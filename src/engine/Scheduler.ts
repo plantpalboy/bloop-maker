@@ -15,7 +15,7 @@ export class Scheduler {
   private noteScheduled: Set<string> = new Set();
   private channels: Record<ChannelId, ChannelState> = {} as Record<ChannelId, ChannelState>;
   private nearEndFired = false;
-  private bpm = 130;
+  bpm = 130;
 
   // Set before start() to enable swing (0 = off, 0.33 = max triplet swing)
   swingAmount = 0;
@@ -40,6 +40,7 @@ export class Scheduler {
     this.noteScheduled.clear();
     this.nearEndFired = false;
     this.timerID = window.setInterval(() => this.tick(), TICK_INTERVAL_MS);
+    this.tick(); // schedule immediately so notes at time=0 aren't missed
   }
 
   stop(): void {

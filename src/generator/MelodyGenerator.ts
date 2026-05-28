@@ -15,7 +15,7 @@ export interface GenConfig {
   scaleType?: ScaleType;
   generateNoise?: boolean;
   sparseness?: number;
-  channelSparseness?: { pulse1?: number; pulse2?: number; wave?: number; noise?: number; pulse3?: number; pad?: number };
+  channelSparseness?: { pulse1?: number; pulse2?: number; wave?: number; noise?: number; pulse3?: number; pad?: number; extra1?: number; extra2?: number; extra3?: number };
   channelStyles?: { pulse1?: string; pulse2?: string; wave?: string; noise?: string; pulse3?: string; pad?: string };
   motifSeed?: number[];
   arpStyle?: string;
@@ -1789,7 +1789,10 @@ export function generate(config: GenConfig): GenResult {
     for (const extId of extraIds) {
       const role = extraRoles[extId];
       if (!role || role === 'off') continue;
+      const extraSparse = config.channelSparseness?.[extId] ?? 0.3;
       for (let bar = 0; bar < config.bars; bar++) {
+        // Respect sparseness — skip bar probabilistically
+        if (rng.next() < extraSparse) continue;
         const phraseIndex = Math.floor(bar / 4);
         const activeProg2 = phraseIndex % 2 === 0 ? progA : progB;
         const chordDeg2 = activeProg2[bar % activeProg2.length];
@@ -1801,9 +1804,13 @@ export function generate(config: GenConfig): GenResult {
         }));
         if (role === 'bell') {
           const { notes: bellNotes } = genGlockenspielBar(rng, scale, config.key, melodyOct + 1, chordDeg2, beatDur, barStart2, 4);
-          extraArrays[extId].push(...applyExtraVel(bellNotes));
+          // Bell: drop every other note so it's less busy
+          extraArrays[extId].push(...applyExtraVel(bellNotes.filter((_, i) => i % 2 === 0)));
         } else if (role === 'arp') {
-          extraArrays[extId].push(...applyExtraVel(genArpBar(rng, scale, config.key, accompOct, chordDeg2, beatDur, barStart2, config.mode)));
+          // Arp: use quarter-note arp style so it's not frantic 16th notes
+          const arpNotes = genArpBar(rng, scale, config.key, accompOct, chordDeg2, beatDur, barStart2, config.mode, 'up');
+          // Keep only downbeat notes (1 per beat) to thin out the density
+          extraArrays[extId].push(...applyExtraVel(arpNotes.filter((_, i) => i % 2 === 0)));
         } else if (role === 'pad') {
           extraArrays[extId].push(...applyExtraVel(genPadBar(rng, scale, config.key, padOct, chordDeg2, beatDur, barStart2, scaleType)));
         } else if (role === 'bass') {

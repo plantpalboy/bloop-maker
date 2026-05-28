@@ -222,6 +222,7 @@ class App {
   private sillyPrefix = 'bloop';
   private activeExtraChannels: Set<ChannelId> = new Set();
   private extraChannelRoles: Partial<Record<ChannelId, string>> = {};
+  private bpmLocked = false;
   private lastMotifIntervals: number[] = [];
 
   // DOM refs
@@ -372,6 +373,7 @@ class App {
                 <span class="gen-label">BPM</span>
                 <input type="number" class="gen-input" id="gen-bpm" value="130" min="40" max="220">
                 <button class="toolbar-btn" id="tap-tempo-btn" title="Tap to set BPM" style="margin-left:4px;padding:3px 7px;font-size:10px">Tap</button>
+                <button class="toolbar-btn" id="gen-bpm-lock" title="Lock BPM — presets won't change it" style="margin-left:2px;padding:3px 7px;font-size:10px">LOCK</button>
               </div>
               <div class="gen-row">
                 <span class="gen-label">Bars</span>
@@ -586,6 +588,7 @@ class App {
                   <span class="bpm-label">BPM</span>
                   <input type="number" class="bpm-input" id="bpm-input" value="--" min="20" max="300" title="Change BPM (rescales notes)">
                 </div>
+                <input type="text" id="export-name" placeholder="file name (auto)" title="Custom export file name — leave blank for auto" style="font:10px Tahoma;padding:2px 4px;width:100px;background:#222;color:#ccc;border:1px solid #444;border-radius:2px">
                 <button class="btn-download" id="download-btn" disabled>Save MIDI</button>
                 <button class="btn-download" id="wav-btn" disabled>Save WAV</button>
               </div>
@@ -932,12 +935,31 @@ class App {
       if (wet > 0) this.sampler?.setReverbAmount(wet, decay);
     });
 
-    // BPM input (rescale notes on change)
-    this.bpmInput.addEventListener('change', () => {
+    // BPM input (rescale notes on change, including arrow keys)
+    let bpmDebounce: number | null = null;
+    const applyBPMChange = () => {
       const newBPM = parseInt(this.bpmInput.value, 10);
-      if (!isNaN(newBPM) && newBPM >= 20 && newBPM <= 300) this.rescaleBPM(newBPM);
+      if (!isNaN(newBPM) && newBPM >= 20 && newBPM <= 300) {
+        const wasPlaying = this.state.isPlaying;
+        this.rescaleBPM(newBPM);
+        if (wasPlaying) this.startPlayback();
+      }
+    };
+    this.bpmInput.addEventListener('change', applyBPMChange);
+    this.bpmInput.addEventListener('input', () => {
+      if (bpmDebounce) clearTimeout(bpmDebounce);
+      bpmDebounce = window.setTimeout(applyBPMChange, 250);
     });
     this.bpmInput.addEventListener('keydown', e => { if (e.key === 'Enter') this.bpmInput.blur(); });
+
+    // Gen BPM lock button
+    const genBpmLockBtn = document.getElementById('gen-bpm-lock') as HTMLButtonElement;
+    genBpmLockBtn?.addEventListener('click', () => {
+      this.bpmLocked = !this.bpmLocked;
+      genBpmLockBtn.classList.toggle('active', this.bpmLocked);
+      genBpmLockBtn.style.background = this.bpmLocked ? '#c8a020' : '';
+      genBpmLockBtn.style.color = this.bpmLocked ? '#000' : '';
+    });
 
     // Transport
     this.restartBtn.addEventListener('click', () => this.restartPlayback());
@@ -1347,6 +1369,8 @@ class App {
       if (panVal) this.panValEls[id] = panVal;
     }
     this.bindChannelRowEvents();
+    this.populateInstrumentSelectors();
+    this.updateSF2List();
     document.getElementById('add-channel-btn')?.addEventListener('click', () => {
       const extras: ChannelId[] = ['extra1', 'extra2', 'extra3'];
       const next = extras.find(e => !this.activeExtraChannels.has(e));
@@ -1504,7 +1528,7 @@ class App {
 
   private quickGenerate(opts: Partial<GenConfig> & { mode: GenMode; bpm: number; scale: string; generateNoise: boolean }) {
     this.genMode = opts.mode;
-    (document.getElementById('gen-bpm')   as HTMLInputElement).value  = String(opts.bpm);
+    if (!this.bpmLocked) (document.getElementById('gen-bpm') as HTMLInputElement).value = String(opts.bpm);
     (document.getElementById('gen-scale') as HTMLSelectElement).value = opts.scale;
     (document.getElementById('gen-noise') as HTMLInputElement).checked = opts.generateNoise;
     // Apply preset sparseness if provided, otherwise use mode default
@@ -1516,8 +1540,15 @@ class App {
   }
 
   private randomAndGenerate() {
-    const p = GEN_PRESETS[Math.floor(Math.random() * GEN_PRESETS.length)];
-    this.quickGenerate(p);
+    // Bias toward low BPM — presets under 90 bpm get 5x weight, 90-110 get 2x, 110+ get 0.5x
+    const weights = GEN_PRESETS.map(p => p.bpm < 90 ? 5 : p.bpm < 110 ? 2 : 0.5);
+    const total = weights.reduce((a, b) => a + b, 0);
+    let r = Math.random() * total;
+    for (let i = 0; i < GEN_PRESETS.length; i++) {
+      r -= weights[i];
+      if (r <= 0) { this.quickGenerate(GEN_PRESETS[i]); return; }
+    }
+    this.quickGenerate(GEN_PRESETS[GEN_PRESETS.length - 1]);
   }
 
   private addMoreBars(bars = 16) {
@@ -1747,6 +1778,9 @@ class App {
       noise:  this.channelGenEnabled['noise']  === false ? 1 : (this.channelSparseValues['noise']  ?? 0),
       pulse3: this.channelGenEnabled['pulse3'] === false ? 1 : (this.channelSparseValues['pulse3'] ?? 0),
       pad:    this.channelGenEnabled['pad']    === false ? 1 : (this.channelSparseValues['pad']    ?? 0),
+      extra1: this.channelGenEnabled['extra1'] === false ? 1 : (this.channelSparseValues['extra1'] ?? 0.3),
+      extra2: this.channelGenEnabled['extra2'] === false ? 1 : (this.channelSparseValues['extra2'] ?? 0.3),
+      extra3: this.channelGenEnabled['extra3'] === false ? 1 : (this.channelSparseValues['extra3'] ?? 0.3),
     };
     const channelStyles = {
       pulse1: this.channelStyle['pulse1'] ?? 'auto',
@@ -2404,8 +2438,9 @@ class App {
     try {
       const keyName = NOTE_NAMES[parseInt((document.getElementById('gen-key') as HTMLInputElement).value, 10)] || 'C';
       const bpm = Math.round(this.state.bpm);
-      const baseName = `${this.sillyPrefix}_${bpm}bpm_${keyName}`;
-      downloadMIDI(buildMIDI(this.state.channels, this.state.bpm), `${baseName}.mid`);
+      const customName = (document.getElementById('export-name') as HTMLInputElement)?.value.trim();
+      const baseName = customName || `${this.sillyPrefix}_${bpm}bpm_${keyName}`;
+      downloadMIDI(buildMIDI(this.state.channels, this.state.bpm, this.channelVolValues), `${baseName}.mid`);
       this.exportSF2Info(baseName);
       this.setStatus('ok', 'MIDI + SF2 info exported!');
     } catch (err) { this.setStatus('err', `Export failed: ${(err as Error).message}`); }
@@ -2505,9 +2540,11 @@ class App {
       const sf2List = this.loadedSF2s.map(f => f.sf2);
       const keyName = NOTE_NAMES[parseInt((document.getElementById('gen-key') as HTMLInputElement).value, 10)] || 'C';
       const bpm = Math.round(this.state.bpm);
+      const customName = (document.getElementById('export-name') as HTMLInputElement)?.value.trim();
+      const exportFilename = (customName || `${this.sillyPrefix}_${bpm}bpm_${keyName}`) + '.wav';
       await exportWAV(this.state, channelVols, channelPans, masterVol, reverbWet, reverbDecay, pct => {
         this.progressFill.style.width = `${Math.round(pct * 100)}%`;
-      }, sf2List, this.channelSF2Idx, `${this.sillyPrefix}_${bpm}bpm_${keyName}.wav`);
+      }, sf2List, this.channelSF2Idx, exportFilename);
       this.setStatus('ok', 'WAV exported!');
     } catch (err) {
       this.setStatus('err', `WAV export failed: ${(err as Error).message}`);
