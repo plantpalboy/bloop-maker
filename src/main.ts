@@ -223,6 +223,7 @@ class App {
   private activeExtraChannels: Set<ChannelId> = new Set();
   private extraChannelRoles: Partial<Record<ChannelId, string>> = {};
   private bpmLocked = false;
+  private loopEnabled = false;
   private lastMotifIntervals: number[] = [];
 
   // DOM refs
@@ -573,6 +574,7 @@ class App {
                 <button class="btn-transport" id="restart-btn" disabled title="Back to start (R)">|&lt;</button>
                 <button class="btn-transport" id="play-btn" disabled>&gt;</button>
                 <button class="btn-transport" id="stop-btn" disabled>[]</button>
+                <button class="btn-transport" id="loop-btn" title="Loop: replay bars seamlessly (off = infinite mode)" style="font-size:13px">↻</button>
                 <div class="seek-wrap">
                   <input type="range" class="seek-slider" id="seek-slider" min="0" max="300" value="0" step="0.1">
                 </div>
@@ -965,6 +967,13 @@ class App {
     this.restartBtn.addEventListener('click', () => this.restartPlayback());
     this.playBtn.addEventListener('click',    () => this.togglePlay());
     this.stopBtn.addEventListener('click',    () => this.stopPlayback());
+    const loopBtn = document.getElementById('loop-btn') as HTMLButtonElement;
+    loopBtn?.addEventListener('click', () => {
+      this.loopEnabled = !this.loopEnabled;
+      loopBtn.classList.toggle('active', this.loopEnabled);
+      if (this.scheduler) this.scheduler.loop = this.loopEnabled;
+      this.setStatus('ok', this.loopEnabled ? 'Loop ON — replays bars seamlessly.' : 'Loop OFF — infinite mode, generates new bars.');
+    });
     this.downloadBtn.addEventListener('click', () => this.runDownload());
     this.wavBtn.addEventListener('click',     () => void this.runWAVExport());
 
@@ -2321,6 +2330,12 @@ class App {
       if (Math.round(t * 5) % 4 === 0) this.updateAllCanvases();
     };
 
+    this.scheduler.loop = this.loopEnabled;
+    this.scheduler.onLoop = () => {
+      this.currentTime = 0;
+      this.seekSlider.value = '0';
+    };
+
     this.scheduler.onEnded = () => {
       this.state.isPlaying = false;
       this.currentTime = 0;
@@ -2333,6 +2348,7 @@ class App {
 
     if (this.lastGenConfig) {
       this.scheduler.onNearEnd = () => {
+        if (this.loopEnabled) return;  // loop mode handles the end
         if (!this.lastGenConfig) return;
         try {
           // bars:8 keeps totalPhrases<=2, forcing all bars to 'chorus' activity
