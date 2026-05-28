@@ -366,11 +366,15 @@ function scaleMidi(key: number, oct: number, scaleArr: number[], degree: number)
 function snapToScale(midi: number, key: number, scaleArr: number[]): number {
   const pc = ((midi % 12) + 12) % 12;
   const relPc = ((pc - key) + 12) % 12;
-  let bestDelta = 99, best = relPc;
+  let bestDelta = 99;
   for (const s of scaleArr) {
-    const d = Math.min(Math.abs(s - relPc), 12 - Math.abs(s - relPc));
-    if (d < Math.abs(bestDelta)) { bestDelta = s - relPc; best = s; }
+    // Shortest signed distance around the octave: never move more than 6 semitones.
+    let delta = s - relPc;
+    if (delta > 6) delta -= 12;
+    else if (delta < -6) delta += 12;
+    if (Math.abs(delta) < Math.abs(bestDelta)) bestDelta = delta;
   }
+  if (bestDelta === 99) bestDelta = 0;
   return midi + bestDelta;
 }
 
@@ -461,6 +465,7 @@ function genMelodyBar(
   phrasePos = 0,
   phraseRole: 'antecedent' | 'consequent' | 'free' = 'free',
   prevDelta = 0,
+  isLoopEnd = false,
 ): { notes: NoteEvent[]; lastMidi: number; lastDelta: number } {
   const notes: NoteEvent[] = [];
   let t = barStart;
@@ -532,24 +537,27 @@ function genMelodyBar(
       const upW   = (effectiveDir === 'up'   ? 1.4 : effectiveDir === 'down' ? 0.7 : 1.0) * zigzagUp;
       const downW = (effectiveDir === 'down' ? 1.4 : effectiveDir === 'up'   ? 0.7 : 1.0) * zigzagDown;
 
-      // Calibrated from 13,423 real game MIDI files:
-      // Repeat ~16%, Steps ~14%, 3rds ~20%, 4ths ~12%, 5ths ~9%, Octaves ~11%
+      // Melody ruleset §8/§25: melodies should be ~70-90% stepwise and must NOT spam octave
+      // jumps. Steps (±1/±2 semitones) dominate; 3rds are occasional skips; 4th/5th are rare
+      // "support" leaps (wonder/heroic); octaves are very rare accents. After a leap, suppressFar
+      // and recover* still pull the line back, satisfying the leap-recovery rule (§7).
+      // Stepwise share of *moving* notes here ≈ 70%.
       const intervals: { delta: number; w: number }[] = [
-        { delta: -2, w: Math.round(13 * recoverDown * downW) },
-        { delta:  2, w: Math.round(11 * recoverUp   * upW)   },
-        { delta:  0, w: 22 },
-        { delta: -1, w: Math.round(5 * downW) },
-        { delta:  1, w: Math.round(5 * upW)   },
-        { delta: -3, w: Math.round(13 * downW * suppressFar) },
-        { delta:  3, w: Math.round(13 * upW   * suppressFar) },
-        { delta: -4, w: Math.round(10 * downW * suppressFar) },
-        { delta:  4, w: Math.round(10 * upW   * suppressFar) },
-        { delta: -5, w: Math.round(9  * suppressFar) },
-        { delta:  5, w: Math.round(9  * suppressFar) },
-        { delta: -7, w: Math.round(7  * suppressFar) },
-        { delta:  7, w: Math.round(7  * suppressFar) },
-        { delta:-12, w: Math.round(8  * suppressFar) },
-        { delta: 12, w: Math.round(7  * suppressFar) },
+        { delta: -2, w: Math.round(30 * recoverDown * downW) },  // major 2nd — primary motion
+        { delta:  2, w: Math.round(30 * recoverUp   * upW)   },
+        { delta: -1, w: Math.round(8 * downW) },                 // minor 2nd / semitone lean
+        { delta:  1, w: Math.round(8 * upW)   },
+        { delta:  0, w: 12 },                                    // repeat (rhythmic identity, not motion)
+        { delta: -3, w: Math.round(8 * downW * suppressFar) },   // minor 3rd — occasional skip
+        { delta:  3, w: Math.round(8 * upW   * suppressFar) },
+        { delta: -4, w: Math.round(6 * downW * suppressFar) },   // major 3rd
+        { delta:  4, w: Math.round(6 * upW   * suppressFar) },
+        { delta: -5, w: Math.round(3  * suppressFar) },          // 4th — rare support leap
+        { delta:  5, w: Math.round(3  * suppressFar) },
+        { delta: -7, w: Math.round(2  * suppressFar) },          // 5th — rare support leap
+        { delta:  7, w: Math.round(2  * suppressFar) },
+        { delta:-12, w: Math.round(1  * suppressFar) },          // octave — very rare accent (anti-spam)
+        { delta: 12, w: Math.round(1  * suppressFar) },
       ];
 
       const delta = rng.weighted(intervals.map(i => ({ value: i.delta, w: Math.max(1, i.w) })));
@@ -625,22 +633,41 @@ function genMelodyBar(
     cur = next; noteRun++; t += dur;
   }
 
-  // Retardation: lengthen final note at any phrase ending for a natural "breathing" feel
-  if (notes.length > 0 && phrasePos === 3) {
+  // Loop turnaround (RULE 1.1 / 2.3): the song's FINAL bar must not resolve and stop — it has to
+  // pull back into bar 1. Instead of lengthening + snapping to a chord tone (closure), we end on a
+  // tone that leans toward the tonic of bar 1 (leading tone below or supertonic above, whichever is
+  // the smoother step) with a shorter, softer note so the loop feels open, not finished.
+  if (isLoopEnd && notes.length > 0) {
+    // Melody ruleset §19: the loop-hook note should be scale degree 2 or 5 (open, unresolved
+    // tones that create desire to restart) — never the tonic. Pick whichever is the smoother step.
+    const supertonic = scaleMidi(key, oct, scale, 1); // degree 2 — movement / hope
+    const dominant   = scaleMidi(key, oct, scale, 4); // degree 5 — strength / momentum
     const last = notes[notes.length - 1];
-    notes[notes.length - 1] = { ...last, duration: Math.min(last.duration * 1.6, beatDur * 1.8) };
-  }
-
-  // Hard guarantee: the very last note of a phrase-ending bar must be a chord tone.
-  // This is the ultimate fix for "sounds off at section end" — whatever slipped through above gets snapped here.
-  if (phrasePos === 3 && notes.length > 0) {
-    const last = notes[notes.length - 1];
-    const best = chordTones.reduce((b, ct) => Math.abs(ct - last.midi) < Math.abs(b - last.midi) ? ct : b, chordTones[0]);
+    const target = Math.abs(supertonic - last.midi) <= Math.abs(dominant - last.midi) ? supertonic : dominant;
     notes[notes.length - 1] = {
       ...last,
-      midi: Math.max(0, Math.min(127, best)),
-      velocity: Math.max(last.velocity, 74),
+      midi: Math.max(0, Math.min(127, target)),
+      duration: Math.min(last.duration, beatDur * 0.9),
+      velocity: Math.max(40, last.velocity - 12),
     };
+  } else {
+    // Retardation: lengthen final note at any phrase ending for a natural "breathing" feel
+    if (notes.length > 0 && phrasePos === 3) {
+      const last = notes[notes.length - 1];
+      notes[notes.length - 1] = { ...last, duration: Math.min(last.duration * 1.6, beatDur * 1.8) };
+    }
+
+    // Hard guarantee: the very last note of a phrase-ending bar must be a chord tone.
+    // This is the ultimate fix for "sounds off at section end" — whatever slipped through above gets snapped here.
+    if (phrasePos === 3 && notes.length > 0) {
+      const last = notes[notes.length - 1];
+      const best = chordTones.reduce((b, ct) => Math.abs(ct - last.midi) < Math.abs(b - last.midi) ? ct : b, chordTones[0]);
+      notes[notes.length - 1] = {
+        ...last,
+        midi: Math.max(0, Math.min(127, best)),
+        velocity: Math.max(last.velocity, 74),
+      };
+    }
   }
 
   return { notes, lastMidi: cur, lastDelta };
@@ -810,7 +837,7 @@ function genArpBar(
     case 'updown':     pattern = [root, third, fifth, high, fifth, third, root, third]; break;
     case 'broken':     pattern = [root, fifth, third, high, root, fifth, third, fifth]; break;
     case 'alberti':    pattern = [root, fifth, third, fifth, root, fifth, third, fifth]; break;
-    case 'bounce':     pattern = [root, high, fifth, high, root, high, third, high]; break;
+    case 'bounce':     pattern = [root, high3, fifth, high, root, high3, third, high]; break;
     case 'waltz':      pattern = [root, third, fifth, root, third, fifth, root, third]; break;
     case 'cascading':  pattern = [high, fifth, third, root, high5, high, fifth, third]; break;
     case 'pinned':     pattern = [root, third, root, fifth, root, high, root, fifth]; break;
@@ -825,14 +852,22 @@ function genArpBar(
     case 'open5':      pattern = [root, root + 7, high, root + 7, root, root + 7, high, root + 7]; break; // power chord 5ths
   }
 
-  // For some styles, occasionally use first-inversion (start on third) or second-inversion (start on fifth)
+  // Inversion / register variation. Rotating the pattern makes it start on the 3rd or 5th —
+  // a *true* inversion that keeps the arp's melodic shape — while an octave shift gives register
+  // contrast. (The old per-pitch octave shift collided root+12 with `high` and broke the contour.)
   if (style !== 'doubletime' && rng.next() < 0.3) {
-    const inv = rng.next() < 0.5 ? 1 : 2;
-    if (inv === 1) pattern = pattern.map(n => n === root ? root + 12 : n);  // 1st inversion: root goes up octave
-    else           pattern = pattern.map(n => (n === root || n === third) ? n + 12 : n); // 2nd inversion
+    const roll = rng.next();
+    if (roll < 0.45) {
+      const rot = rng.next() < 0.5 ? 1 : 2;                       // start on 3rd or 5th
+      pattern = [...pattern.slice(rot), ...pattern.slice(0, rot)];
+    } else if (roll < 0.7) {
+      pattern = pattern.map(n => n + 12);                          // up an octave
+    } else {
+      pattern = pattern.map(n => n - 12);                          // down an octave
+    }
   }
 
-  // Note length — double-time uses 16ths, others use 8ths, ambient uses quarters
+  // Note length — double-time uses 16ths, others use 8ths, ambient/waltz use triplet-ish quarters
   const noteLen = style === 'doubletime'
     ? beatDur * 0.25
     : mode === 'ambient' || style === 'waltz'
@@ -841,18 +876,42 @@ function genArpBar(
 
   const velBase = mode === 'ambient' ? 38 : mode === 'battle' ? 68 : 55;
 
-  // Velocity accent pattern — downbeats louder
-  const accentPattern = [1.0, 0.7, 0.85, 0.7, 0.9, 0.7, 0.8, 0.7, 0.95, 0.7, 0.85, 0.7, 0.9, 0.7, 0.8, 0.7];
+  // Syncopation: styles named after grooves should actually groove instead of playing a wall
+  // of straight 8ths. These masks select which 8th-note slots (0..7) sound; the dropped slots
+  // become rests, producing the tresillo / clave / driving-riff feel the names imply.
+  const SYNCO_SLOTS: Partial<Record<ArpStyle, number[]>> = {
+    latin:  [0, 3, 6],           // tresillo (3-3-2)
+    clave:  [0, 3, 4, 6],        // tresillo + backbeat
+    riff:   [0, 2, 3, 4, 6],     // driving rock
+    bounce: [0, 1, 3, 4, 5, 7],  // skip-step bounce
+  };
+  // Ambient/weird already carve their own gaps below, so leave them smooth.
+  const slotMask = (mode !== 'ambient' && mode !== 'weird' && SYNCO_SLOTS[style])
+    ? new Set(SYNCO_SLOTS[style]) : null;
+  // Syncopated hits ring a little longer so the groove connects rather than clicking.
+  const gate = slotMask ? 1.05 : style === 'waltz' ? 0.7 : style === 'jazzy' ? 0.65 : 0.82;
 
   for (let i = 0; i < pattern.length; i++) {
     const t = barStart + i * noteLen;
     if (t >= barStart + 4 * beatDur - 0.01) break;
+    if (slotMask && !slotMask.has(i)) continue;            // syncopated rest
     if (mode === 'ambient' && rng.next() < 0.22) continue; // ambient: sparse gaps
     if (mode === 'weird'   && rng.next() < 0.18) continue; // weird: irregular gaps
-    const accent = accentPattern[i % accentPattern.length];
+
+    // Accent by real metrical position (works for 8ths, 16ths, and triplet spacing alike):
+    // beat 1 strongest, beat 3 next, other downbeats medium, 8th-offbeats light, 16ths softest.
+    const beatPos = (t - barStart) / beatDur;
+    const frac = beatPos - Math.floor(beatPos);
+    const accent =
+      Math.abs(beatPos) < 0.08            ? 1.0
+      : Math.abs(beatPos - 2) < 0.08      ? 0.92
+      : frac < 0.08 || frac > 0.92        ? 0.85
+      : Math.abs(frac - 0.5) < 0.08       ? 0.78
+      : 0.7;
+
     notes.push({
       time: t,
-      duration: noteLen * (style === 'waltz' ? 0.7 : style === 'jazzy' ? 0.65 : 0.82),
+      duration: noteLen * gate,
       midi: Math.max(0, Math.min(127, pattern[i])),
       velocity: Math.round(velBase * accent) + rng.int(10),
     });
@@ -1444,10 +1503,14 @@ export function generate(config: GenConfig): GenResult {
   }
 
   const modulationType = rng.next();
+  // Most songs stay in one key (the most song-like default). When a song does lift its
+  // chorus, favor a small, classic step up — whole-step, or minor-third in minor/dorian.
+  // Big 4th/5th jumps (which sound disorienting when they revert each verse) are now rare.
   const modulationSemitones =
-    (scaleType === 'minor' || scaleType === 'dorian') && modulationType < 0.35 ? 3
-    : modulationType < 0.55 ? 2
-    : modulationType < 0.75 ? 5
+    modulationType < 0.50 ? 0
+    : (scaleType === 'minor' || scaleType === 'dorian') && modulationType < 0.72 ? 3
+    : modulationType < 0.88 ? 2
+    : modulationType < 0.96 ? 5
     : 7;
 
   const PITCH_ARC: Record<SectionType, number> = {
@@ -1474,6 +1537,8 @@ export function generate(config: GenConfig): GenResult {
 
   for (let bar = 0; bar < config.bars; bar++) {
     const barStart = bar * barDur;
+    // The very last bar is the loop turnaround back into bar 1.
+    const isFinalBar = bar === config.bars - 1 && config.bars > 1;
     // A/B alternating progression: even 4-bar phrases use progA, odd use progB
     const phraseIndex = Math.floor(bar / 4);
     const activeProg = phraseIndex % 2 === 0 ? progA : progB;
@@ -1501,7 +1566,9 @@ export function generate(config: GenConfig): GenResult {
     } else {
       holdChord = null; holdBarsLeft = 0;
     }
-    const chordDeg = rawChordDeg;
+    // Loop turnaround: end on the dominant (degree 4 = V) so bar 1's tonic resolves the loop.
+    // bar 1 always opens on degree 0 (every progression starts on the tonic).
+    const chordDeg = isFinalBar ? 4 : rawChordDeg;
 
     // Reset leap recovery at phrase boundaries
     if (phrasePos === 0) melPrevDelta = 0;
@@ -1523,6 +1590,12 @@ export function generate(config: GenConfig): GenResult {
     const isChorus = section === 'chorus';
     const activeKey = isChorus ? (config.key + modulationSemitones) % 12 : config.key;
     const activeOct = isChorus ? melodyOct + (config.key + modulationSemitones >= 12 ? 1 : 0) : melodyOct;
+
+    // Lead entrance: in non-aggressive modes the melody holds back during the intro so the
+    // song "opens" on bass + pad and the tune enters at the build/verse — a core song signal.
+    // Battle/funky/silly slam the lead in from bar 0 for immediate energy.
+    const leadHoldsBack = config.mode !== 'battle' && config.mode !== 'funky' && config.mode !== 'silly';
+    const leadIntroSilent = leadHoldsBack && section === 'intro';
 
     const pitchArcBias = PITCH_ARC[section];
     const arcDir: 'up' | 'down' | 'free' =
@@ -1596,8 +1669,10 @@ export function generate(config: GenConfig): GenResult {
       : (section === 'intro' || section === 'outro' || section === 'break') && rng.next() < 0.55
       ? slowFlowRhythms
       : leadRhythms;
+    // Loop turnaround thins the final bar's lead (RULE 2.3: reduce melodic density into the loop).
+    const finalBarRestBias = isFinalBar ? 0.18 : 0;
     const melRaw = !isSilenceBar && freeDuration > beatDur * 1.0
-      ? genMelodyBar(rng, scale, activeKey, activeOct, chordDeg, beatDur, freeStart, arcDir, prevMidi, config.mode, scaleType, barRhythms, lo, hi, freeDuration, leadRestProb - BASE_REST_PROB[config.mode] + restBias + accompTextureBias, phrasePos, phraseRole, melPrevDelta)
+      ? genMelodyBar(rng, scale, activeKey, activeOct, chordDeg, beatDur, freeStart, arcDir, prevMidi, config.mode, scaleType, barRhythms, lo, hi, freeDuration, leadRestProb - BASE_REST_PROB[config.mode] + restBias + accompTextureBias + finalBarRestBias, phrasePos, phraseRole, melPrevDelta, isFinalBar)
       : { notes: [], lastMidi: prevMidi, lastDelta: 0 };
     // Ornament insertion: mode-aware probability, phrase-start bars only, max 1 per 4 bars
     const canOrnament = phrasePos === 0 && bar - lastOrnamentBar >= 4;
@@ -1628,7 +1703,7 @@ export function generate(config: GenConfig): GenResult {
       prevMidi = leadingTone(nextChordRoots[bar]);
     }
     // Anticipation: add a pickup note in the last 8th of cadence bars pointing to next chord root
-    if (isCadenceBar(bar) && rng.next() < 0.30 && !isSilenceBar) {
+    if (isCadenceBar(bar) && rng.next() < 0.30 && !isSilenceBar && !leadIntroSilent) {
       const nextRoot = nextChordRoots[bar];
       const pickupTime = barStart + 3.75 * beatDur;
       if (pickupTime < barStart + 4 * beatDur - 0.01) {
@@ -1661,7 +1736,7 @@ export function generate(config: GenConfig): GenResult {
     // When locked motif is active, replace generated mel/motif for phrase-start bars
     const melNotes = (config.motifSeed && config.motifSeed.length > 0 && phrasePos === 0)
       ? [] : [...motifNotes, ...mel.notes];
-    if (!isSilenceBar && pulse1Active) pulse1.push(...applyVel([...seedNotes, ...melNotes]));
+    if (!isSilenceBar && pulse1Active && !leadIntroSilent) pulse1.push(...applyVel([...seedNotes, ...melNotes]));
 
     // Pulse2 — when arp style is forced, route through genArpBar for real variety
     if (act.pulse2 && !isSilenceBar) {
@@ -1732,21 +1807,40 @@ export function generate(config: GenConfig): GenResult {
         wave.push(...applyVel(genBassBar(rng, scale, config.key, bassOct, chordDeg, beatDur, barStart, config.mode, scaleType, nextChordDeg)));
       }
     }
+    // Chorus modulation: the bass is generated in config.key, but the lead/arp/pad all
+    // transpose to activeKey in the chorus. Shift this bar's bass by the same amount so it
+    // stays harmonically locked to the modulated harmony instead of clashing a 2nd/5th away.
+    const chorusBassShift = isChorus ? modulationSemitones : 0;
+    if (chorusBassShift !== 0 && wave.length > waveBeforeLen) {
+      for (let wi = waveBeforeLen; wi < wave.length; wi++) {
+        wave[wi] = { ...wave[wi], midi: Math.max(0, Math.min(127, wave[wi].midi + chorusBassShift)) };
+      }
+    }
     // Bass leap protection: if downbeat jumps >7 semitones from previous bar, use third instead
     if (wave.length > waveBeforeLen) {
       const downbeat = wave[waveBeforeLen];
       if (prevBassRootMidi >= 0 && Math.abs(downbeat.midi - prevBassRootMidi) > 7) {
-        const thirdMidi = scaleMidi(config.key, bassOct, scale, chordDeg + 2);
+        const thirdMidi = scaleMidi(config.key, bassOct, scale, chordDeg + 2) + chorusBassShift;
         wave[waveBeforeLen] = { ...downbeat, midi: Math.max(0, Math.min(127, thirdMidi)) };
       }
       prevBassRootMidi = wave[waveBeforeLen].midi;
     }
 
-    // Noise (drums)
-    if (act.noise) noise.push(...genPercBar(rng, beatDur, barStart, config.mode, useCompound, bar));
+    // Noise (drums) — follow the section dynamic arc like every other channel.
+    // Multiplicative gain keeps the internal kick/snare/hat accent balance intact;
+    // floor keeps soft hats audible. +phrase crescendo for a gentle build into each cadence.
+    if (act.noise) {
+      const drumSectionGain: Record<SectionType, number> = {
+        intro: 0.68, build: 0.82, verse: 0.92, chorus: 1.0, break: 0.74, outro: 0.58,
+      };
+      const gain = drumSectionGain[section];
+      const drumBar = genPercBar(rng, beatDur, barStart, config.mode, useCompound, bar)
+        .map(n => ({ ...n, velocity: Math.max(12, Math.min(127, Math.round(n.velocity * gain) + phraseCrescendo)) }));
+      noise.push(...drumBar);
+    }
 
-    // Pulse3 (arpeggio / countermelody)
-    if (act.pulse3 && sp3 < 1 && arrRng.next() > sp3 * 0.7) {
+    // Pulse3 (arpeggio / countermelody) — dropped on the loop-turnaround bar to thin density.
+    if (act.pulse3 && sp3 < 1 && !isFinalBar && arrRng.next() > sp3 * 0.7) {
       const styleP3 = config.channelStyles?.pulse3;
       // Auto mode: alternate between arp and countermelody every 2 bars for variety
       const useCounterMelody = styleP3 === 'melody' || (styleP3 !== 'arp' && bar % 4 >= 2 && arrRng.next() < 0.45);

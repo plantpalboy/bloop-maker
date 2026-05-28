@@ -223,6 +223,8 @@ class App {
   private activeExtraChannels: Set<ChannelId> = new Set();
   private extraChannelRoles: Partial<Record<ChannelId, string>> = {};
   private bpmLocked = false;
+  private loopEnabled = true;
+  private bpmArrowDebounce: number | null = null;
   private lastMotifIntervals: number[] = [];
 
   // DOM refs
@@ -573,6 +575,7 @@ class App {
                 <button class="btn-transport" id="restart-btn" disabled title="Back to start (R)">|&lt;</button>
                 <button class="btn-transport" id="play-btn" disabled>&gt;</button>
                 <button class="btn-transport" id="stop-btn" disabled>[]</button>
+                <button class="btn-transport active" id="loop-btn" title="Loop: replay the same bars seamlessly (off = play once)" style="font-size:13px">↻</button>
                 <div class="seek-wrap">
                   <input type="range" class="seek-slider" id="seek-slider" min="0" max="300" value="0" step="0.1">
                 </div>
@@ -788,7 +791,16 @@ class App {
         const bpmEl = document.getElementById('gen-bpm') as HTMLInputElement;
         const step = e.shiftKey ? 5 : 1;
         const cur = parseInt(bpmEl.value, 10) || 130;
-        bpmEl.value = String(Math.max(40, Math.min(220, cur + (e.key === 'ArrowUp' ? step : -step))));
+        const next = Math.max(40, Math.min(220, cur + (e.key === 'ArrowUp' ? step : -step)));
+        bpmEl.value = String(next);
+        // If a song is loaded, ↑/↓ also drives the live transport tempo: update the
+        // transport window and rescale the playing notes (debounced so holding the key is smooth).
+        const hasNotes = CHANNELS.some(id => this.state.channels[id].notes.length > 0);
+        if (hasNotes) {
+          this.bpmInput.value = String(next);
+          if (this.bpmArrowDebounce) clearTimeout(this.bpmArrowDebounce);
+          this.bpmArrowDebounce = window.setTimeout(() => this.commitTransportBPM(next), 200);
+        }
       }
       // Easter egg: type "bloop"
       if (e.key.length === 1) {
@@ -937,14 +949,7 @@ class App {
 
     // BPM input (rescale notes on change, including arrow keys)
     let bpmDebounce: number | null = null;
-    const applyBPMChange = () => {
-      const newBPM = parseInt(this.bpmInput.value, 10);
-      if (!isNaN(newBPM) && newBPM >= 20 && newBPM <= 300) {
-        const wasPlaying = this.state.isPlaying;
-        this.rescaleBPM(newBPM);
-        if (wasPlaying) this.startPlayback();
-      }
-    };
+    const applyBPMChange = () => this.commitTransportBPM(parseInt(this.bpmInput.value, 10));
     this.bpmInput.addEventListener('change', applyBPMChange);
     this.bpmInput.addEventListener('input', () => {
       if (bpmDebounce) clearTimeout(bpmDebounce);
@@ -965,6 +970,13 @@ class App {
     this.restartBtn.addEventListener('click', () => this.restartPlayback());
     this.playBtn.addEventListener('click',    () => this.togglePlay());
     this.stopBtn.addEventListener('click',    () => this.stopPlayback());
+    const loopBtn = document.getElementById('loop-btn') as HTMLButtonElement;
+    loopBtn?.addEventListener('click', () => {
+      this.loopEnabled = !this.loopEnabled;
+      loopBtn.classList.toggle('active', this.loopEnabled);
+      if (this.scheduler) this.scheduler.loop = this.loopEnabled;
+      this.setStatus('ok', this.loopEnabled ? 'Loop ON — song repeats its bars seamlessly.' : 'Loop OFF — song plays once and stops.');
+    });
     this.downloadBtn.addEventListener('click', () => this.runDownload());
     this.wavBtn.addEventListener('click',     () => void this.runWAVExport());
 
@@ -1389,6 +1401,15 @@ class App {
   }
 
   // ── BPM rescaling ────────────────────────────────────────────
+
+  // Apply a new transport tempo: rescale the loaded notes and keep playing if we were.
+  // Shared by the transport BPM input and the global ↑/↓ tempo nudge.
+  private commitTransportBPM(newBPM: number) {
+    if (isNaN(newBPM) || newBPM < 20 || newBPM > 300) return;
+    const wasPlaying = this.state.isPlaying;
+    this.rescaleBPM(newBPM);
+    if (wasPlaying) this.startPlayback();
+  }
 
   private rescaleBPM(newBPM: number) {
     const oldBPM = this.state.bpm;
@@ -2331,27 +2352,13 @@ class App {
       this.stopOscilloscope();
     };
 
-    if (this.state.inputType === 'generated' && this.lastGenConfig) {
-      this.scheduler.onNearEnd = () => {
-        if (!this.lastGenConfig) return;
-        try {
-          // bars:8 keeps totalPhrases<=2, forcing all bars to 'chorus' activity
-          // — avoids intro/outro silence gaps that make infinite mode feel broken
-          const extra = generate({ ...this.lastGenConfig, bars: 8 });
-          const offset = this.state.duration;
-          for (const id of CHANNELS) {
-            const shifted = extra.channels[id].map(n => ({ ...n, time: n.time + offset }));
-            this.state.channels[id].notes.push(...shifted);
-          }
-          this.state.duration += extra.duration;
-          this.seekSlider.max = String(this.state.duration);
-          this.scheduler?.extendDuration(this.state.duration);
-        } catch (e) {
-          console.error('Infinite mode extension error:', e);
-          this.scheduler?.extendDuration(this.state.duration + 30);
-        }
-      };
-    }
+    // Loop toggle: when ON the scheduler seamlessly replays the same bars (the loop turnaround
+    // in the generator makes the final bar flow back into bar 1). When OFF it plays once and stops.
+    this.scheduler.loop = this.loopEnabled;
+    this.scheduler.onLoop = () => {
+      this.currentTime = 0;
+      this.seekSlider.value = '0';
+    };
 
     this.state.isPlaying = true;
     this.updateTransportButtons();

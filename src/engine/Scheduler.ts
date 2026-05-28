@@ -21,9 +21,12 @@ export class Scheduler {
   swingAmount = 0;
 
   duration = 0;
+  // When true the song wraps back to the top at the end instead of stopping (seamless game loop).
+  loop = false;
   onTimeUpdate?: (t: number) => void;
   onEnded?: () => void;
   onNearEnd?: () => void;
+  onLoop?: () => void;
 
   constructor(ctx: AudioContext, sampler: SF2Sampler) {
     this.ctx = ctx;
@@ -89,7 +92,19 @@ export class Scheduler {
       this.onNearEnd?.();
     }
 
-    if (songTime >= this.duration) { this.stop(); this.onEnded?.(); return; }
+    if (songTime >= this.duration) {
+      if (this.loop && this.duration > 0) {
+        // Wrap back to bar 1 without stopping audio: shift the time origin forward by one
+        // loop length so currentSongTime rolls over to ~0, then reschedule from the top.
+        this.startContextTime += this.duration;
+        this.noteScheduled.clear();
+        this.nearEndFired = false;
+        this.onLoop?.();
+        this.tick();
+        return;
+      }
+      this.stop(); this.onEnded?.(); return;
+    }
 
     const scheduleUntil = songTime + SCHEDULE_AHEAD_S;
 

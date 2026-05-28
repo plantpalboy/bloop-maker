@@ -2,6 +2,17 @@
 
 A browser-based video game music generator and editor. Generate chiptune-style songs, edit notes in a piano roll, and export to MIDI or WAV.
 
+## What's New in V4 — "Loops & Singable Melodies"
+
+Focused on making generated tracks sound like real, loopable game music:
+
+- **Clean loop turnarounds** — the final bar no longer resolves to a dead stop. It moves to the dominant and ends the melody on scale degree 2 or 5, so the track pulls naturally back into bar 1.
+- **Loop toggle (↻)** — new transport button. ON replays the same bars seamlessly forever (no audio gap); OFF plays once and stops. Replaces the old "generate-forever" infinite mode.
+- **Singable melodies** — retuned the melodic engine to ~70% stepwise motion and nearly eliminated random octave jumps, per a hummability-first ruleset.
+- **Smarter arpeggios** — `clave`/`latin`/`riff` now actually syncopate (tresillo/backbeat grooves), inversions rotate instead of mangling the contour, and accents follow the beat.
+- **Better arrangement** — the lead now holds back during the intro and enters at the build/verse; drums follow the section dynamic arc; choruses mostly stay in key (small, classic lifts when they do modulate); the bass now follows chorus key changes instead of clashing.
+- **Live tempo** — ↑/↓ arrow keys now rescale the playing song and update the transport BPM in real time.
+
 ## Requirements
 
 - [Node.js](https://nodejs.org/) v18 or newer
