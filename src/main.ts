@@ -754,7 +754,7 @@ class App {
             </div>
 
             <h3>Tips</h3>
-            <p>Infinite mode: when playing a generated song, it automatically adds more bars before the end so it never stops. Change BPM in the transport to rescale all notes to a new tempo. Drop any .mid file to import and then scramble it.</p>
+            <p>Infinite mode: when playing a generated song, it automatically adds more bars before the end so it never stops. Use the ↻ button in the transport to switch to Loop mode instead — the same bars replay seamlessly. Change BPM in the transport to rescale all notes to a new tempo. Drop any .mid file to import and then scramble it.</p>
             <p style="margin-top:14px;color:var(--txt-dis);font-size:10px;text-align:center">Made with love, confusion, and way too many music theory decisions ~</p>
           </div>
           <div class="modal-footer">
