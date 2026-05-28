@@ -96,7 +96,7 @@ Output goes to `dist/`. Serve with any static file server.
 
 ## Tips
 
-- **Infinite mode**: generated songs auto-extend before they end
+- **Infinite mode**: generated songs auto-extend before they end — click **↻** in the transport to switch to seamless loop mode instead
 - **Multiple SF2s**: drop several `.sf2` files and use "Random Presets" to get a mashup of instruments
 - **BPM field**: changing the transport BPM rescales all note timings
 - **Add 16 More Bars**: Generate menu → "Add 16 More Bars" to extend the current song
