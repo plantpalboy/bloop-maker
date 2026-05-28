@@ -2,7 +2,7 @@ import type { ChannelId, ChannelState, AppState } from '../types';
 import { CHANNELS } from '../types';
 import { SF2Sampler } from '../sf2/SF2Sampler';
 
-const SCHEDULE_AHEAD_S = 0.2;
+const SCHEDULE_AHEAD_S = 0.5;
 const TICK_INTERVAL_MS = 50;
 const NEAR_END_THRESHOLD_S = 4;
 
@@ -21,9 +21,11 @@ export class Scheduler {
   swingAmount = 0;
 
   duration = 0;
+  loop = false;
   onTimeUpdate?: (t: number) => void;
   onEnded?: () => void;
   onNearEnd?: () => void;
+  onLoop?: () => void;
 
   constructor(ctx: AudioContext, sampler: SF2Sampler) {
     this.ctx = ctx;
@@ -89,7 +91,17 @@ export class Scheduler {
       this.onNearEnd?.();
     }
 
-    if (songTime >= this.duration) { this.stop(); this.onEnded?.(); return; }
+    if (songTime >= this.duration) {
+      if (this.loop && this.duration > 0) {
+        this.startContextTime += this.duration;
+        this.noteScheduled.clear();
+        this.nearEndFired = false;
+        this.onLoop?.();
+        this.tick();
+        return;
+      }
+      this.stop(); this.onEnded?.(); return;
+    }
 
     const scheduleUntil = songTime + SCHEDULE_AHEAD_S;
 
