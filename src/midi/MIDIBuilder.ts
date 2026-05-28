@@ -16,7 +16,8 @@ const CHANNEL_MIDI_NUM: Record<ChannelId, number> = {
 
 export function buildMIDI(
   channels: Record<ChannelId, ChannelState>,
-  bpm: number
+  bpm: number,
+  channelVols?: Partial<Record<ChannelId, number>>,
 ): Uint8Array {
   const midi = new Midi();
   midi.header.setTempo(bpm);
@@ -33,12 +34,13 @@ export function buildMIDI(
       track.instrument.number = ch.presetIndex % 128;
     }
 
+    const volScale = channelVols?.[chId] ?? 1;
     for (const note of ch.notes) {
       track.addNote({
         midi: Math.max(0, Math.min(127, note.midi)),
         time: note.time,
         duration: Math.max(0.01, note.duration),
-        velocity: Math.max(0, Math.min(1, note.velocity / 127)),
+        velocity: Math.max(0, Math.min(1, (note.velocity / 127) * volScale)),
       });
     }
   }
