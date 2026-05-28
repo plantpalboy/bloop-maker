@@ -2331,7 +2331,7 @@ class App {
       this.stopOscilloscope();
     };
 
-    if (this.state.inputType === 'generated' && this.lastGenConfig) {
+    if (this.lastGenConfig) {
       this.scheduler.onNearEnd = () => {
         if (!this.lastGenConfig) return;
         try {
