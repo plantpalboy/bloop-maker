@@ -2777,41 +2777,74 @@ class App {
     const ctx = canvas.getContext('2d')!;
     const W = canvas.width, H = canvas.height;
     const bufLen = this.oscAnalyser.fftSize >> 1;
+    const timeData = new Uint8Array(this.oscAnalyser.fftSize);
     const freqData = new Uint8Array(bufLen);
-    const colW = Math.max(2, Math.floor(W / 64));
-    const numCols = Math.floor(W / colW);
+
+    // ASCII creatures that bounce to the music
+    const CHARS = ['ฅ^•ﻌ•^ฅ', '(^._.^)', 'ʕ•ᴥ•ʔ', '(=^･ω･^=)', 'ฅ(^ω^ฅ)', '(◕‿◕)', '(^◡^)', 'ʕ•̫͡•ʕ', '♪ ♫ ♬ ♩'];
+    const NUM = 9;
+    type Creature = { x: number; vx: number; charIdx: number; bobPhase: number; bobSpeed: number; };
+    const creatures: Creature[] = Array.from({ length: NUM }, (_, i) => ({
+      x: (i / NUM) * W + W / NUM / 2,
+      vx: (Math.random() - 0.5) * 0.4,
+      charIdx: i % CHARS.length,
+      bobPhase: Math.random() * Math.PI * 2,
+      bobSpeed: 0.04 + Math.random() * 0.03,
+    }));
+    let t = 0;
 
     const draw = () => {
       this.matrixRafId = requestAnimationFrame(draw);
+      t++;
       this.oscAnalyser!.getByteFrequencyData(freqData);
+      this.oscAnalyser!.getByteTimeDomainData(timeData);
 
-      // Fade background
-      ctx.fillStyle = 'rgba(1, 5, 1, 0.25)';
+      // Overall amplitude (0–1)
+      let sum = 0;
+      for (let i = 0; i < timeData.length; i++) sum += Math.abs(timeData[i] - 128);
+      const amp = Math.min(1, (sum / timeData.length) / 40);
+
+      // Per-creature frequency band (spread creatures across freq spectrum)
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = '#010501';
       ctx.fillRect(0, 0, W, H);
 
-      for (let col = 0; col < numCols; col++) {
-        const binIdx = Math.floor((col / numCols) * (bufLen * 0.75));
-        const magnitude = freqData[binIdx] / 255;
-        const barH = Math.floor(magnitude * H);
+      for (let ci = 0; ci < creatures.length; ci++) {
+        const c = creatures[ci];
 
-        if (barH > 0) {
-          const green = Math.round(80 + magnitude * 175);
-          const alpha = 0.5 + magnitude * 0.5;
-          ctx.fillStyle = `rgba(0,${green},0,${alpha})`;
-          ctx.fillRect(col * colW, H - barH, colW - 1, barH);
+        // Each creature listens to its own freq band
+        const binStart = Math.floor((ci / NUM) * bufLen * 0.6);
+        const binEnd   = Math.floor(((ci + 1) / NUM) * bufLen * 0.6);
+        let bandSum = 0;
+        for (let b = binStart; b < binEnd; b++) bandSum += freqData[b];
+        const bandAmp = Math.min(1, (bandSum / ((binEnd - binStart) * 255)) * 3.5);
 
-          // Bright top pixel
-          if (magnitude > 0.3) {
-            ctx.fillStyle = `rgba(180,255,180,${alpha})`;
-            ctx.fillRect(col * colW, H - barH, colW - 1, 2);
-          }
+        // Move and bounce off walls
+        c.x += c.vx * (1 + bandAmp * 3);
+        if (c.x < 20) { c.x = 20; c.vx = Math.abs(c.vx); }
+        if (c.x > W - 20) { c.x = W - 20; c.vx = -Math.abs(c.vx); }
+
+        // Bob up and down with the beat
+        c.bobPhase += c.bobSpeed + amp * 0.12;
+        const bob = Math.sin(c.bobPhase) * (6 + bandAmp * 18);
+        const y = H / 2 + bob;
+
+        // Size pulses with its band amplitude
+        const fontSize = Math.round(11 + bandAmp * 14);
+        const bright = Math.round(120 + bandAmp * 135);
+        const alpha = 0.55 + bandAmp * 0.45;
+        ctx.font = `${fontSize}px monospace`;
+        ctx.fillStyle = `rgba(0,${bright},${Math.round(bright * 0.4)},${alpha})`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(CHARS[c.charIdx], c.x, y);
+
+        // Tiny sparkle on loud hits
+        if (bandAmp > 0.7) {
+          ctx.fillStyle = `rgba(200,255,200,${bandAmp - 0.5})`;
+          ctx.font = `${Math.round(fontSize * 0.55)}px monospace`;
+          ctx.fillText('✦', c.x + fontSize * 0.8, y - fontSize * 0.7);
         }
-      }
-
-      // Scanline effect
-      for (let y = 0; y < H; y += 4) {
-        ctx.fillStyle = 'rgba(0,0,0,0.08)';
-        ctx.fillRect(0, y, W, 1);
       }
     };
     draw();
@@ -2823,39 +2856,29 @@ class App {
     const canvas = this.matrixCanvas;
     const ctx = canvas.getContext('2d')!;
     const W = canvas.width, H = canvas.height;
+
+    const CHARS = ['ฅ^•ﻌ•^ฅ', '(^._.^)', 'ʕ•ᴥ•ʔ', '(=^･ω･^=)', 'ฅ(^ω^ฅ)', '(◕‿◕)', '(^◡^)', 'ʕ•̫͡•ʕ', '♪ ♫ ♬'];
+    type IdleCreature = { x: number; y: number; vx: number; charIdx: number; phase: number; };
+    const creatures: IdleCreature[] = Array.from({ length: 7 }, (_, i) => ({
+      x: (i / 7) * W, y: H / 2, vx: 0.18 + Math.random() * 0.12,
+      charIdx: i % CHARS.length, phase: (i / 7) * Math.PI * 2,
+    }));
     let t = 0;
 
     const draw = () => {
       this.matrixRafId = requestAnimationFrame(draw);
       t++;
-      ctx.fillStyle = 'rgba(1, 5, 1, 0.18)';
+      ctx.fillStyle = '#010501';
       ctx.fillRect(0, 0, W, H);
-
-      // Pulsing random static noise
-      if (t % 3 === 0) {
-        for (let i = 0; i < 12; i++) {
-          const x = Math.random() * W;
-          const y = Math.random() * H;
-          const bright = Math.random();
-          ctx.fillStyle = `rgba(0,${Math.round(60 + bright * 80)},0,${0.3 + bright * 0.4})`;
-          ctx.fillRect(x, y, 2 + Math.random() * 6, 2);
-        }
-      }
-
-      // Slow sine wave outline
-      ctx.strokeStyle = 'rgba(0,120,0,0.25)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      for (let x = 0; x <= W; x += 2) {
-        const y = H / 2 + Math.sin((x / W) * Math.PI * 6 + t * 0.02) * H * 0.12;
-        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-
-      // Scanlines
-      for (let y = 0; y < H; y += 4) {
-        ctx.fillStyle = 'rgba(0,0,0,0.06)';
-        ctx.fillRect(0, y, W, 1);
+      for (const c of creatures) {
+        c.x = (c.x + c.vx + W) % W;
+        c.phase += 0.025;
+        const y = H / 2 + Math.sin(c.phase) * 10;
+        ctx.font = '11px monospace';
+        ctx.fillStyle = `rgba(0,${80 + Math.round(Math.sin(c.phase) * 20)},0,0.55)`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(CHARS[c.charIdx], c.x, y);
       }
     };
     draw();
