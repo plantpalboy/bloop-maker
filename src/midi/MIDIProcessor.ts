@@ -80,7 +80,7 @@ export function processMIDI(arrayBuffer: ArrayBuffer): {
 
   if (trackFeatures.length === 0) {
     return {
-      channels: { pulse1: [], pulse2: [], wave: [], noise: [], pulse3: [], pad: [] },
+      channels: { pulse1: [], pulse2: [], wave: [], noise: [], pulse3: [], pad: [], extra1: [], extra2: [], extra3: [] },
       duration: 0,
       bpm,
     };
@@ -100,6 +100,9 @@ export function processMIDI(arrayBuffer: ArrayBuffer): {
     noise: [],
     pulse3: [],
     pad: [],
+    extra1: [],
+    extra2: [],
+    extra3: [],
   };
 
   // Noise channel: use percussion tracks
@@ -161,6 +164,9 @@ export function processMIDI(arrayBuffer: ArrayBuffer): {
       noise: mergeNotes(assigned.noise),
       pulse3: mergeNotes(assigned.pulse3),
       pad: mergeNotes(assigned.pad),
+      extra1: mergeNotes(assigned.extra1),
+      extra2: mergeNotes(assigned.extra2),
+      extra3: mergeNotes(assigned.extra3),
     },
     duration,
     bpm,

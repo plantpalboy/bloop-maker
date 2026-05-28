@@ -20,6 +20,7 @@ const SCALES: Record<ScaleType, number[]> = {
   pentatonicMinor:[0, 3, 5, 7, 10],
   pentatonicMajor:[0, 2, 4, 7, 9],
   wholeTone:      [0, 2, 4, 6, 8, 10],
+  harmonicMinor:  [0, 2, 3, 5, 7, 8, 11],
 };
 
 function snapToScale(midi: number, root: number, scale: number[]): number {
@@ -133,5 +134,8 @@ export function scramble(
     noise:  channels.noise, // preserve drums
     pulse3: process(channels.pulse3 ?? []),
     pad:    process(channels.pad    ?? []),
+    extra1: process(channels.extra1 ?? []),
+    extra2: process(channels.extra2 ?? []),
+    extra3: process(channels.extra3 ?? []),
   };
 }
