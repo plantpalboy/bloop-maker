@@ -18,7 +18,7 @@ function formatPan(v: number): string {
   return v < 0 ? `${pct}L` : `${pct}R`;
 }
 
-interface GenPreset { label: string; mode: GenMode; bpm: number; scale: string; generateNoise: boolean; }
+interface GenPreset { label: string; mode: GenMode; bpm: number; scale: string; generateNoise: boolean; sparseness?: number; }
 const GEN_PRESETS: GenPreset[] = [
   // ── Ambient / Chill ──
   { label: 'Peaceful Walk',        mode: 'ambient', bpm: 72,  scale: 'lydian',           generateNoise: false },
@@ -123,6 +123,23 @@ const GEN_PRESETS: GenPreset[] = [
   { label: 'Dream Sequence',       mode: 'weird',  bpm: 80,  scale: 'lydian',           generateNoise: false },
   { label: 'Eldritch Market',      mode: 'weird',  bpm: 95,  scale: 'wholeTone',        generateNoise: true  },
   { label: 'Void Theme',           mode: 'weird',  bpm: 65,  scale: 'wholeTone',        generateNoise: false },
+  // ── Game Roles (from role mapping doc) ──
+  { label: 'Menu Screen',          mode: 'ambient', bpm: 68,  scale: 'major',            generateNoise: false, sparseness: 0.4 },
+  { label: 'Save Room',            mode: 'ambient', bpm: 55,  scale: 'lydian',           generateNoise: false, sparseness: 0.5 },
+  { label: 'Game Over',            mode: 'ambient', bpm: 60,  scale: 'minor',            generateNoise: false, sparseness: 0.3 },
+  { label: 'Exploration',          mode: 'mid',     bpm: 95,  scale: 'pentatonicMajor',  generateNoise: false, sparseness: 0.2 },
+  { label: 'Field Theme',          mode: 'mid',     bpm: 100, scale: 'major',            generateNoise: true,  sparseness: 0.1 },
+  { label: 'Dungeon Explore',      mode: 'mid',     bpm: 88,  scale: 'dorian',           generateNoise: false, sparseness: 0.2 },
+  { label: 'Boss Intro',           mode: 'battle',  bpm: 145, scale: 'minor',            generateNoise: true,  sparseness: 0   },
+  { label: 'Final Confrontation',  mode: 'battle',  bpm: 172, scale: 'minor',            generateNoise: true,  sparseness: 0   },
+  { label: 'Eastern Boss',         mode: 'battle',  bpm: 158, scale: 'harmonicMinor',   generateNoise: true,  sparseness: 0   },
+  { label: 'Victory Fanfare',      mode: 'mid',     bpm: 140, scale: 'major',            generateNoise: true,  sparseness: 0   },
+  { label: 'Cutscene Drama',       mode: 'ambient', bpm: 72,  scale: 'minor',            generateNoise: false, sparseness: 0.3 },
+  // ── Undertale/Deltarune style (quirky nostalgic) ──
+  { label: 'Quirky Nostalgic',     mode: 'jazzy',   bpm: 92,  scale: 'dorian',           generateNoise: false, sparseness: 0.3 },
+  { label: 'Wistful Town',         mode: 'jazzy',   bpm: 84,  scale: 'dorian',           generateNoise: true,  sparseness: 0.25 },
+  { label: 'Tense Dungeon',        mode: 'ambient', bpm: 78,  scale: 'harmonicMinor',   generateNoise: false, sparseness: 0.35 },
+  { label: 'Bittersweet Journey',  mode: 'mid',     bpm: 108, scale: 'mixolydian',       generateNoise: false, sparseness: 0.2 },
 ];
 
 interface HistoryEntry {
@@ -194,6 +211,19 @@ class App {
   private loadedSF2s: { name: string; sf2: ReturnType<typeof parseSF2> }[] = [];
   private channelSF2Idx: Partial<Record<ChannelId, number>> = {};
 
+  // Energy curve (20 points, 0=silent 1=full)
+  private energyCurve: number[] = [];
+  // Locked motif (scale degree indices 0-6)
+  private lockedMotif: number[] = [];
+  // Arp style override ('auto' = random per song)
+  private arpStyleOverride = 'auto';
+  // Last generation metadata for inspector + JSON export
+  private lastSeed = 0;
+  private sillyPrefix = 'bloop';
+  private activeExtraChannels: Set<ChannelId> = new Set();
+  private extraChannelRoles: Partial<Record<ChannelId, string>> = {};
+  private lastMotifIntervals: number[] = [];
+
   // DOM refs
   private root: HTMLElement;
   private canvases:          Record<ChannelId, HTMLCanvasElement>  = {} as any;
@@ -234,6 +264,7 @@ class App {
   private reverbDecaySlider!: HTMLInputElement;
   private faqModal!:         HTMLElement;
   private projectLoadInput!: HTMLInputElement;
+  private bloopBuffer = '';
 
   constructor(rootEl: HTMLElement) {
     this.root = rootEl;
@@ -302,7 +333,7 @@ class App {
         <div class="toolbar-sep"></div>
         <button class="toolbar-btn dark-toggle" id="dark-btn" title="Toggle dark mode">Dark</button>
         <div class="toolbar-sep"></div>
-        <span style="font:11px Tahoma;color:var(--txt-dis)">Space = play/pause &nbsp;|&nbsp; R = restart &nbsp;|&nbsp; Ctrl+Z/Y = undo/redo</span>
+        <button class="toolbar-btn" id="hotkeys-btn" title="Keyboard shortcuts">? Keys</button>
       </div>
 
       <div class="win-body">
@@ -312,13 +343,6 @@ class App {
           <div class="card-title ct-create">Create Music</div>
           <div class="create-grid">
             <div>
-              <div class="gen-row">
-                <span class="gen-label">Preset</span>
-                <select class="gen-select" id="gen-preset">
-                  <option value="custom">-- Custom --</option>
-                  ${GEN_PRESETS.map((p, i) => `<option value="${i}">${p.label}</option>`).join('')}
-                </select>
-              </div>
               <div class="gen-noise-row">
                 <input type="checkbox" id="gen-noise" checked>
                 <label for="gen-noise" style="cursor:pointer;font:12px Tahoma">Generate drums</label>
@@ -337,6 +361,7 @@ class App {
                   <option value="major">Major (bright, resolved)</option>
                   <option value="mixolydian">Mixolydian (bittersweet)</option>
                   <option value="minor">Minor (dark, dramatic)</option>
+                  <option value="harmonicMinor">Harmonic Minor (eastern / tense)</option>
                   <option value="dorian">Dorian (minor + bright 6th)</option>
                   <option value="pentatonicMinor">Penta Minor (5-note minor)</option>
                   <option value="pentatonicMajor">Penta Major (5-note major)</option>
@@ -356,6 +381,77 @@ class App {
                 <span class="gen-label">Sparse</span>
                 <input type="range" class="gen-input" id="gen-sparseness" min="0" max="1" value="0.4" step="0.05" style="flex:1">
                 <span class="scramble-val" id="gen-sparseness-val" style="min-width:42px">40%</span>
+              </div>
+              <div class="gen-row" style="align-items:center">
+                <span class="gen-label">Energy</span>
+                <canvas id="energy-canvas" width="200" height="40" style="cursor:crosshair;border:1px solid #555;background:#1a1a1a"></canvas>
+                <button id="energy-reset" class="btn-sm" style="margin-left:4px">&#8635;</button>
+              </div>
+              <div class="gen-row" style="align-items:center;gap:3px;flex-wrap:wrap">
+                <span class="gen-label">Arp Style</span>
+                <button id="arp-auto"      class="btn-sm arp-btn active" style="font-size:10px">Auto</button>
+                <button id="arp-up"        class="btn-sm arp-btn" style="font-size:10px">Up</button>
+                <button id="arp-down"      class="btn-sm arp-btn" style="font-size:10px">Down</button>
+                <button id="arp-updown"    class="btn-sm arp-btn" style="font-size:10px">UpDn</button>
+                <button id="arp-broken"    class="btn-sm arp-btn" style="font-size:10px">Broken</button>
+                <button id="arp-alberti"   class="btn-sm arp-btn" style="font-size:10px">Alberti</button>
+                <button id="arp-bounce"    class="btn-sm arp-btn" style="font-size:10px">Bounce</button>
+                <button id="arp-waltz"     class="btn-sm arp-btn" style="font-size:10px">Waltz</button>
+                <button id="arp-cascading" class="btn-sm arp-btn" style="font-size:10px">Cascade</button>
+                <button id="arp-pinned"    class="btn-sm arp-btn" style="font-size:10px">Pinned</button>
+                <button id="arp-clave"     class="btn-sm arp-btn" style="font-size:10px">Clave</button>
+                <button id="arp-doubletime" class="btn-sm arp-btn" style="font-size:10px">2×Time</button>
+                <button id="arp-jazzy"     class="btn-sm arp-btn" style="font-size:10px">Jazzy</button>
+                <button id="arp-spread"    class="btn-sm arp-btn" style="font-size:10px">Spread</button>
+                <button id="arp-stride"    class="btn-sm arp-btn" style="font-size:10px">Stride</button>
+                <button id="arp-riff"      class="btn-sm arp-btn" style="font-size:10px">Riff</button>
+                <button id="arp-spiral"    class="btn-sm arp-btn" style="font-size:10px">Spiral</button>
+                <button id="arp-latin"     class="btn-sm arp-btn" style="font-size:10px">Latin</button>
+                <button id="arp-open5"     class="btn-sm arp-btn" style="font-size:10px">Open5</button>
+              </div>
+              <div class="gen-row" style="align-items:center">
+                <span class="gen-label">Motif Lock</span>
+                <div id="motif-btns" style="display:inline-flex;gap:2px"></div>
+                <button id="motif-clear" class="btn-sm" style="margin-left:4px">&#10005;</button>
+                <canvas id="motif-canvas" width="120" height="22" style="margin-left:6px;border:1px solid #444;background:#111;vertical-align:middle"></canvas>
+              </div>
+              <div class="gen-row" style="align-items:center;gap:3px;flex-wrap:wrap">
+                <span class="gen-label">Archetypes</span>
+                <button id="motif-preset-hook"     class="btn-sm" style="font-size:10px">&#8599; Hook</button>
+                <button id="motif-preset-hero"     class="btn-sm" style="font-size:10px">&#8593; Hero</button>
+                <button id="motif-preset-sad"      class="btn-sm" style="font-size:10px">&#8595; Sad</button>
+                <button id="motif-preset-wave"     class="btn-sm" style="font-size:10px">&#8767; Wave</button>
+                <button id="motif-preset-fanfare"  class="btn-sm" style="font-size:10px">&#9835; Fanfare</button>
+                <button id="motif-preset-quest"    class="btn-sm" style="font-size:10px">&#8594; Quest</button>
+                <button id="motif-preset-boss"     class="btn-sm" style="font-size:10px">&#9760; Boss</button>
+                <button id="motif-preset-chase"    class="btn-sm" style="font-size:10px">&#9889; Chase</button>
+                <button id="motif-preset-bounce"   class="btn-sm" style="font-size:10px">&#8645; Bounce</button>
+                <button id="motif-preset-march"    class="btn-sm" style="font-size:10px">&#9654; March</button>
+                <button id="motif-preset-jazz"     class="btn-sm" style="font-size:10px">&#9837; Jazz</button>
+                <button id="motif-preset-skip"     class="btn-sm" style="font-size:10px">&#8646; Skip</button>
+                <button id="motif-preset-lullaby"  class="btn-sm" style="font-size:10px">&#9675; Lullaby</button>
+                <button id="motif-preset-tumble"   class="btn-sm" style="font-size:10px">&#8600; Tumble</button>
+                <button id="motif-preset-spiral"   class="btn-sm" style="font-size:10px">&#8635; Spiral</button>
+                <button id="motif-preset-taunt"    class="btn-sm" style="font-size:10px">&#8604; Taunt</button>
+                <button id="motif-preset-triumph"  class="btn-sm" style="font-size:10px">&#9733; Triumph</button>
+                <button id="motif-preset-lament"   class="btn-sm" style="font-size:10px">&#9834; Lament</button>
+                <button id="motif-preset-panic"    class="btn-sm" style="font-size:10px">&#10033; Panic</button>
+                <button id="motif-preset-creep"    class="btn-sm" style="font-size:10px">&#9680; Creep</button>
+                <button id="motif-preset-hiccup"   class="btn-sm" style="font-size:10px">&#8252; Hiccup</button>
+                <button id="motif-preset-boing"    class="btn-sm" style="font-size:10px">&#8597; Boing</button>
+                <button id="motif-preset-wobbly"   class="btn-sm" style="font-size:10px">&#126; Wobbly</button>
+                <button id="motif-preset-dizzy"    class="btn-sm" style="font-size:10px">&#9862; Dizzy</button>
+                <button id="motif-preset-glitch"   class="btn-sm" style="font-size:10px">&#9889; Glitch</button>
+                <button id="motif-preset-alien"    class="btn-sm" style="font-size:10px">&#9251; Alien</button>
+                <button id="motif-preset-trance"   class="btn-sm" style="font-size:10px">&#9736; Trance</button>
+                <button id="motif-preset-backwards" class="btn-sm" style="font-size:10px">&#8612; Bkwds</button>
+              </div>
+              <div class="gen-row" style="align-items:center;gap:6px">
+                <span class="gen-label">Inspector</span>
+                <span id="seed-display" style="font-size:10px;opacity:0.6;font-family:monospace">seed: —</span>
+                <span id="motif-inspector" style="font-size:10px;opacity:0.6;font-family:monospace">motif: —</span>
+                <button id="copy-seed-btn" class="btn-sm" style="font-size:10px">copy seed</button>
+                <button id="export-json-btn" class="btn-sm" style="font-size:10px">JSON</button>
               </div>
               <button class="btn-generate" id="gen-btn">Generate!</button>
             </div>
@@ -384,6 +480,7 @@ class App {
                 </label>
                 <select class="gen-select" id="sc-scale" style="flex:1;margin-left:8px">
                   <option value="minor">Minor</option>
+                  <option value="harmonicMinor">Harmonic Minor</option>
                   <option value="mixolydian">Mixolydian</option>
                   <option value="lydian">Lydian</option>
                   <option value="major">Major</option>
@@ -405,7 +502,11 @@ class App {
         <div class="card">
           <div class="card-title ct-channels">Channels</div>
           <div class="channels-list" id="channels-list">
-            ${CHANNELS.map(id => this.renderChannelRow(id)).join('')}
+            ${CHANNELS.filter(id => !['extra1','extra2','extra3'].includes(id) || this.activeExtraChannels.has(id)).map(id => this.renderChannelRow(id)).join('')}
+            <div style="margin-top:6px;display:flex;gap:6px;align-items:center">
+              <button class="toolbar-btn" id="add-channel-btn" title="Add an extra instrument channel">+ Add Channel</button>
+              <span id="extra-ch-hint" style="font:10px Tahoma;color:var(--txt-dis)">${this.activeExtraChannels.size === 0 ? 'Up to 3 extra channels' : `${this.activeExtraChannels.size}/3 added`}</span>
+            </div>
           </div>
         </div>
 
@@ -444,6 +545,7 @@ class App {
                 <span class="pp-val" id="humanize-val">35%</span>
               </div>
               <button class="btn-humanize" id="humanize-btn" disabled>Apply Humanize</button>
+              <label style="display:inline-flex;align-items:center;gap:4px;font:11px Tahoma;margin-left:6px;cursor:pointer"><input type="checkbox" id="auto-humanize"> Auto</label>
             </div>
             <div>
               <div class="pp-row">
@@ -578,8 +680,9 @@ class App {
               ${id === 'pulse1' || id === 'pulse2' ? '<option value="melody">Melody</option><option value="accomp">Chords</option><option value="stab">Chord Stab</option>' : ''}
               ${id === 'pulse3' ? '<option value="arp">Arpeggio</option><option value="melody">Melody</option>' : ''}
               ${id === 'pad' ? '<option value="pad">Pad</option>' : ''}
-              ${id === 'wave' ? '<option value="bass">Bass (Auto)</option><option value="march">March Bass</option><option value="walking">Walking Bass</option><option value="waltz">Waltz Bass</option><option value="alberti">Alberti Bass</option><option value="melody">Melody</option>' : ''}
+              ${id === 'wave' ? '<option value="bass">Bass (Auto)</option><option value="pedal">Pedal Bass</option><option value="synco">Synco Bass</option><option value="march">March Bass</option><option value="walking">Walking Bass</option><option value="waltz">Waltz Bass</option><option value="alberti">Alberti Bass</option><option value="melody">Melody</option>' : ''}
               ${id === 'noise' ? '<option value="drums">Drums</option><option value="off">Off</option>' : ''}
+              ${['extra1','extra2','extra3'].includes(id) ? '<option value="arp">Arpeggio</option><option value="bell">Bells</option><option value="pad">Pad</option><option value="strum">Chord Strum</option><option value="bass">Bass</option><option value="off">Off</option>' : ''}
             </select>
             <select class="ch-sf2-select" id="sf2-src-${id}" title="Which soundfont this channel uses" style="display:none;font:10px Tahoma;padding:1px 2px;max-width:80px">
             </select>
@@ -604,6 +707,7 @@ class App {
                 <button class="btn-chstep" id="pan-up-${id}">►</button>
               </div>
             </div>
+            ${['extra1','extra2','extra3'].includes(id) ? `<button class="btn-remove-ch" id="remove-ch-${id}" title="Remove this channel" style="margin-left:auto;padding:2px 7px;font-size:10px;background:#c0392b;color:#fff;border:none;border-radius:3px;cursor:pointer">✕ Remove</button>` : ''}
           </div>
         </div>
       </div>
@@ -673,6 +777,21 @@ class App {
         if (this.state.isPlaying) this.seekTo(newTime);
         else this.currentTime = newTime;
       }
+      if (e.key === 'f' || e.key === 'F') { e.preventDefault(); this.runGenerator(); }
+      if (e.key === 'g' || e.key === 'G') { e.preventDefault(); this.randomizeSF2Presets(); }
+      if (e.key === 'x' || e.key === 'X') { e.preventDefault(); this.randomAndGenerate(); }
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        const bpmEl = document.getElementById('gen-bpm') as HTMLInputElement;
+        const step = e.shiftKey ? 5 : 1;
+        const cur = parseInt(bpmEl.value, 10) || 130;
+        bpmEl.value = String(Math.max(40, Math.min(220, cur + (e.key === 'ArrowUp' ? step : -step))));
+      }
+      // Easter egg: type "bloop"
+      if (e.key.length === 1) {
+        this.bloopBuffer = (this.bloopBuffer + e.key.toLowerCase()).slice(-5);
+        if (this.bloopBuffer === 'bloop') { this.bloopBuffer = ''; this.triggerBloopEasterEgg(); }
+      }
     });
 
     // Close dropdowns on outside click
@@ -708,14 +827,14 @@ class App {
 
     // Dark mode
     document.getElementById('dark-btn')!.addEventListener('click', () => this.toggleDarkMode());
-
-    // Preset dropdown
-    document.getElementById('gen-preset')!.addEventListener('change', e => {
-      const val = (e.target as HTMLSelectElement).value;
-      if (val === 'custom') return;
-      const p = GEN_PRESETS[parseInt(val, 10)];
-      if (!p) return;
-      this.applyPreset(p);
+    document.getElementById('hotkeys-btn')!.addEventListener('click', (e) => { e.stopPropagation(); this.showShortcuts(); });
+    document.getElementById('add-channel-btn')?.addEventListener('click', () => {
+      const extras: ChannelId[] = ['extra1', 'extra2', 'extra3'];
+      const next = extras.find(e => !this.activeExtraChannels.has(e));
+      if (!next) return;
+      this.activeExtraChannels.add(next);
+      this.extraChannelRoles[next] = 'arp';
+      this.rerenderChannelsList();
     });
 
     // Presets submenu items
@@ -855,73 +974,232 @@ class App {
     });
 
     // Channel controls
-    for (const id of CHANNELS) {
-      this.muteBtns[id].addEventListener('click',     () => this.toggleMute(id));
-      this.soloBtns[id].addEventListener('click',     () => this.toggleSolo(id));
-      this.regenBtns[id].addEventListener('click',    () => this.regenChannel(id));
-      this.exportChBtns[id].addEventListener('click', () => this.exportChannel(id));
-      this.editBtns[id].addEventListener('click',     () => this.toggleChannelEdit(id));
-      const lockBtn = document.getElementById(`lock-${id}`) as HTMLButtonElement;
-      lockBtn?.addEventListener('click', () => {
-        this.channelLocked[id] = !this.channelLocked[id];
-        lockBtn.classList.toggle('active', !!this.channelLocked[id]);
-      });
-      const volValEl = document.getElementById(`chvol-val-${id}`)!;
-      const adjVol = (delta: number) => {
-        this.channelVolValues[id] = Math.max(0, Math.min(1, (this.channelVolValues[id] ?? 1) + delta));
-        volValEl.textContent = `${Math.round(this.channelVolValues[id] * 100)}%`;
-        this.sampler?.setChannelVolume(id, this.channelVolValues[id]);
-      };
-      document.getElementById(`chvol-dn-${id}`)!.addEventListener('click', () => adjVol(-0.05));
-      document.getElementById(`chvol-up-${id}`)!.addEventListener('click', () => adjVol(0.05));
-      const sparseEl    = document.getElementById(`sparse-${id}`) as HTMLInputElement;
-      const sparseValEl = document.getElementById(`sparse-val-${id}`)!;
-      const genToggleEl = document.getElementById(`gen-toggle-${id}`) as HTMLButtonElement;
-      sparseEl?.addEventListener('input', () => {
-        const v = parseFloat(sparseEl.value);
-        this.channelSparseValues[id] = v;
-        sparseValEl.textContent = `${Math.round(v * 100)}%`;
-      });
-      genToggleEl?.addEventListener('click', () => {
-        const enabled = this.channelGenEnabled[id] !== false;
-        this.channelGenEnabled[id] = !enabled;
-        genToggleEl.classList.toggle('active', !enabled);
-        // Don't disable the slider — just visually dim it so user can still read/change the value
-        sparseEl.style.opacity = enabled ? '0.4' : '1';
-        genToggleEl.title = enabled ? 'Channel excluded from generation (click to enable)' : 'Toggle channel in generation';
-      });
-      // Per-channel SF2 source
-      const sf2SrcEl = document.getElementById(`sf2-src-${id}`) as HTMLSelectElement;
-      sf2SrcEl?.addEventListener('change', () => {
-        const idx = parseInt(sf2SrcEl.value, 10);
-        this.channelSF2Idx[id] = idx;
-        this.sampler?.setChannelSF2(id, idx);
-        this.updateChannelInstrumentSelector(id);
-      });
-      document.getElementById(`tr-up-${id}`)!.addEventListener('click',     () => this.transposeChannel(id, 1));
-      document.getElementById(`tr-dn-${id}`)!.addEventListener('click',     () => this.transposeChannel(id, -1));
-      document.getElementById(`tr-oct-up-${id}`)!.addEventListener('click', () => this.transposeChannel(id, 12));
-      document.getElementById(`tr-oct-dn-${id}`)!.addEventListener('click', () => this.transposeChannel(id, -12));
-      this.selects[id].addEventListener('change', e => {
-        this.state.channels[id].presetIndex = parseInt((e.target as HTMLSelectElement).value, 10);
-      });
-      // Channel style select
-      const styleEl = document.getElementById(`style-${id}`) as HTMLSelectElement;
-      if (styleEl) {
-        styleEl.value = this.channelStyle[id] ?? 'auto';
-        styleEl.addEventListener('change', () => { this.channelStyle[id] = styleEl.value; });
+    this.bindChannelRowEvents();
+
+    // Energy canvas wiring
+    this.bindEnergyCanvas();
+
+    // Arp style buttons
+    this.bindArpButtons();
+
+    // Motif lock wiring
+    this.bindMotifLock();
+  }
+
+  private bindEnergyCanvas() {
+    const canvas = document.getElementById('energy-canvas') as HTMLCanvasElement;
+    const POINTS = 20;
+    let painting = false;
+
+    const getX = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      return Math.max(0, Math.min(POINTS - 1, Math.floor((e.clientX - rect.left) / canvas.width * POINTS)));
+    };
+    const getY = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      return Math.max(0, Math.min(1, 1 - (e.clientY - rect.top) / canvas.height));
+    };
+    const paintPoint = (e: MouseEvent) => {
+      const xi = getX(e);
+      if (this.energyCurve.length !== POINTS) {
+        this.energyCurve = new Array(POINTS).fill(1);
       }
-      // Pan buttons
-      const adjPan = (delta: number) => {
-        const cur = Math.round((this.channelPanValues[id] ?? 0) * 100);
-        const next = Math.max(-100, Math.min(100, cur + delta));
-        this.channelPanValues[id] = next / 100;
-        this.panValEls[id].textContent = formatPan(next);
-        this.sampler?.setChannelPan(id, next / 100);
-      };
-      document.getElementById(`pan-dn-${id}`)!.addEventListener('click', () => adjPan(-10));
-      document.getElementById(`pan-up-${id}`)!.addEventListener('click', () => adjPan(10));
+      this.energyCurve[xi] = getY(e);
+      this.drawEnergyCanvas();
+    };
+    canvas.addEventListener('mousedown', e => { painting = true; paintPoint(e); });
+    canvas.addEventListener('mousemove', e => { if (painting) paintPoint(e); });
+    document.addEventListener('mouseup', () => { painting = false; });
+
+    document.getElementById('energy-reset')!.addEventListener('click', () => {
+      this.energyCurve = [];
+      this.drawEnergyCanvas();
+    });
+
+    this.drawEnergyCanvas();
+  }
+
+  private drawEnergyCanvas() {
+    const canvas = document.getElementById('energy-canvas') as HTMLCanvasElement;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d')!;
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, 0, W, H);
+
+    const POINTS = 20;
+    const curve = this.energyCurve.length === POINTS ? this.energyCurve : new Array(POINTS).fill(1);
+    const stepW = W / POINTS;
+
+    ctx.strokeStyle = '#4af';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let i = 0; i < POINTS; i++) {
+      const x = i * stepW + stepW / 2;
+      const y = H - curve[i] * H;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
+    ctx.stroke();
+
+    // Draw dots
+    ctx.fillStyle = '#4af';
+    for (let i = 0; i < POINTS; i++) {
+      const x = i * stepW + stepW / 2;
+      const y = H - curve[i] * H;
+      ctx.beginPath();
+      ctx.arc(x, y, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  private getEnergyMultiplier(barIndex: number, totalBars: number): number {
+    if (this.energyCurve.length !== 20) return 1.0;
+    const t = totalBars <= 1 ? 0 : barIndex / (totalBars - 1);
+    const pos = t * 19; // 0..19
+    const lo = Math.floor(pos);
+    const hi = Math.min(19, lo + 1);
+    const frac = pos - lo;
+    return this.energyCurve[lo] * (1 - frac) + this.energyCurve[hi] * frac;
+  }
+
+  private bindArpButtons() {
+    document.querySelectorAll('.arp-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const style = (btn as HTMLElement).id.replace('arp-', '');
+        this.arpStyleOverride = style;
+        document.querySelectorAll('.arp-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+  }
+
+  private bindMotifLock() {
+    const container = document.getElementById('motif-btns')!;
+    const canvas = document.getElementById('motif-canvas') as HTMLCanvasElement;
+    const DEGREE_NAMES = ['1','2','3','4','5','6','7'];
+    const DEGREE_COLORS = ['#e87','#eb7','#af7','#7cf','#87e','#f7a','#7ea'];
+
+    const drawMotifCanvas = () => {
+      const ctx = canvas.getContext('2d')!;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (this.lockedMotif.length === 0) {
+        ctx.fillStyle = '#444'; ctx.font = '9px sans-serif';
+        ctx.fillText('no motif', 4, 14); return;
+      }
+      const w = canvas.width / Math.max(this.lockedMotif.length, 4);
+      this.lockedMotif.forEach((deg, i) => {
+        // Map degree 0-6 to vertical position (higher degree = higher)
+        const y = canvas.height - 4 - (deg / 6) * (canvas.height - 8);
+        ctx.fillStyle = DEGREE_COLORS[deg];
+        ctx.fillRect(i * w + 1, y - 3, w - 2, 6);
+        // Connect dots with a line
+        if (i > 0) {
+          const prevDeg = this.lockedMotif[i - 1];
+          const py = canvas.height - 4 - (prevDeg / 6) * (canvas.height - 8);
+          ctx.strokeStyle = '#666'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo((i - 0.5) * w, py); ctx.lineTo((i + 0.5) * w, y); ctx.stroke();
+        }
+      });
+    };
+
+    for (let i = 0; i < 7; i++) {
+      const btn = document.createElement('button');
+      btn.textContent = DEGREE_NAMES[i];
+      btn.className = 'btn-sm';
+      btn.style.cssText = `min-width:20px;padding:1px 4px;font-size:11px;background:${DEGREE_COLORS[i]}22;border-color:${DEGREE_COLORS[i]}88`;
+      btn.addEventListener('click', () => {
+        if (this.lockedMotif.length >= 8) return;
+        this.lockedMotif.push(i);
+        drawMotifCanvas();
+      });
+      container.appendChild(btn);
+    }
+
+    document.getElementById('motif-clear')!.addEventListener('click', () => {
+      this.lockedMotif = [];
+      drawMotifCanvas();
+    });
+
+    // Preset archetypes: one-click motif patterns
+    const ARCHETYPES: Record<string, number[]> = {
+      'motif-preset-hook':    [0, 4, 3, 2],       // leap to 5th, stepwise descent
+      'motif-preset-hero':    [0, 1, 2, 4],       // rising stepwise to 5th
+      'motif-preset-sad':     [4, 2, 1, 0],       // descending from 5th to root
+      'motif-preset-wave':    [0, 2, 4, 2, 0],    // arch up and back
+      'motif-preset-fanfare': [0, 2, 4, 6, 4],    // arpeggio up through 7th, partial descent
+      'motif-preset-quest':   [0, 1, 2, 3, 5],    // stepwise rise, lands on 6th (unresolved)
+      'motif-preset-boss':    [6, 4, 0, 6, 4],    // dark — starts on 7th, drops to root, repeats
+      'motif-preset-chase':   [0, 4, 2, 6, 4],    // active leaping: root→5th→3rd→7th→5th
+      'motif-preset-bounce':  [0, 4, 0, 4],       // root-5th ostinato
+      'motif-preset-march':   [0, 0, 2, 4],       // repeated note then rise (march feel)
+      'motif-preset-jazz':    [0, 2, 4, 6],       // maj7 arpeggio outline
+      'motif-preset-skip':    [0, 3, 1, 4, 2],    // playful alternating leaps
+      'motif-preset-lullaby': [2, 1, 0, 1, 2],    // gentle rocking: 3rd→2nd→root→2nd→3rd
+      'motif-preset-tumble':  [4, 6, 3, 1, 0],    // long fall from 5th through 7th down to root
+      'motif-preset-spiral':  [0, 2, 1, 3, 2, 4], // winding upward: step up, step back, repeat
+      'motif-preset-taunt':   [0, 0, 3, 2, 0],    // repeated root jab then 4th drop (nyah-nyah)
+      'motif-preset-triumph': [0, 4, 4, 6, 5, 4], // 5th, sustained, then descend with flair
+      'motif-preset-lament':  [0, 6, 5, 3, 2],    // chromatic descent using 7th-6th-4th-3rd
+      'motif-preset-panic':   [0, 4, 1, 5, 2, 6], // wild alternating leaps — jagged, tense
+      'motif-preset-creep':    [0, 1, 0, 6, 0],    // neighbor tone oscillation around root
+      // silly
+      'motif-preset-hiccup':   [0, 0, 4, 0, 0, 6], // stuttery repeats with surprise leaps
+      'motif-preset-boing':    [0, 6, 0, 6, 0],    // giant bounces between root and 7th
+      'motif-preset-wobbly':   [0, 1, 0, 2, 0, 3], // wobbles up one step at a time from root
+      'motif-preset-dizzy':    [0, 3, 5, 2, 0, 3], // spins in circles, never settles
+      // weird
+      'motif-preset-glitch':   [0, 6, 1, 5, 2, 4], // alternates between high and low extremes
+      'motif-preset-alien':    [0, 3, 6, 3, 6, 3], // tritone / whole-tone oscillation
+      'motif-preset-trance':   [0, 0, 0, 0, 5, 0], // hypnotic repeats then sudden 6th jump
+      'motif-preset-backwards':[6, 4, 2, 0, 2, 4], // descends then climbs back — reversed arch
+    };
+    for (const [id, degrees] of Object.entries(ARCHETYPES)) {
+      document.getElementById(id)!.addEventListener('click', () => {
+        this.lockedMotif = [...degrees];
+        drawMotifCanvas();
+      });
+    }
+
+    drawMotifCanvas();
+
+    // Inspector + export buttons
+    document.getElementById('copy-seed-btn')!.addEventListener('click', () => {
+      navigator.clipboard.writeText(String(this.lastSeed)).catch(() => {});
+      this.setStatus('ok', `Seed ${this.lastSeed} copied! Use it to reproduce this song.`);
+    });
+    document.getElementById('export-json-btn')!.addEventListener('click', () => this.exportJSON());
+  }
+
+  private updateInspector() {
+    const arrowMap: [number, string][] = [[-3,'↓↓'],[-2,'↓'],[-1,'↘'],[0,'→'],[1,'↗'],[2,'↑'],[3,'↑↑']];
+    const arrow = (v: number) => arrowMap.find(([k]) => k === v)?.[1] ?? (v > 0 ? `+${v}` : `${v}`);
+    const motifStr = this.lastMotifIntervals.map(arrow).join(' ');
+    (document.getElementById('seed-display') as HTMLElement).textContent = `seed: ${this.lastSeed}`;
+    (document.getElementById('motif-inspector') as HTMLElement).textContent = `motif: ${motifStr || '—'}`;
+  }
+
+  private exportJSON() {
+    const NOTE_NAMES_FULL = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+    if (!this.lastGenConfig) { this.setStatus('err', 'Generate something first!'); return; }
+    const meta = {
+      seed: this.lastSeed,
+      bpm: this.state.bpm,
+      key: NOTE_NAMES_FULL[this.lastGenConfig.key],
+      mode: this.lastGenConfig.mode,
+      scale: this.lastGenConfig.scaleType ?? 'default',
+      bars: this.lastGenConfig.bars,
+      motifIntervals: this.lastMotifIntervals,
+      motifSeed: this.lastGenConfig.motifSeed ?? null,
+      sparseness: this.lastGenConfig.sparseness ?? 0,
+      generatedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(meta, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `bloop_${meta.bpm}bpm_${meta.key}_seed${meta.seed}.json`;
+    a.click();
+    this.setStatus('ok', 'Metadata JSON exported!');
   }
 
   // ── Menu action dispatch ───────────────────────────────────────
@@ -941,6 +1219,142 @@ class App {
       case 'show-faq':         this.faqModal.classList.add('open'); break;
       case 'show-shortcuts':   this.showShortcuts(); break;
     }
+  }
+
+  private bindChannelRowEvents() {
+    const visibleChannels = CHANNELS.filter(id => !['extra1','extra2','extra3'].includes(id) || this.activeExtraChannels.has(id));
+    for (const id of visibleChannels) {
+      this.muteBtns[id]?.addEventListener('click',     () => this.toggleMute(id));
+      this.soloBtns[id]?.addEventListener('click',     () => this.toggleSolo(id));
+      this.regenBtns[id]?.addEventListener('click',    () => this.regenChannel(id));
+      this.exportChBtns[id]?.addEventListener('click', () => this.exportChannel(id));
+      this.editBtns[id]?.addEventListener('click',     () => this.toggleChannelEdit(id));
+      const lockBtn = document.getElementById(`lock-${id}`) as HTMLButtonElement;
+      lockBtn?.addEventListener('click', () => {
+        this.channelLocked[id] = !this.channelLocked[id];
+        lockBtn.classList.toggle('active', !!this.channelLocked[id]);
+      });
+      const volValEl = document.getElementById(`chvol-val-${id}`);
+      if (volValEl) {
+        const adjVol = (delta: number) => {
+          this.channelVolValues[id] = Math.max(0, Math.min(1, (this.channelVolValues[id] ?? 1) + delta));
+          volValEl.textContent = `${Math.round(this.channelVolValues[id] * 100)}%`;
+          this.sampler?.setChannelVolume(id, this.channelVolValues[id]);
+        };
+        document.getElementById(`chvol-dn-${id}`)?.addEventListener('click', () => adjVol(-0.05));
+        document.getElementById(`chvol-up-${id}`)?.addEventListener('click', () => adjVol(0.05));
+      }
+      const sparseEl    = document.getElementById(`sparse-${id}`) as HTMLInputElement;
+      const sparseValEl = document.getElementById(`sparse-val-${id}`);
+      const genToggleEl = document.getElementById(`gen-toggle-${id}`) as HTMLButtonElement;
+      sparseEl?.addEventListener('input', () => {
+        const v = parseFloat(sparseEl.value);
+        this.channelSparseValues[id] = v;
+        if (sparseValEl) sparseValEl.textContent = `${Math.round(v * 100)}%`;
+      });
+      genToggleEl?.addEventListener('click', () => {
+        const enabled = this.channelGenEnabled[id] !== false;
+        this.channelGenEnabled[id] = !enabled;
+        genToggleEl.classList.toggle('active', !enabled);
+        sparseEl.style.opacity = enabled ? '0.4' : '1';
+        genToggleEl.title = enabled ? 'Channel excluded from generation (click to enable)' : 'Toggle channel in generation';
+      });
+      const sf2SrcEl = document.getElementById(`sf2-src-${id}`) as HTMLSelectElement;
+      sf2SrcEl?.addEventListener('change', () => {
+        const idx = parseInt(sf2SrcEl.value, 10);
+        this.channelSF2Idx[id] = idx;
+        this.sampler?.setChannelSF2(id, idx);
+        this.updateChannelInstrumentSelector(id);
+      });
+      document.getElementById(`tr-up-${id}`)?.addEventListener('click',     () => this.transposeChannel(id, 1));
+      document.getElementById(`tr-dn-${id}`)?.addEventListener('click',     () => this.transposeChannel(id, -1));
+      document.getElementById(`tr-oct-up-${id}`)?.addEventListener('click', () => this.transposeChannel(id, 12));
+      document.getElementById(`tr-oct-dn-${id}`)?.addEventListener('click', () => this.transposeChannel(id, -12));
+      this.selects[id]?.addEventListener('change', e => {
+        this.state.channels[id].presetIndex = parseInt((e.target as HTMLSelectElement).value, 10);
+      });
+      const styleEl = document.getElementById(`style-${id}`) as HTMLSelectElement;
+      if (styleEl) {
+        styleEl.value = this.channelStyle[id] ?? 'auto';
+        styleEl.addEventListener('change', () => {
+          this.channelStyle[id] = styleEl.value;
+          if (['extra1','extra2','extra3'].includes(id)) {
+            this.extraChannelRoles[id] = styleEl.value;
+          }
+        });
+      }
+      const adjPan = (delta: number) => {
+        const cur = Math.round((this.channelPanValues[id] ?? 0) * 100);
+        const next = Math.max(-100, Math.min(100, cur + delta));
+        this.channelPanValues[id] = next / 100;
+        if (this.panValEls[id]) this.panValEls[id].textContent = formatPan(next);
+        this.sampler?.setChannelPan(id, next / 100);
+      };
+      document.getElementById(`pan-dn-${id}`)?.addEventListener('click', () => adjPan(-10));
+      document.getElementById(`pan-up-${id}`)?.addEventListener('click', () => adjPan(10));
+      if (['extra1','extra2','extra3'].includes(id)) {
+        document.getElementById(`remove-ch-${id}`)?.addEventListener('click', () => this.removeChannel(id));
+      }
+    }
+  }
+
+  private removeChannel(id: ChannelId) {
+    this.activeExtraChannels.delete(id);
+    delete this.extraChannelRoles[id as keyof typeof this.extraChannelRoles];
+    this.state.channels[id].notes = [];
+    // Clear stale DOM refs
+    (this.selects as Record<string,unknown>)[id] = null;
+    (this.muteBtns as Record<string,unknown>)[id] = null;
+    (this.soloBtns as Record<string,unknown>)[id] = null;
+    (this.regenBtns as Record<string,unknown>)[id] = null;
+    (this.exportChBtns as Record<string,unknown>)[id] = null;
+    (this.editBtns as Record<string,unknown>)[id] = null;
+    this.rerenderChannelsList();
+    this.updateAllCanvases();
+    this.updateNoteCountBadges();
+  }
+
+  private rerenderChannelsList() {
+    const list = document.getElementById('channels-list');
+    if (!list) return;
+    const allAdded = this.activeExtraChannels.size >= 3;
+    list.innerHTML = CHANNELS
+      .filter(id => !['extra1','extra2','extra3'].includes(id) || this.activeExtraChannels.has(id))
+      .map(id => this.renderChannelRow(id)).join('') +
+      `<div style="margin-top:6px;display:flex;gap:6px;align-items:center">
+        ${allAdded ? '' : `<button class="toolbar-btn" id="add-channel-btn" title="Add an extra instrument channel">+ Add Channel</button>`}
+        <span id="extra-ch-hint" style="font:10px Tahoma;color:var(--txt-dis)">${this.activeExtraChannels.size}/3 extra channels</span>
+      </div>`;
+    // Re-cache DOM refs for newly rendered channels
+    for (const id of CHANNELS) {
+      const canvas = document.getElementById(`canvas-${id}`) as HTMLCanvasElement;
+      if (canvas) this.canvases[id] = canvas;
+      const sel = document.getElementById(`select-${id}`) as HTMLSelectElement;
+      if (sel) this.selects[id] = sel;
+      const mute = document.getElementById(`mute-${id}`) as HTMLButtonElement;
+      if (mute) this.muteBtns[id] = mute;
+      const solo = document.getElementById(`solo-${id}`) as HTMLButtonElement;
+      if (solo) this.soloBtns[id] = solo;
+      const regen = document.getElementById(`regen-${id}`) as HTMLButtonElement;
+      if (regen) this.regenBtns[id] = regen;
+      const exportCh = document.getElementById(`export-ch-${id}`) as HTMLButtonElement;
+      if (exportCh) this.exportChBtns[id] = exportCh;
+      const edit = document.getElementById(`edit-${id}`) as HTMLButtonElement;
+      if (edit) this.editBtns[id] = edit;
+      const noteCount = document.getElementById(`count-${id}`);
+      if (noteCount) this.noteCountEls[id] = noteCount;
+      const panVal = document.getElementById(`pan-val-${id}`);
+      if (panVal) this.panValEls[id] = panVal;
+    }
+    this.bindChannelRowEvents();
+    document.getElementById('add-channel-btn')?.addEventListener('click', () => {
+      const extras: ChannelId[] = ['extra1', 'extra2', 'extra3'];
+      const next = extras.find(e => !this.activeExtraChannels.has(e));
+      if (!next) return;
+      this.activeExtraChannels.add(next);
+      this.extraChannelRoles[next] = 'arp';
+      this.rerenderChannelsList();
+    });
   }
 
   // ── Dark mode ────────────────────────────────────────────────
@@ -1081,6 +1495,11 @@ class App {
     (document.getElementById('gen-bpm')   as HTMLInputElement).value = String(p.bpm);
     (document.getElementById('gen-scale') as HTMLSelectElement).value = p.scale;
     (document.getElementById('gen-noise') as HTMLInputElement).checked = p.generateNoise;
+    if (p.sparseness != null) {
+      const sparEl = document.getElementById('gen-sparseness') as HTMLInputElement;
+      sparEl.value = String(p.sparseness);
+      document.getElementById('gen-sparseness-val')!.textContent = `${Math.round(p.sparseness * 100)}%`;
+    }
   }
 
   private quickGenerate(opts: Partial<GenConfig> & { mode: GenMode; bpm: number; scale: string; generateNoise: boolean }) {
@@ -1088,9 +1507,8 @@ class App {
     (document.getElementById('gen-bpm')   as HTMLInputElement).value  = String(opts.bpm);
     (document.getElementById('gen-scale') as HTMLSelectElement).value = opts.scale;
     (document.getElementById('gen-noise') as HTMLInputElement).checked = opts.generateNoise;
-    (document.getElementById('gen-preset') as HTMLSelectElement).value = 'custom';
-    // Apply a sensible default sparseness for the mode
-    const sparDefault = opts.mode === 'ambient' ? 0.5 : opts.mode === 'battle' ? 0.1 : opts.mode === 'jazzy' ? 0.35 : opts.mode === 'funky' ? 0.25 : opts.mode === 'silly' ? 0.15 : opts.mode === 'weird' ? 0.40 : 0.4;
+    // Apply preset sparseness if provided, otherwise use mode default
+    const sparDefault = opts.sparseness ?? (opts.mode === 'ambient' ? 0.5 : opts.mode === 'battle' ? 0.1 : opts.mode === 'jazzy' ? 0.35 : opts.mode === 'funky' ? 0.25 : opts.mode === 'silly' ? 0.15 : opts.mode === 'weird' ? 0.40 : 0.4);
     const sparEl = document.getElementById('gen-sparseness') as HTMLInputElement;
     sparEl.value = String(sparDefault);
     document.getElementById('gen-sparseness-val')!.textContent = `${Math.round(sparDefault * 100)}%`;
@@ -1119,14 +1537,104 @@ class App {
     this.setStatus('ok', `Added ${bars} more bars!`);
   }
 
+  private triggerBloopEasterEgg() {
+    const DOG = [
+      '  / \\__',
+      ' (    @\\___',
+      ' /         O',
+      '/   (_____/',
+      '/_____/   U',
+    ];
+    const RAINBOW = ['#ff4444','#ff9900','#ffee00','#44dd44','#4488ff','#9944ff','#ff44cc'];
+    // Fly all cards off screen
+    const cards = Array.from(document.querySelectorAll('.card, .win-toolbar, .win-menubar, .win-body > *')) as HTMLElement[];
+    const cardData: {el: HTMLElement; origTransform: string; origOpacity: string}[] = [];
+    cards.forEach((el, i) => {
+      cardData.push({ el, origTransform: el.style.transform, origOpacity: el.style.opacity });
+      const angle = (i / cards.length) * Math.PI * 2 + Math.random() * 0.5;
+      const dist = 800 + Math.random() * 400;
+      const tx = Math.cos(angle) * dist;
+      const ty = Math.sin(angle) * dist;
+      const rot = (Math.random() - 0.5) * 720;
+      el.style.transition = `transform 0.6s cubic-bezier(0.55,0,1,0.45) ${i * 0.04}s, opacity 0.5s ease ${i * 0.04}s`;
+      el.style.transform = `translate(${tx}px, ${ty}px) rotate(${rot}deg)`;
+      el.style.opacity = '0';
+    });
+    // Show dog overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'bloop-dog-overlay';
+    Object.assign(overlay.style, {
+      position: 'fixed', inset: '0', display: 'flex', alignItems: 'center',
+      justifyContent: 'center', zIndex: '99999', pointerEvents: 'none',
+      flexDirection: 'column', gap: '0',
+    });
+    const dogDiv = document.createElement('pre');
+    Object.assign(dogDiv.style, {
+      fontFamily: 'monospace', fontSize: '20px', lineHeight: '1.4',
+      textAlign: 'left', opacity: '0', transition: 'opacity 0.4s ease 0.5s',
+      userSelect: 'none',
+    });
+    let frame = 0;
+    const colorInterval = setInterval(() => {
+      dogDiv.innerHTML = DOG.map(line =>
+        [...line].map(ch => {
+          const color = RAINBOW[(frame++) % RAINBOW.length];
+          return `<span style="color:${color}">${ch === ' ' ? '&nbsp;' : ch === '<' ? '&lt;' : ch === '>' ? '&gt;' : ch}</span>`;
+        }).join('')
+      ).join('\n');
+      frame++;
+    }, 80);
+    overlay.appendChild(dogDiv);
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => { dogDiv.style.opacity = '1'; });
+    // Restore after 2 seconds
+    setTimeout(() => {
+      clearInterval(colorInterval);
+      dogDiv.style.transition = 'opacity 0.3s ease';
+      dogDiv.style.opacity = '0';
+      cardData.forEach(({ el, origTransform }) => {
+        el.style.transition = `transform 0.7s cubic-bezier(0.175,0.885,0.32,1.275), opacity 0.5s ease`;
+        el.style.transform = origTransform || '';
+        el.style.opacity = '';
+      });
+      setTimeout(() => {
+        overlay.remove();
+        cardData.forEach(({ el }) => { el.style.transition = ''; });
+      }, 800);
+    }, 2000);
+  }
+
   private showShortcuts() {
-    const msg = [
-      'Space = Play / Pause',
-      'R = Restart and Play',
-      'Ctrl+Z = Undo',
-      'Ctrl+Y = Redo',
-    ].join('\n');
-    alert(msg);
+    let tip = document.getElementById('hotkeys-tip');
+    if (tip) { tip.remove(); return; }
+    tip = document.createElement('div');
+    tip.id = 'hotkeys-tip';
+    tip.innerHTML = `
+      <div style="font-weight:bold;margin-bottom:6px;font-size:11px;text-transform:uppercase;letter-spacing:1px">Keyboard Shortcuts</div>
+      <table style="border-collapse:collapse;width:100%">
+        <tr><td style="padding:2px 10px 2px 0;font-weight:bold">Space</td><td>Play / Pause</td></tr>
+        <tr><td style="padding:2px 10px 2px 0;font-weight:bold">R</td><td>Restart &amp; Play</td></tr>
+        <tr><td style="padding:2px 10px 2px 0;font-weight:bold">F</td><td>Generate music</td></tr>
+        <tr><td style="padding:2px 10px 2px 0;font-weight:bold">G</td><td>Randomize SF2 presets</td></tr>
+        <tr><td style="padding:2px 10px 2px 0;font-weight:bold">X</td><td>Randomize &amp; Generate</td></tr>
+        <tr><td style="padding:2px 10px 2px 0;font-weight:bold">↑ / ↓</td><td>BPM +1 / −1 (Shift ±5)</td></tr>
+        <tr><td style="padding:2px 10px 2px 0;font-weight:bold">Backspace</td><td>Seek back 5 sec</td></tr>
+        <tr><td style="padding:2px 10px 2px 0;font-weight:bold">Ctrl+Z</td><td>Undo</td></tr>
+        <tr><td style="padding:2px 10px 2px 0;font-weight:bold">Ctrl+Y</td><td>Redo</td></tr>
+      </table>
+      <div style="margin-top:6px;font-size:10px;opacity:0.6">Click anywhere to close</div>
+    `;
+    Object.assign(tip.style, {
+      position: 'fixed', top: '40px', left: '50%', transform: 'translateX(-50%)',
+      background: 'var(--card-bg)', border: '1px solid var(--b-btn)',
+      borderRadius: '8px', padding: '12px 16px', zIndex: '9999',
+      fontFamily: 'Tahoma, Arial, sans-serif', fontSize: '12px',
+      color: 'var(--txt)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+      minWidth: '240px', cursor: 'pointer',
+    });
+    tip.addEventListener('click', () => tip!.remove());
+    document.body.appendChild(tip);
+    setTimeout(() => document.addEventListener('click', function h() { tip?.remove(); document.removeEventListener('click', h); }, { once: true }), 10);
   }
 
   // ── Helpers ──────────────────────────────────────────────────
@@ -1144,8 +1652,19 @@ class App {
 
   private updateSongTitle() {
     this.currentSongTitle = this.generateSongTitle();
+    this.sillyPrefix = this.generateSillyPrefix();
     const el = document.getElementById('song-subtitle');
     if (el) el.textContent = this.currentSongTitle;
+  }
+
+  private generateSillyPrefix(): string {
+    const WORDS = [
+      'bloop','bonk','boop','wiggly','squishy','chunky','fluffy','goopy','jiggly','wobbly',
+      'bouncy','lumpy','noodly','ploppy','gloopy','squelchy','funky','wriggly','sloshy','zippy',
+      'snorky','doinky','blorp','zappy','chompy','flubby','warply','bibble','splorp','gonky',
+      'yoinkle','blobby','twisty','gurgly','flappy','snappy','zoinky','munchie','plonky','durpy',
+    ];
+    return WORDS[Math.floor(Math.random() * WORDS.length)];
   }
 
   private colorTitle(text: string): string {
@@ -1237,7 +1756,13 @@ class App {
       pulse3: this.channelStyle['pulse3'] ?? 'auto',
       pad:    this.channelStyle['pad']    ?? 'auto',
     };
-    const config: GenConfig = { mode: this.genMode, key, octave: 4, bars, bpm, scaleType: scaleRaw || undefined, generateNoise, sparseness, channelSparseness, channelStyles };
+    const config: GenConfig = { mode: this.genMode, key, octave: 4, bars, bpm, scaleType: scaleRaw || undefined, generateNoise, sparseness, channelSparseness, channelStyles, motifSeed: this.lockedMotif.length > 0 ? [...this.lockedMotif] : undefined, arpStyle: this.arpStyleOverride,
+      extraChannelRoles: Object.fromEntries(
+        (['extra1','extra2','extra3'] as ChannelId[])
+          .filter(id => this.activeExtraChannels.has(id))
+          .map(id => [id, this.extraChannelRoles[id] ?? 'arp'])
+      ) as { extra1?: string; extra2?: string; extra3?: string },
+    };
     this.lastGenConfig = config;
     this.setStatus('busy', `Generating ${bars} bars...`);
 
@@ -1246,9 +1771,27 @@ class App {
         this.pushHistory();
         const result = generate(config);
         this.applyResult(result.channels, result.duration, result.bpm);
+        // Apply energy curve scaling
+        if (this.energyCurve.length === 20) {
+          const barDur = (60 / result.bpm) * 4;
+          for (const id of CHANNELS) {
+            this.state.channels[id].notes = this.state.channels[id].notes.map(n => {
+              const barIdx = Math.floor(n.time / barDur);
+              const mult = this.getEnergyMultiplier(barIdx, bars);
+              return { ...n, velocity: Math.max(1, Math.min(127, Math.round(n.velocity * mult))) };
+            });
+          }
+        }
+        if ((document.getElementById('auto-humanize') as HTMLInputElement).checked) {
+          this.applyHumanize();
+        }
         this.state.inputType = 'generated';
+        this.lastSeed = result.seed;
+        this.lastMotifIntervals = result.motifIntervals;
+        this.updateInspector();
         this.updateSongTitle();
-        this.setStatus('ok', `Generated! ${bars} bars -- ${NOTE_NAMES[key]} -- ${Math.round(result.bpm)} BPM -- infinite mode active`);
+        const metricTag = result.metricMod ? ' — 2× chorus' : '';
+        this.setStatus('ok', `Generated! ${bars} bars — ${NOTE_NAMES[key]} — ${Math.round(result.bpm)} BPM — seed: ${result.seed}${metricTag}`);
       } catch (err) {
         this.setStatus('err', `Generator error: ${(err as Error).message}`);
         console.error(err);
@@ -1599,6 +2142,7 @@ class App {
     if (sf2Idx >= this.loadedSF2s.length) return;
     const { sf2 } = this.loadedSF2s[sf2Idx];
     const sel = this.selects[id];
+    if (!sel) return;
     const prev = this.state.channels[id].presetIndex;
     sel.innerHTML = '';
     sf2.presets.forEach((p, i) => {
@@ -1629,32 +2173,39 @@ class App {
   }
 
   private randomizeSF2Presets() {
-    if (this.loadedSF2s.length === 0) return;
+    if (this.loadedSF2s.length === 0) { this.setStatus('err', 'Load an SF2 soundfont first!'); return; }
     for (const id of CHANNELS) {
       // Pick a random SF2 for this channel
       const sf2Idx = Math.floor(Math.random() * this.loadedSF2s.length);
       const { sf2 } = this.loadedSF2s[sf2Idx];
-      if (this.channelSF2Idx[id] !== sf2Idx) {
-        this.channelSF2Idx[id] = sf2Idx;
-        this.sampler?.setChannelSF2(id, sf2Idx);
-        // Update instrument selector to show this SF2's presets
-        this.updateChannelInstrumentSelector(id);
-      }
+
+      // Always update SF2 index, sampler, selector, and the sf2-src dropdown
+      this.channelSF2Idx[id] = sf2Idx;
+      this.sampler?.setChannelSF2(id, sf2Idx);
+      const sf2SrcEl = document.getElementById(`sf2-src-${id}`) as HTMLSelectElement | null;
+      if (sf2SrcEl) sf2SrcEl.value = String(sf2Idx);
+
+      // Rebuild instrument list for this SF2
+      this.updateChannelInstrumentSelector(id);
+
       // For noise: prefer drum bank
+      const chSel = this.selects[id];
+      if (!chSel) continue;
       if (id === 'noise') {
         const drumIdx = sf2.presets.findIndex(p => p.bank === 128);
-        if (drumIdx >= 0) { this.selects[id].value = String(drumIdx); this.state.channels[id].presetIndex = drumIdx; continue; }
+        if (drumIdx >= 0) { chSel.value = String(drumIdx); this.state.channels[id].presetIndex = drumIdx; continue; }
       }
       const melodicPresets = sf2.presets.map((p, i) => ({ p, i })).filter(x => x.p.bank !== 128);
       if (melodicPresets.length > 0) {
         const pick = melodicPresets[Math.floor(Math.random() * melodicPresets.length)];
-        this.selects[id].value = String(pick.i);
+        chSel.value = String(pick.i);
         this.state.channels[id].presetIndex = pick.i;
       }
     }
     // Update SF2 list pickers
     this.updateSF2List();
-    this.setStatus('ok', `Random presets from ${this.loadedSF2s.length} font(s)!`);
+    const names = [...new Set(Object.values(this.channelSF2Idx).map(i => this.loadedSF2s[i ?? 0]?.name.replace(/\.sf2$/i,'') ?? ''))].join(', ');
+    this.setStatus('ok', `Randomized all channels — fonts: ${names}`);
   }
 
   private applyChannelVolumes() {
@@ -1749,15 +2300,22 @@ class App {
     if (this.state.inputType === 'generated' && this.lastGenConfig) {
       this.scheduler.onNearEnd = () => {
         if (!this.lastGenConfig) return;
-        const extra = generate({ ...this.lastGenConfig, bars: 16 });
-        const offset = this.state.duration;
-        for (const id of CHANNELS) {
-          const shifted = extra.channels[id].map(n => ({ ...n, time: n.time + offset }));
-          this.state.channels[id].notes.push(...shifted);
+        try {
+          // bars:8 keeps totalPhrases<=2, forcing all bars to 'chorus' activity
+          // — avoids intro/outro silence gaps that make infinite mode feel broken
+          const extra = generate({ ...this.lastGenConfig, bars: 8 });
+          const offset = this.state.duration;
+          for (const id of CHANNELS) {
+            const shifted = extra.channels[id].map(n => ({ ...n, time: n.time + offset }));
+            this.state.channels[id].notes.push(...shifted);
+          }
+          this.state.duration += extra.duration;
+          this.seekSlider.max = String(this.state.duration);
+          this.scheduler?.extendDuration(this.state.duration);
+        } catch (e) {
+          console.error('Infinite mode extension error:', e);
+          this.scheduler?.extendDuration(this.state.duration + 30);
         }
-        this.state.duration += extra.duration;
-        this.seekSlider.max = String(this.state.duration);
-        this.scheduler?.extendDuration(this.state.duration);
       };
     }
 
@@ -1815,26 +2373,26 @@ class App {
       if (this.preSoloMutes) {
         for (const ch of CHANNELS) {
           this.state.channels[ch].muted = this.preSoloMutes[ch];
-          document.getElementById(`row-${ch}`)!.classList.toggle('muted', this.preSoloMutes[ch]);
-          this.muteBtns[ch].classList.toggle('active', this.preSoloMutes[ch]);
-          this.muteBtns[ch].textContent = this.preSoloMutes[ch] ? 'UNMUTE' : 'MUTE';
+          document.getElementById(`row-${ch}`)?.classList.toggle('muted', this.preSoloMutes[ch]);
+          this.muteBtns[ch]?.classList.toggle('active', this.preSoloMutes[ch]);
+          if (this.muteBtns[ch]) this.muteBtns[ch].textContent = this.preSoloMutes[ch] ? 'UNMUTE' : 'MUTE';
         }
         this.preSoloMutes = null;
       }
-      this.soloBtns[id].classList.remove('active');
+      this.soloBtns[id]?.classList.remove('active');
     } else {
       this.preSoloMutes = {} as Record<ChannelId, boolean>;
       for (const ch of CHANNELS) this.preSoloMutes[ch] = this.state.channels[ch].muted;
-      if (this.soloedChannel) this.soloBtns[this.soloedChannel].classList.remove('active');
+      if (this.soloedChannel) this.soloBtns[this.soloedChannel]?.classList.remove('active');
       this.soloedChannel = id;
       for (const ch of CHANNELS) {
         const shouldMute = ch !== id;
         this.state.channels[ch].muted = shouldMute;
-        document.getElementById(`row-${ch}`)!.classList.toggle('muted', shouldMute);
-        this.muteBtns[ch].classList.toggle('active', shouldMute);
-        this.muteBtns[ch].textContent = shouldMute ? 'UNMUTE' : 'MUTE';
+        document.getElementById(`row-${ch}`)?.classList.toggle('muted', shouldMute);
+        this.muteBtns[ch]?.classList.toggle('active', shouldMute);
+        if (this.muteBtns[ch]) this.muteBtns[ch].textContent = shouldMute ? 'UNMUTE' : 'MUTE';
       }
-      this.soloBtns[id].classList.add('active');
+      this.soloBtns[id]?.classList.add('active');
     }
   }
 
@@ -1846,9 +2404,76 @@ class App {
     try {
       const keyName = NOTE_NAMES[parseInt((document.getElementById('gen-key') as HTMLInputElement).value, 10)] || 'C';
       const bpm = Math.round(this.state.bpm);
-      downloadMIDI(buildMIDI(this.state.channels, this.state.bpm), `bloop_${bpm}bpm_${keyName}.mid`);
-      this.setStatus('ok', 'MIDI exported!');
+      const baseName = `${this.sillyPrefix}_${bpm}bpm_${keyName}`;
+      downloadMIDI(buildMIDI(this.state.channels, this.state.bpm), `${baseName}.mid`);
+      this.exportSF2Info(baseName);
+      this.setStatus('ok', 'MIDI + SF2 info exported!');
     } catch (err) { this.setStatus('err', `Export failed: ${(err as Error).message}`); }
+  }
+
+  private exportSF2Info(baseName = 'bloop_session') {
+    const NOTE_NAMES_FULL = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+    const keyVal = parseInt((document.getElementById('gen-key') as HTMLInputElement)?.value ?? '0', 10);
+    const keyName = NOTE_NAMES_FULL[keyVal] ?? 'C';
+    const bpm = Math.round(this.state.bpm);
+    const mode = (document.getElementById('gen-mode') as HTMLSelectElement)?.value ?? '—';
+    const scale = (document.getElementById('gen-scale') as HTMLSelectElement)?.value ?? '—';
+    const bars = (document.getElementById('gen-bars') as HTMLInputElement)?.value ?? '—';
+    const now = new Date().toLocaleString();
+
+    const CHANNEL_LABELS: Record<string, string> = {
+      pulse1: 'Lead Melody',
+      pulse2: 'Harmony / Accomp',
+      wave:   'Bass',
+      noise:  'Drums',
+      pulse3: 'Arpeggio / Counter',
+      pad:    'Pad',
+    };
+
+    const lines: string[] = [
+      'bloop-maker session info',
+      `Generated : ${now}`,
+      `BPM       : ${bpm}`,
+      `Key       : ${keyName}`,
+      `Mode      : ${mode}`,
+      `Scale     : ${scale}`,
+      `Bars      : ${bars}`,
+      `Seed      : ${this.lastSeed || '—'}`,
+      '',
+      'Channel Assignments',
+      '─'.repeat(72),
+      `${'Channel'.padEnd(8)} │ ${'Role'.padEnd(20)} │ ${'SF2 File'.padEnd(22)} │ ${'Preset'.padEnd(24)} │ Idx`,
+      '─'.repeat(72),
+    ];
+
+    for (const id of CHANNELS) {
+      const sfIdx    = this.channelSF2Idx[id] ?? 0;
+      const sfName   = this.loadedSF2s[sfIdx]?.name ?? '(no SF2)';
+      const sel      = this.selects[id];
+      const preset   = sel?.selectedOptions[0]?.text ?? '—';
+      const pIdx     = this.state.channels[id]?.presetIndex ?? 0;
+      const role     = CHANNEL_LABELS[id] ?? id;
+      const noteCount = this.state.channels[id]?.notes.length ?? 0;
+      const activeTag = noteCount > 0 ? '' : ' (silent)';
+      lines.push(
+        `${id.padEnd(8)} │ ${role.padEnd(20)} │ ${sfName.padEnd(22)} │ ${preset.padEnd(24)} │ ${pIdx}${activeTag}`
+      );
+    }
+
+    lines.push('─'.repeat(72));
+
+    if (this.loadedSF2s.length > 1) {
+      lines.push('');
+      lines.push('Loaded Soundfonts');
+      this.loadedSF2s.forEach((sf, i) => lines.push(`  [${i}] ${sf.name}`));
+    }
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${baseName}_info.txt`;
+    a.click();
+    URL.revokeObjectURL(a.href);
   }
 
   private exportChannel(id: ChannelId) {
@@ -1882,7 +2507,7 @@ class App {
       const bpm = Math.round(this.state.bpm);
       await exportWAV(this.state, channelVols, channelPans, masterVol, reverbWet, reverbDecay, pct => {
         this.progressFill.style.width = `${Math.round(pct * 100)}%`;
-      }, sf2List, this.channelSF2Idx, `bloop_${bpm}bpm_${keyName}.wav`);
+      }, sf2List, this.channelSF2Idx, `${this.sillyPrefix}_${bpm}bpm_${keyName}.wav`);
       this.setStatus('ok', 'WAV exported!');
     } catch (err) {
       this.setStatus('err', `WAV export failed: ${(err as Error).message}`);
@@ -2340,8 +2965,8 @@ class App {
     this.playBtn.textContent = this.state.isPlaying ? '||' : '>';
     this.playBtn.classList.toggle('playing', this.state.isPlaying);
     for (const id of CHANNELS) {
-      this.regenBtns[id].disabled    = !canRegen;
-      this.exportChBtns[id].disabled = !hasNotes;
+      if (this.regenBtns[id])    this.regenBtns[id].disabled    = !canRegen;
+      if (this.exportChBtns[id]) this.exportChBtns[id].disabled = !hasNotes;
     }
   }
 }

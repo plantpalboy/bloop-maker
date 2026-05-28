@@ -9,6 +9,9 @@ const CHANNEL_MIDI_NUM: Record<ChannelId, number> = {
   noise: 9,
   pulse3: 3,
   pad: 4,
+  extra1: 5,
+  extra2: 6,
+  extra3: 7,
 };
 
 export function buildMIDI(
