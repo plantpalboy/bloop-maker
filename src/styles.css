@@ -647,13 +647,14 @@ body.dark .gen-select { color: #88b8e4 !important; }
 .ch-btns { display:flex; align-items:center; gap:4px; flex-wrap:wrap; flex:1; }
 
 /* Channel-row buttons */
-.btn-solo, .btn-mute, .btn-regen, .btn-export-ch, .btn-edit-roll {
+.btn-solo, .btn-mute, .btn-regen, .btn-simplify, .btn-export-ch, .btn-edit-roll {
   padding: 3px 9px;
 }
 .btn-mute.active    { background: linear-gradient(180deg, rgba(255,160,180,0.88) 0%, rgba(220,80,100,0.80) 51%, rgba(240,130,150,0.90) 100%); color:#6a0015; border-color: rgba(200,60,80,0.50); }
 .btn-solo.active    { background: linear-gradient(180deg, rgba(255,230,100,0.90) 0%, rgba(220,170,20,0.82) 51%, rgba(240,210,60,0.92) 100%); color:#4a3000; border-color: rgba(180,130,0,0.50); }
 .btn-edit-roll.active { background: linear-gradient(180deg, rgba(140,210,255,0.90) 0%, rgba(60,150,235,0.82) 51%, rgba(100,180,255,0.92) 100%); color:#002060; border-color: rgba(40,120,210,0.50); }
-.btn-regen:disabled, .btn-export-ch:disabled { opacity:0.45; cursor:not-allowed; }
+.btn-regen:disabled, .btn-export-ch:disabled, .btn-simplify:disabled { opacity:0.45; cursor:not-allowed; }
+.btn-simplify { background: linear-gradient(180deg, rgba(180,255,180,.88) 0%, rgba(80,200,80,.80) 51%, rgba(120,220,120,.90) 100%); border-color: rgba(40,160,40,.46); color: #003a00; }
 
 /* Transpose mini-buttons */
 .ch-transpose {

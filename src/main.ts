@@ -666,6 +666,7 @@ class App {
             <button class="btn-solo"      id="solo-${id}">SOLO</button>
             <button class="btn-mute"      id="mute-${id}">MUTE</button>
             <button class="btn-regen"     id="regen-${id}"     disabled>Regen</button>
+            <button class="btn-simplify"  id="simplify-${id}" disabled title="Simplify: thin fast note runs and add breathing room">Simplify</button>
             <button class="btn-edit-roll" id="edit-${id}">Piano Roll</button>
             <div class="ch-transpose">
               <button class="btn-tr" id="tr-dn-${id}"     title="-1 semitone">-1</button>
@@ -1258,6 +1259,7 @@ class App {
       this.muteBtns[id]?.addEventListener('click',     () => this.toggleMute(id));
       this.soloBtns[id]?.addEventListener('click',     () => this.toggleSolo(id));
       this.regenBtns[id]?.addEventListener('click',    () => this.regenChannel(id));
+      document.getElementById(`simplify-${id}`)?.addEventListener('click', () => this.simplifyChannel(id));
       this.exportChBtns[id]?.addEventListener('click', () => this.exportChannel(id));
       this.editBtns[id]?.addEventListener('click',     () => this.toggleChannelEdit(id));
       const lockBtn = document.getElementById(`lock-${id}`) as HTMLButtonElement;
@@ -1883,6 +1885,76 @@ class App {
     }
     this.updateAllCanvases();
     this.setStatus('ok', `Humanized! Amount: ${Math.round(amount * 100)}%`);
+  }
+
+  // ── Simplify channel ──────────────────────────────────────────
+
+  private simplifyChannel(id: ChannelId) {
+    const notes = this.state.channels[id].notes;
+    if (notes.length === 0) return;
+    this.pushHistory();
+
+    const beatDur = 60 / this.state.bpm;
+    const shortThreshold = beatDur * 0.42; // notes shorter than ~dotted-8th are "fast"
+    const sorted = [...notes].sort((a, b) => a.time - b.time);
+    const result: NoteEvent[] = [];
+    let i = 0;
+
+    while (i < sorted.length) {
+      const note = sorted[i];
+
+      // Detect a run: 3+ consecutive short notes with tiny gaps between them
+      if (note.duration < shortThreshold) {
+        let runEnd = i;
+        while (runEnd + 1 < sorted.length) {
+          const gap = sorted[runEnd + 1].time - (sorted[runEnd].time + sorted[runEnd].duration);
+          if (sorted[runEnd + 1].duration < shortThreshold && gap < beatDur * 0.18) {
+            runEnd++;
+          } else break;
+        }
+
+        const runLen = runEnd - i + 1;
+        if (runLen >= 3) {
+          // Keep roughly every other note; always keep the first (musical anchor)
+          const runNotes = sorted.slice(i, runEnd + 1);
+          const spanEnd  = runNotes[runLen - 1].time + runNotes[runLen - 1].duration;
+          const spanStart = runNotes[0].time;
+          const keepIdx: number[] = [];
+          for (let k = 0; k < runLen; k += 2) keepIdx.push(k);
+          // Distribute the span evenly across kept notes
+          const slotDur = (spanEnd - spanStart) / keepIdx.length;
+          for (let k = 0; k < keepIdx.length; k++) {
+            const orig = runNotes[keepIdx[k]];
+            result.push({
+              ...orig,
+              time:     spanStart + k * slotDur,
+              duration: slotDur * 0.80,
+            });
+          }
+          i = runEnd + 1;
+          continue;
+        }
+      }
+
+      result.push(note);
+      i++;
+    }
+
+    // Breathe pass: add a small gap before notes that are back-to-back
+    const breathed = result.map((note, idx) => {
+      if (idx === 0) return note;
+      const prev = result[idx - 1];
+      const gap = note.time - (prev.time + prev.duration);
+      if (gap < 0.02 && prev.duration > beatDur * 0.3) {
+        return { ...prev, duration: Math.max(prev.duration * 0.78, beatDur * 0.15) };
+      }
+      return note;
+    });
+
+    this.state.channels[id].notes = breathed.sort((a, b) => a.time - b.time);
+    this.updateAllCanvases();
+    this.updateNoteCountBadges();
+    this.setStatus('ok', `Simplified ${id} — thinned fast runs and added breathing room.`);
   }
 
   // ── Channel transpose ─────────────────────────────────────────
@@ -3020,6 +3092,8 @@ class App {
     for (const id of CHANNELS) {
       if (this.regenBtns[id])    this.regenBtns[id].disabled    = !canRegen;
       if (this.exportChBtns[id]) this.exportChBtns[id].disabled = !hasNotes;
+      const simplifyBtn = document.getElementById(`simplify-${id}`) as HTMLButtonElement | null;
+      if (simplifyBtn) simplifyBtn.disabled = this.state.channels[id].notes.length === 0;
     }
   }
 }
