@@ -1,20 +1,55 @@
 # Bloop Maker
 
-A browser-based video game music composer and MIDI editor. Generates original chiptune-style songs using rule-based music theory algorithms — no AI, no internet required, runs entirely in your browser.
+**Free procedural music composer for video games, streams, and indie projects. No AI. No copyright risk. Runs offline.**
 
-## What It Is
+Generate original chiptune and game music in your browser using rule-based music theory algorithms. Every song is built from scratch by code — chord progressions, melody contour, motif repetition, harmonic rhythm, bass logic, and drum patterns. Nothing sampled, nothing copied, no machine learning involved.
 
-Bloop Maker is a **procedural music generator**. Every song is built from scratch using coded rules: chord progressions, melody contour, motif repetition, harmonic rhythm, bass line logic, drum patterns, and more. The output is deterministic from a seed — the same seed always produces the same song. Nothing is sampled or copied from existing music.
+---
 
-It runs fully offline. Once the page is loaded, no network connection is needed.
+## No AI. No Copyright Risk.
 
-## Requirements
+This matters right now.
+
+Game developers, indie studios, Twitch streamers, and YouTube creators are all navigating AI music concerns — platforms flag it, publishers ask about it, licensing gets complicated.
+
+Bloop Maker generates music the same way a game procedurally generates a dungeon: **coded rules, deterministic logic, reproducible results**. The music is yours. The process is transparent. No AI was involved.
+
+Every song comes from a seed number. The same seed always produces the same song. Share the seed with a collaborator and they get the exact same result. That's it — no black box, no model, no training data.
+
+---
+
+## What It Does
+
+- Generates original multi-channel game music from scratch
+- Full piano roll editor — add, remove, and extend individual notes
+- Exports to standard MIDI (open in any DAW) and WAV audio
+- 6 independent channels with solo, mute, per-channel regen, and instrument selection
+- 50+ melodic archetypes, 28 arp styles, 6 steering modes
+- 15 post-generation editing tools per channel and globally
+- Deterministic seed system — same seed = same song, every time
+- Runs completely offline once loaded — no account, no internet, no telemetry
+
+---
+
+## Who It's For
+
+- **Indie game developers** who need original background music without copyright headaches
+- **Game jam participants** who need music fast
+- **Twitch streamers and YouTubers** who need safe background music
+- **Hobbyist musicians** looking for composition starting points
+- **Music students** exploring music theory through experimentation
+
+---
+
+## Getting Started
+
+### Requirements
 
 - [Node.js](https://nodejs.org/) v18 or newer
 - npm (included with Node.js)
-- A free `.sf2` soundfont file to hear audio (see below)
+- A free `.sf2` soundfont file for audio playback (see below)
 
-## Install & Run
+### Install & Run
 
 ```bash
 git clone <this-repo>
@@ -25,42 +60,51 @@ npm run dev
 
 Open **http://localhost:5173** in your browser.
 
-## Getting Audio: Soundfonts
+### Getting Audio: Soundfonts
 
-Bloop Maker generates MIDI data. To hear sound, you need a **SoundFont (.sf2)** file — a standard audio format that maps MIDI notes to instrument samples.
+Bloop Maker generates MIDI data. To hear audio in the browser, drag in a free **SoundFont (.sf2)** file:
 
-Good free options:
 - **GeneralUser GS** — search "GeneralUser GS sf2 download" (~30 MB)
 - **FluidR3 GM** — search "FluidR3 GM sf2 download" (~140 MB)
-- **MuseScore General** — search "MuseScore General sf2 download"
 
-Drag the `.sf2` file into the **Soundfont** box in the app. You can load multiple soundfonts and assign different ones to each channel.
+Without a soundfont you can still generate, edit, and export MIDI — you just won't hear playback inside the app. The exported MIDI will play correctly in any DAW or MIDI player.
 
-Without a soundfont you can still generate, edit, and export MIDI — you just won't hear playback inside the app.
+---
 
-## Generating Music
+## How It Works
 
-### Quick Start
+No AI. No samples from existing music. Each generation:
 
-1. Load a soundfont (drag `.sf2` into the box)
-2. Pick a **Preset** from the dropdown (or set mode/BPM/key/scale manually)
-3. Hit **Generate!**
-4. Press **Space** or **>** to play
+1. **Picks a seed** from the current time, key, and mode. The same seed always produces the same song.
+2. **Builds chord progressions** from diatonic progression tables appropriate to the scale. Two progressions alternate every 4 bars.
+3. **Generates a motif** — a 2-8 note melodic cell, quality-gated with up to 3 attempts.
+4. **Commits a signature rhythm** — one rhythmic cell used throughout so the melody has a consistent feel.
+5. **Caches the first phrase** — bars 0-3 are saved and replayed in subsequent matching sections, transposed for the current chord, with small development on each repeat.
+6. **Plans song structure** — intro, build, verse, chorus, break, outro sections with velocity arcs, register shifts, and bass style changes per section.
+7. **Fills each bar** — melody, arp, bass, drums, and pad generated bar by bar using chord-tone snapping, leap recovery, suspensions, ornaments, chromatic approach tones, call-and-response, and phrase breathing.
+8. **Post-processes** — chord-tone enforcement on strong beats, density throttling by mode, modal interchange, transition fills, and a global dynamics curve.
 
-### Generator Settings
+---
 
-| Setting | What it does |
-|---------|-------------|
-| **Mode** | Overall character: Ambient, Mid, Battle, Jazzy, Funky, Silly, Weird |
-| **BPM** | Tempo in beats per minute |
-| **Key** | Root note (C through B) |
-| **Scale** | Musical scale: Major, Minor, Lydian, Dorian, Mixolydian, Harmonic Minor, Pentatonic, Whole Tone |
-| **Bars** | Length of the song (8–64 bars recommended) |
-| **Sparseness** | How often channels rest (0% = constantly playing, 100% = very sparse) |
+## Generator Controls
 
-### Steering the Generation
+### Mode
 
-Before hitting Generate, use the **Steer** buttons to constrain the output toward a feel:
+Overall character of the song:
+
+| Mode | Character |
+|------|-----------|
+| Ambient | Slow, spacious, atmospheric |
+| Mid | Balanced, town/exploration feel |
+| Battle | Fast, energetic, tense |
+| Jazzy | Swung rhythms, rich harmony |
+| Funky | Syncopated, groove-based |
+| Silly | Upbeat, bouncy, cartoonish |
+| Weird | Unpredictable, experimental |
+
+### Steer Buttons (Pre-Generation)
+
+Click before hitting Generate to constrain the output toward a feel:
 
 | Button | Effect |
 |--------|--------|
@@ -71,36 +115,17 @@ Before hitting Generate, use the **Steer** buttons to constrain the output towar
 | **Punchy** | Staccato, hard downbeat accents, low sparseness, drums on |
 | **Lofi** | Dorian/pentatonic minor, high sparseness, slow BPM, no drums |
 
-Steer buttons are toggles — click to activate, click again to deactivate.
+Steer buttons are toggles — click to activate, click again to turn off.
 
-### Archetype (Motif Shape)
+### Archetype
 
-The **Archetype** dropdown sets a melodic shape that repeats throughout the song as the main hook. Options are grouped by length: 3-note (punchy), 4-note, 5-note, 6-note, and 8-note (flowing). The exact pitches shift based on key and chord, but the interval pattern stays recognizable.
-
-Hit **Rnd** next to the dropdown to let Randomize Everything also pick a random archetype and arp style each time.
+Sets a melodic shape that repeats as the main hook throughout the song. Options grouped by length: 3-note (punchy), 4-note, 5-note, 6-note, 8-note (flowing). The interval pattern stays recognizable across chord changes.
 
 ### Arp Style
 
-The **Arp Style** dropdown controls how the harmony channel (Pulse 2) plays chords. Options are grouped:
-- **Classic**: Up, Down, Alberti, Waltz, Bounce, etc.
-- **Rhythmic**: Clave, Latin, Clockwork, Heartbeat, etc.
-- **Harmonic**: Jazzy (7ths), Staircase, Spread, Stride, etc.
-- **Texture**: Shimmer, Echo, Pluck, Trill, etc.
+Controls how the harmony channel plays chords. 28 styles grouped into Classic, Rhythmic, Harmonic, and Texture.
 
-Auto (default) picks a style appropriate to the mode on each generation.
-
-## How the Generator Works
-
-The generator uses rule-based music theory, not machine learning or AI. Each generation:
-
-1. **Picks a seed** — a number derived from the current time, key, and mode. The same seed always produces the same song.
-2. **Builds a chord progression** — from a pool of diatonic progressions appropriate to the scale. Two progressions (A and B) alternate every 4 bars.
-3. **Generates a motif** — a 2-6 note melodic cell with scored quality gating. Up to 3 attempts, keeping the best.
-4. **Generates a signature rhythm** — a short rhythmic cell committed for the whole song so the melody has a consistent feel.
-5. **Caches the first phrase** — bars 0-3 are saved. Subsequent matching sections replay that cached phrase, transposed for the chord, with small development on each repeat (exact → +1 semitone → parallel harmony).
-6. **Plans the structure** — intro, build, verse, chorus, break, outro sections with velocity arcs, register shifts, and bass style changes per section.
-7. **Fills each bar** — melody, arp, bass, drums, and pad generated bar by bar with chord-tone snapping, leap recovery, suspensions, ornaments, and phrase breathing.
-8. **Post-processes** — chord-tone enforcement on strong beats, density throttling by mode, modal interchange (borrowed chords), chromatic approach tones, and transition fills.
+---
 
 ## Channels
 
@@ -114,60 +139,54 @@ The generator uses rule-based music theory, not machine learning or AI. Each gen
 | Pad | Sustained harmonic pad |
 | Extra 1-3 | Optional additional channels |
 
-Each channel has independent controls: SOLO, MUTE, Regen, lock, sparseness, style, soundfont, volume, pan, instrument, and transpose.
+Each channel has: SOLO, MUTE, Regen (keeps the same chord progression as the original), Lock, sparseness slider, style selector, soundfont selector, volume, pan, instrument, and transpose.
 
-## Editing Notes
+---
 
-Click **Piano Roll** on any channel to expand the note editor.
+## Post-Generation Editing
 
-- **Click empty space** — add a note
-- **Click a note** — remove it
-- **Drag right while placing** — extend the note duration
-- **Scroll wheel** — zoom in/out on the timeline
-- **Click piano keys on left** — preview that pitch
-
-Notes snap to a 16th-note grid.
-
-## Per-Channel Post-Gen Buttons
-
-After generating, you can modify individual channels:
+### Per-Channel Buttons
 
 | Button | Effect |
 |--------|--------|
 | **Simplify** | Thins fast note runs, adds breathing room |
-| **Ghost** | Drops all velocities by 25 (channel sits back in mix) |
-| **Boost** | Raises all velocities by 20 (channel pushes forward) |
-| **Stacc** | Cuts all durations to 40% — punchy and staccato |
-| **Legato** | Extends all durations to 95% — smooth connected line |
-| **Harm** | Adds a minor third below every note at lower velocity |
+| **Ghost** | Drops velocities by 25 — sits back in the mix |
+| **Boost** | Raises velocities by 20 — pushes forward |
+| **Stacc** | Cuts durations to 40% — punchy and staccato |
+| **Legato** | Extends durations to 95% — smooth connected line |
+| **Harm** | Adds a minor third below every note |
 | **Retro** | Reverses note order in time |
-| **Oct+ / Oct-** | Shifts all notes up or down one octave |
+| **Oct+ / Oct-** | Shifts the channel up or down one octave |
 
-## Global Post-Gen Buttons
-
-These affect all channels at once:
+### Global Buttons
 
 | Button | Effect |
 |--------|--------|
-| **Swing** | Toggle: delays off-beat notes by 30ms across all channels. Click again to remove. |
-| **Compress** | Narrows velocity range — loud notes come down, quiet notes come up |
-| **Swell** | Applies a volume crescendo: quiet start, loud end |
-| **2x Time** | Halves all note timings — same song, twice as busy |
-| **0.5x Time** | Doubles all note timings — same song, half as busy |
+| **Swing** | Toggle — delays off-beat notes 30ms across all channels. Click again to remove. |
+| **Compress** | Narrows the velocity range toward the average |
+| **Swell** | Velocity crescendo from start to end |
+| **2x Time** | Halves all timings — same song, twice as busy |
+| **0.5x Time** | Doubles all timings — same song, half as busy |
 
-All post-gen operations are undoable (Ctrl+Z).
+All changes are undoable with Ctrl+Z and export correctly to MIDI and WAV.
+
+---
 
 ## Export
 
-- **Save MIDI** — exports all channels as a standard `.mid` file. Open in any DAW, notation software, or MIDI device.
-- **Save WAV** — renders to audio using the loaded soundfont. Requires a soundfont to be loaded.
-- **Per-channel MIDI** — click the MIDI button on any channel row to export just that channel.
+- **Save MIDI** — standard `.mid` file, opens in any DAW, notation software, or MIDI device
+- **Save WAV** — renders audio using the loaded soundfont
+- **Per-channel MIDI** — individual channel export button on each channel row
 
-Everything you hear is what you get in the export. Post-gen edits, velocity changes, timing shifts — all written into the MIDI/WAV.
+Everything you hear is what you get. Post-gen edits, velocity changes, timing shifts — all written into the file.
+
+---
 
 ## Importing MIDI
 
-Drop any `.mid` file into the **MIDI** drop zone to import it. Then use the Scramble controls (Transpose, Variation) to add variation, or edit notes directly in the piano roll.
+Drop any `.mid` file into the MIDI drop zone to import it. Edit notes in the piano roll, use Scramble controls to add variation, re-export.
+
+---
 
 ## Keyboard Shortcuts
 
@@ -175,19 +194,23 @@ Drop any `.mid` file into the **MIDI** drop zone to import it. Then use the Scra
 |-----|--------|
 | Space | Play / Pause |
 | R | Restart and Play |
-| F | Generate (same as clicking Generate!) |
+| F | Generate |
 | X | Randomize Everything and Generate |
 | G | Randomize SF2 instrument presets |
 | Ctrl+Z | Undo |
-| Ctrl+Y / Ctrl+Shift+Z | Redo |
+| Ctrl+Y | Redo |
 | Backspace | Rewind 5 seconds |
-| Arrow Up / Down | BPM +1 / -1 (Shift = ±5) |
+| Arrow Up / Down | BPM ±1 (Shift = ±5) |
+
+---
 
 ## Playback Modes
 
-- **Normal** — plays once through, then stops
-- **Loop** — replays the same bars seamlessly (click the ↻ button)
-- **Infinite** — automatically generates and appends more bars before the end so the song never stops
+- **Normal** — plays once through
+- **Loop** (↻) — replays the same bars seamlessly
+- **Infinite** — auto-appends more bars before the end so the song never stops
+
+---
 
 ## Build for Production
 
@@ -195,12 +218,14 @@ Drop any `.mid` file into the **MIDI** drop zone to import it. Then use the Scra
 npm run build
 ```
 
-Output goes to `dist/`. Serve with any static file server — no server-side code required.
+Output goes to `dist/`. No server-side code required — serve with any static file host (Netlify, GitHub Pages, Vercel, etc.).
+
+---
 
 ## Technical Notes
 
 - Written in TypeScript, built with Vite
-- Audio rendered via Web Audio API with a custom SF2 sampler (no external audio libraries)
-- MIDI export uses a hand-rolled MIDI writer
-- WAV export renders samples directly from SF2 data
-- No external API calls. No telemetry. Fully self-contained.
+- Audio via Web Audio API with a custom SF2 sampler — no external audio libraries
+- Custom MIDI writer and WAV renderer
+- No external API calls. No telemetry. No accounts. Fully self-contained.
+- Runs offline after initial page load.
