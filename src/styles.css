@@ -46,6 +46,96 @@
   --radius:     8px;
 }
 
+/* ── Theme: Neon / Synthwave ─────────────────────────────── */
+body.theme-neon {
+  background: linear-gradient(160deg, #0d0015 0%, #18003a 50%, #0a001e 100%);
+  background-attachment: fixed;
+  --win:      rgba(22,0,48,0.95);
+  --card:     rgba(30,0,60,0.92);
+  --btn-hi1:  rgba(80,0,140,0.88);
+  --btn-hi2:  rgba(50,0,100,0.82);
+  --btn-lo1:  rgba(30,0,70,0.78);
+  --btn-lo2:  rgba(40,0,90,0.86);
+  --tb-hi:    rgba(140,0,200,0.96);
+  --tb-lo:    rgba(40,0,80,0.99);
+  --b-win:    rgba(200,0,255,0.35);
+  --b-btn:    rgba(180,0,240,0.50);
+  --b-card:   rgba(160,0,220,0.28);
+  --txt:      #ff88ff;
+  --txt-dis:  #660066;
+  --txt-dim:  #cc44cc;
+  --acc:      #00ffcc;
+  --acc2:     #ff00aa;
+  --sel-bg:   #aa00ff;
+  --sel-txt:  #ffffff;
+  --ok:       #00ffaa;
+  --busy:     #aa00ff;
+  --err:      #ff3366;
+  --c1: #ff00cc; --c2: #00ffee; --c3: #aa00ff; --c4: #ffcc00;
+}
+body.theme-neon::before { background: radial-gradient(circle, rgba(200,0,255,0.18) 0%, transparent 70%); }
+body.theme-neon::after  { background: radial-gradient(circle, rgba(0,255,200,0.15) 0%, transparent 70%); }
+
+/* ── Theme: Amber / Warm Ambient ─────────────────────────── */
+body.theme-amber {
+  background: linear-gradient(160deg, #fdf4e0 0%, #f5e6c0 50%, #faebd4 100%);
+  background-attachment: fixed;
+  --win:      rgba(255,248,225,0.96);
+  --card:     rgba(255,252,235,0.94);
+  --btn-hi1:  rgba(255,235,170,0.90);
+  --btn-hi2:  rgba(250,220,140,0.84);
+  --btn-lo1:  rgba(240,200,110,0.80);
+  --btn-lo2:  rgba(248,215,135,0.88);
+  --tb-hi:    rgba(210,130,20,0.95);
+  --tb-lo:    rgba(150,80,0,0.98);
+  --b-win:    rgba(180,120,40,0.30);
+  --b-btn:    rgba(160,100,20,0.40);
+  --b-card:   rgba(180,130,50,0.28);
+  --txt:      #3a1a00;
+  --txt-dis:  #b08040;
+  --txt-dim:  #7a4010;
+  --acc:      #c86400;
+  --acc2:     #e09020;
+  --sel-bg:   #8b4800;
+  --sel-txt:  #ffffff;
+  --ok:       #2a6000;
+  --busy:     #7a3a00;
+  --err:      #aa1000;
+  --c1: #c84000; --c2: #0060a0; --c3: #408020; --c4: #9040c0;
+}
+body.theme-amber::before { background: radial-gradient(circle, rgba(255,200,80,0.25) 0%, transparent 70%); }
+body.theme-amber::after  { background: radial-gradient(circle, rgba(200,140,40,0.18) 0%, transparent 70%); }
+
+/* ── Theme: Forest Green ─────────────────────────────────── */
+body.theme-green {
+  background: linear-gradient(160deg, #e8f5e9 0%, #c8e6c9 50%, #e0f2e1 100%);
+  background-attachment: fixed;
+  --win:      rgba(232,245,233,0.96);
+  --card:     rgba(245,255,245,0.94);
+  --btn-hi1:  rgba(200,240,200,0.90);
+  --btn-hi2:  rgba(170,220,170,0.84);
+  --btn-lo1:  rgba(140,200,140,0.80);
+  --btn-lo2:  rgba(160,215,160,0.88);
+  --tb-hi:    rgba(40,120,40,0.96);
+  --tb-lo:    rgba(10,70,10,0.99);
+  --b-win:    rgba(60,140,60,0.30);
+  --b-btn:    rgba(40,120,40,0.42);
+  --b-card:   rgba(80,150,80,0.28);
+  --txt:      #0a2a0a;
+  --txt-dis:  #508050;
+  --txt-dim:  #1a5a1a;
+  --acc:      #1a8a1a;
+  --acc2:     #40b040;
+  --sel-bg:   #0a5a0a;
+  --sel-txt:  #ffffff;
+  --ok:       #006600;
+  --busy:     #004400;
+  --err:      #880000;
+  --c1: #cc2244; --c2: #1a88aa; --c3: #228822; --c4: #aa6600;
+}
+body.theme-green::before { background: radial-gradient(circle, rgba(80,200,80,0.25) 0%, transparent 70%); }
+body.theme-green::after  { background: radial-gradient(circle, rgba(40,160,80,0.18) 0%, transparent 70%); }
+
 /* ── Dark Aero ───────────────────────────────────────────── */
 body.dark {
   background:
@@ -981,3 +1071,31 @@ body.dark .gen-select { color: #88b8e4 !important; }
 
 /* ── Misc ────────────────────────────────────────────────── */
 ::selection { background: var(--sel-bg); color: var(--sel-txt); }
+
+/* ── Theme buttons ───────────────────────────────────────── */
+.btn-theme {
+  font: 11px/1 Tahoma, sans-serif;
+  padding: 3px 9px; border-radius: 5px; cursor: pointer;
+  background: var(--btn-hi1); color: var(--txt); border: 1px solid var(--b-btn);
+  opacity: 0.65; transition: opacity 0.15s;
+}
+.btn-theme:hover { opacity: 0.9; }
+.btn-theme.active { opacity: 1; font-weight: bold; background: var(--acc); color: #fff; border-color: var(--acc); }
+
+/* ── ASCII side panels ───────────────────────────────────── */
+.ascii-side {
+  position: fixed; top: 0; width: 38px; height: 100vh;
+  display: flex; flex-direction: column; justify-content: space-around; align-items: center;
+  pointer-events: none; z-index: 0; overflow: hidden;
+}
+.ascii-side-left  { left: 2px; }
+.ascii-side-right { right: 2px; }
+.ascii-side span {
+  font: 10px/1.4 monospace; display: block; white-space: nowrap;
+  writing-mode: horizontal-tb; transform-origin: center;
+  animation: ascii-bob 4s ease-in-out infinite;
+}
+@keyframes ascii-bob {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%       { transform: translateY(-10px) scale(1.05); }
+}

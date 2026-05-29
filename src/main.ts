@@ -163,6 +163,58 @@ function makeDefaultState(): AppState {
   return { channels, duration: 0, bpm: 130, isPlaying: false, sf2: null, inputType: 'none', assignmentMode: 'auto' };
 }
 
+function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => { const k = (n + h * 12) % 12; return Math.round((l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))) * 255); };
+  return [f(0), f(8), f(4)];
+}
+
+// ── ASCII art pools for the visualizer ───────────────────────
+const ASCII_POOLS: string[][] = [
+  // cats
+  ['ฅ^•ﻌ•^ฅ','(^._.^)','=^..^=','(=^･ω･^=)','ฅ(^ω^ฅ)','(=ↀωↀ=)','>^.^<','(^◡^✿)'],
+  // dogs & bears
+  ['▼・ᴥ・▼','U・ᴥ・U','ʕ•ᴥ•ʔ','ʕ•̫͡•ʕ','ʕ≧ᴥ≦ʔ','(ᵕ◡ᵕ)','ʕっ•ᴥ•ʔっ'],
+  // bugs & silly
+  ['(ᵒ̤̑ ₀̑ ᵒ̤̑)','(¬‿¬)','(◣_◢)','ε=┌(;￣▽￣)┘','ᕙ(⇀‸↼)ᕗ','(⌐■_■)','ლ(ಠ益ಠლ)'],
+  // music
+  ['♪(●′▽‵●)♬','(♩‿♪)','(ノ♪)ノ','♬♩♭♪','(◕‿◕)♬','♪♫♬♩'],
+  // cute & love (user additions)
+  ['(◍•ᴗ•◍)♡','(˘▾˘✿)','(≧◡≦)','(｡♥‿♥｡)','(✿◠‿◠)','(*˘︶˘*)','∩｡•ᵕ•｡∩♡'],
+  // hearts & love kaomoji
+  ['(◍＞◡＜◍)⋈✧♡','(ღ˘⌣˘)♥','♡(˘⌣˘)♡','٩(*❛⊰❛)～❤','♥‿♥','(灬♥ω♥灬)','ෆ╹.̮╹ෆ'],
+  ['(っ˘з(˘⌣˘)','(˵ ͡°͜ʖ ͡°˵)♡','(づ ￣³￣)づ','(∩˃o˂∩)♡','( ♥3♥)','໒(♥◡♥)७~♪'],
+  ['(ﾉ◕ヮ◕)ﾉ*❤','(✿´⌣`✿)╯♡','(•ε•)','(˶˘³˘)♡','♡ⓛⓞⓥⓔ♡','꒒০⌵୧♡'],
+  // sparkle
+  ['✦ ✧ ✦','⋆｡°✩','✨(◕‿◕)✨','☆*:.｡(˘▾˘)','(>^o^)><(^o^<)','(/^-^(^ ^)/'],
+];
+
+const VIZ_SCHEMES: { r: number; g: number; b: number }[] = [
+  { r:0,   g:200, b:0   }, // green
+  { r:200, g:0,   b:255 }, // neon purple
+  { r:0,   g:200, b:255 }, // cyan
+  { r:255, g:160, b:0   }, // amber
+  { r:255, g:50,  b:150 }, // pink
+  { r:140, g:200, b:255 }, // ice blue
+  { r:255, g:255, b:100 }, // yellow
+  { r:-1,  g:-1,  b:-1  }, // rainbow (cycling)
+];
+
+// Multi-line ASCII art — rendered as fading background pieces on the canvas
+const ASCII_ART_BIG: string[][] = [
+  ['   ___', ' __/ _`.  .-"-.',  ' \\_,` | \\-\'  )`-\')', '  "") `"`  \\  ((`"`', '  ___Y  ,   .\'7 /|', '(_,___/...-` (_/_/'],
+  [' /\\︵-︵/\\', '|(◉)(◉)|', '\\ ︶V︶ /', '/ ↺↺↺↺ \\', '↺↺↺↺↺|', '\\↺↺↺↺/', '¯¯/\\¯/\\¯'],
+  ['  __    __', "o-''))_____\\\\", '  "--__/ * * *)', ' c_c__/-c____/'],
+  [' ^..^      /', '/_/\\_____/', '   /\\   /\\', '  /  \\ /  \\'],
+  ['  ||  ||', '  \\\\()//', '//(__)\\\\', '  ||    ||'],
+  [' /^-----^\\', 'V  o o  V', ' |  Y  |', '  \\ Q /', '  / - \\', ' |    \\'],
+  ['       (\\/)','        \\/','  (\\/)  .-.  .-.',"   \\/  ((`-)(-`))","        \\\\    //", ' .="""=._))((_.="""=.'],
+  ['        (','         )','        (','   /\\  .-"""-. /\\', '  //\\\\ ,,,  //\\\\', '  |/\\|,;;;;;,|/\\|', ' //\\\\;-"""-;///\\\\'],
+  ['    __    __', "  o-''))_____\\\\", '  "--__/ * * *)', '   c_c__/-c____/'],
+  [' ,_     _', ' |\\_,-~/', ' / _  _ |  ,--.', '(  @  @ )  / ,-\'', ' \\  _T_/-._( ('],
+  ['        ,-._', "    _.-'  '--.", "  .'      _  -`\\_", " / .----.`_.'----'", ' ;/     `', ' /_; '],
+];
+
 class App {
   private state: AppState = makeDefaultState();
   private audioCtx: AudioContext | null = null;
@@ -224,6 +276,9 @@ class App {
   private extraChannelRoles: Partial<Record<ChannelId, string>> = {};
   private bpmLocked = false;
   private loopEnabled = false;
+  private currentTheme = 'aero';
+  private vizColorIdx = 0;
+  private vizCharPool: string[] = [];
   private lastMotifIntervals: number[] = [];
 
   // DOM refs
@@ -276,8 +331,12 @@ class App {
     this.drawOscIdle();
     this.startMatrixIdle();
     this.startBgGrid();
-    // Restore dark mode preference
+    // Restore dark mode and theme preference
     if (localStorage.getItem('bloopDark') === '1') document.body.classList.add('dark');
+    this.vizCharPool = ASCII_POOLS[0].concat(ASCII_POOLS[4]);
+    const savedTheme = localStorage.getItem('bloopTheme') ?? 'aero';
+    this.applyTheme(savedTheme, false);
+    this.injectSidePanels();
   }
 
   // ── Render ────────────────────────────────────────────────────
@@ -563,6 +622,17 @@ class App {
               </div>
             </div>
           </div>
+
+        <!-- Theme selector -->
+        <div class="card" style="padding:6px 10px">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="font:11px Tahoma;opacity:0.7;flex-shrink:0">Theme:</span>
+            <button class="btn-theme active" id="theme-aero"  data-theme="aero">Aero</button>
+            <button class="btn-theme"        id="theme-neon"  data-theme="neon">Neon</button>
+            <button class="btn-theme"        id="theme-amber" data-theme="amber">Amber</button>
+            <button class="btn-theme"        id="theme-green" data-theme="green">Forest</button>
+          </div>
+        </div>
         </div>
 
         <!-- Transport -->
@@ -599,7 +669,10 @@ class App {
           </div>
         </div>
 
-        <canvas id="matrix-canvas" style="width:100%;height:80px;display:block;background:#010501;border-top:1px solid #1a2a1a;margin-top:4px" width="1200" height="80"></canvas>
+        <div style="position:relative;width:100%;margin-top:4px">
+          <canvas id="matrix-canvas" style="width:100%;height:80px;display:block;background:transparent;border-top:1px solid rgba(0,0,0,0.12)" width="1200" height="80"></canvas>
+          <button id="ascii-rand-btn" title="Randomize creatures and colors" style="position:absolute;top:4px;right:6px;font:10px Tahoma;padding:2px 7px;cursor:pointer;z-index:2;background:rgba(0,0,0,0.35);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.2);border-radius:4px">🎲 New!</button>
+        </div>
 
       </div><!-- end win-body -->
 
@@ -833,6 +906,21 @@ class App {
 
     // Dark mode
     document.getElementById('dark-btn')!.addEventListener('click', () => this.toggleDarkMode());
+
+    // Theme buttons
+    document.querySelectorAll('.btn-theme').forEach(btn => {
+      btn.addEventListener('click', () => this.applyTheme((btn as HTMLElement).dataset.theme ?? 'aero', true));
+    });
+
+    // ASCII randomizer
+    document.getElementById('ascii-rand-btn')?.addEventListener('click', () => {
+      const poolA = ASCII_POOLS[Math.floor(Math.random() * ASCII_POOLS.length)];
+      const poolB = ASCII_POOLS[Math.floor(Math.random() * ASCII_POOLS.length)];
+      this.vizCharPool = [...new Set([...poolA, ...poolB])];
+      this.vizColorIdx = (this.vizColorIdx + 1) % VIZ_SCHEMES.length;
+      this.updateSidePanelColors();
+      if (this.oscAnalyser) { this.startMatrixOsc(); } else { this.startMatrixIdle(); }
+    });
     document.getElementById('hotkeys-btn')!.addEventListener('click', (e) => { e.stopPropagation(); this.showShortcuts(); });
     document.getElementById('add-channel-btn')?.addEventListener('click', () => {
       const extras: ChannelId[] = ['extra1', 'extra2', 'extra3'];
@@ -1397,6 +1485,48 @@ class App {
   private toggleDarkMode() {
     document.body.classList.toggle('dark');
     localStorage.setItem('bloopDark', document.body.classList.contains('dark') ? '1' : '0');
+  }
+
+  private applyTheme(theme: string, save: boolean) {
+    this.currentTheme = theme;
+    document.body.classList.remove('theme-neon', 'theme-amber', 'theme-green');
+    if (theme !== 'aero') document.body.classList.add(`theme-${theme}`);
+    document.querySelectorAll('.btn-theme').forEach(btn => {
+      btn.classList.toggle('active', (btn as HTMLElement).dataset.theme === theme);
+    });
+    this.updateSidePanelColors();
+    if (save) localStorage.setItem('bloopTheme', theme);
+  }
+
+  private injectSidePanels() {
+    const makePanel = (side: 'left' | 'right') => {
+      const div = document.createElement('div');
+      div.className = `ascii-side ascii-side-${side}`;
+      div.id = `ascii-side-${side}`;
+      const chars = this.vizCharPool.slice(0, 7);
+      chars.forEach((ch, i) => {
+        const span = document.createElement('span');
+        span.textContent = ch;
+        span.style.animationDelay = `${(i / chars.length) * 4}s`;
+        span.style.animationDuration = `${3 + i * 0.4}s`;
+        div.appendChild(span);
+      });
+      document.body.appendChild(div);
+    };
+    makePanel('left');
+    makePanel('right');
+    this.updateSidePanelColors();
+  }
+
+  private updateSidePanelColors() {
+    const scheme = VIZ_SCHEMES[this.vizColorIdx];
+    const [r, g, b] = scheme.r < 0
+      ? [100, 200, 255]
+      : [scheme.r, scheme.g, scheme.b];
+    const color = `rgba(${r},${g},${b},0.35)`;
+    document.querySelectorAll('.ascii-side span').forEach(s => {
+      (s as HTMLElement).style.color = color;
+    });
   }
 
   // ── BPM rescaling ────────────────────────────────────────────
@@ -2781,8 +2911,8 @@ class App {
     const freqData = new Uint8Array(bufLen);
 
     // ASCII creatures that bounce to the music
-    const CHARS = ['ฅ^•ﻌ•^ฅ', '(^._.^)', 'ʕ•ᴥ•ʔ', '(=^･ω･^=)', 'ฅ(^ω^ฅ)', '(◕‿◕)', '(^◡^)', 'ʕ•̫͡•ʕ', '♪ ♫ ♬ ♩'];
-    const NUM = 9;
+    const CHARS = this.vizCharPool.length > 0 ? this.vizCharPool : ASCII_POOLS[0];
+    const NUM = Math.min(CHARS.length, 10);
     type Creature = { x: number; vx: number; charIdx: number; bobPhase: number; bobSpeed: number; };
     const creatures: Creature[] = Array.from({ length: NUM }, (_, i) => ({
       x: (i / NUM) * W + W / NUM / 2,
@@ -2806,8 +2936,21 @@ class App {
 
       // Per-creature frequency band (spread creatures across freq spectrum)
       ctx.clearRect(0, 0, W, H);
-      ctx.fillStyle = '#010501';
-      ctx.fillRect(0, 0, W, H);
+
+      // Slowly cycle big ASCII art in the background
+      const artIdx = Math.floor(t / 420) % ASCII_ART_BIG.length;
+      const artLines = ASCII_ART_BIG[artIdx];
+      const artFade = Math.sin((t % 420) / 420 * Math.PI) * 0.18;
+      if (artFade > 0.01) {
+        const sc = VIZ_SCHEMES[this.vizColorIdx];
+        const [ar, ag, ab] = sc.r < 0 ? [80, 160, 255] : [sc.r, sc.g, sc.b];
+        ctx.font = '9px monospace';
+        ctx.textBaseline = 'top';
+        artLines.forEach((line, li) => {
+          ctx.fillStyle = `rgba(${ar},${ag},${ab},${artFade})`;
+          ctx.fillText(line, W / 2 - ctx.measureText(line).width / 2, li * 11 + (H - artLines.length * 11) / 2);
+        });
+      }
 
       for (let ci = 0; ci < creatures.length; ci++) {
         const c = creatures[ci];
@@ -2831,17 +2974,29 @@ class App {
 
         // Size pulses with its band amplitude
         const fontSize = Math.round(11 + bandAmp * 14);
-        const bright = Math.round(120 + bandAmp * 135);
         const alpha = 0.55 + bandAmp * 0.45;
+        const scheme = VIZ_SCHEMES[this.vizColorIdx];
+        let cr: number, cg: number, cb: number;
+        if (scheme.r < 0) {
+          // Rainbow: cycle hue per creature + time
+          const hue = ((ci / NUM) * 360 + t * 0.5) % 360;
+          const [hr, hg, hb] = hslToRgb(hue / 360, 1, 0.55 + bandAmp * 0.25);
+          cr = hr; cg = hg; cb = hb;
+        } else {
+          const lo = 0.45, hi = 1.0;
+          cr = Math.round(scheme.r * (lo + bandAmp * (hi - lo)));
+          cg = Math.round(scheme.g * (lo + bandAmp * (hi - lo)));
+          cb = Math.round(scheme.b * (lo + bandAmp * (hi - lo)));
+        }
         ctx.font = `${fontSize}px monospace`;
-        ctx.fillStyle = `rgba(0,${bright},${Math.round(bright * 0.4)},${alpha})`;
+        ctx.fillStyle = `rgba(${cr},${cg},${cb},${alpha})`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(CHARS[c.charIdx], c.x, y);
+        ctx.fillText(CHARS[c.charIdx % CHARS.length], c.x, y);
 
         // Tiny sparkle on loud hits
         if (bandAmp > 0.7) {
-          ctx.fillStyle = `rgba(200,255,200,${bandAmp - 0.5})`;
+          ctx.fillStyle = `rgba(${cr},${cg},${cb},${bandAmp - 0.4})`;
           ctx.font = `${Math.round(fontSize * 0.55)}px monospace`;
           ctx.fillText('✦', c.x + fontSize * 0.8, y - fontSize * 0.7);
         }
@@ -2857,7 +3012,7 @@ class App {
     const ctx = canvas.getContext('2d')!;
     const W = canvas.width, H = canvas.height;
 
-    const CHARS = ['ฅ^•ﻌ•^ฅ', '(^._.^)', 'ʕ•ᴥ•ʔ', '(=^･ω･^=)', 'ฅ(^ω^ฅ)', '(◕‿◕)', '(^◡^)', 'ʕ•̫͡•ʕ', '♪ ♫ ♬'];
+    const CHARS = this.vizCharPool.length > 0 ? this.vizCharPool : ASCII_POOLS[0];
     type IdleCreature = { x: number; y: number; vx: number; charIdx: number; phase: number; };
     const creatures: IdleCreature[] = Array.from({ length: 7 }, (_, i) => ({
       x: (i / 7) * W, y: H / 2, vx: 0.18 + Math.random() * 0.12,
@@ -2868,17 +3023,34 @@ class App {
     const draw = () => {
       this.matrixRafId = requestAnimationFrame(draw);
       t++;
-      ctx.fillStyle = '#010501';
-      ctx.fillRect(0, 0, W, H);
+      ctx.clearRect(0, 0, W, H);
+
+      // Big art cycles slowly in idle
+      const artIdx = Math.floor(t / 360) % ASCII_ART_BIG.length;
+      const artLines = ASCII_ART_BIG[artIdx];
+      const artFade = Math.sin((t % 360) / 360 * Math.PI) * 0.14;
+      if (artFade > 0.01) {
+        const sc = VIZ_SCHEMES[this.vizColorIdx];
+        const [ar, ag, ab] = sc.r < 0 ? [80, 160, 255] : [sc.r, sc.g, sc.b];
+        ctx.font = '9px monospace'; ctx.textBaseline = 'top';
+        artLines.forEach((line, li) => {
+          ctx.fillStyle = `rgba(${ar},${ag},${ab},${artFade})`;
+          ctx.fillText(line, W / 2 - ctx.measureText(line).width / 2, li * 11 + (H - artLines.length * 11) / 2);
+        });
+      }
+
       for (const c of creatures) {
         c.x = (c.x + c.vx + W) % W;
         c.phase += 0.025;
         const y = H / 2 + Math.sin(c.phase) * 10;
+        const sc = VIZ_SCHEMES[this.vizColorIdx];
+        const pulse = 0.4 + Math.sin(c.phase) * 0.12;
+        const [ir, ig, ib] = sc.r < 0 ? [80, 180, 255] : [Math.round(sc.r * pulse), Math.round(sc.g * pulse), Math.round(sc.b * pulse)];
         ctx.font = '11px monospace';
-        ctx.fillStyle = `rgba(0,${80 + Math.round(Math.sin(c.phase) * 20)},0,0.55)`;
+        ctx.fillStyle = `rgba(${ir},${ig},${ib},0.55)`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(CHARS[c.charIdx], c.x, y);
+        ctx.fillText(CHARS[c.charIdx % CHARS.length], c.x, y);
       }
     };
     draw();
