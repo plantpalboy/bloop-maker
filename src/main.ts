@@ -271,6 +271,10 @@ class App {
   private arpStyleOverride = 'auto';
   // When true, Randomize Everything also picks a random archetype + arp style
   private randomizeArchAndArp = false;
+  // Steering mode
+  private steeringMode: 'bright' | 'focused' | 'cinematic' | 'lush' | 'punchy' | 'lofi' | null = null;
+  // Swing toggle state
+  private swingActive = false;
   // Last generation metadata for inspector + JSON export
   private lastSeed = 0;
   private sillyPrefix = 'bloop';
@@ -451,27 +455,48 @@ class App {
                 <canvas id="energy-canvas" width="200" height="40" style="cursor:crosshair;border:1px solid #555;background:#1a1a1a"></canvas>
                 <button id="energy-reset" class="btn-sm" style="margin-left:4px">&#8635;</button>
               </div>
-              <div class="gen-row" style="align-items:center;gap:3px;flex-wrap:wrap">
+              <div class="gen-row" style="align-items:center;gap:6px">
                 <span class="gen-label">Arp Style</span>
-                <button id="arp-auto"      class="btn-sm arp-btn active" style="font-size:10px">Auto</button>
-                <button id="arp-up"        class="btn-sm arp-btn" style="font-size:10px">Up</button>
-                <button id="arp-down"      class="btn-sm arp-btn" style="font-size:10px">Down</button>
-                <button id="arp-updown"    class="btn-sm arp-btn" style="font-size:10px">UpDn</button>
-                <button id="arp-broken"    class="btn-sm arp-btn" style="font-size:10px">Broken</button>
-                <button id="arp-alberti"   class="btn-sm arp-btn" style="font-size:10px">Alberti</button>
-                <button id="arp-bounce"    class="btn-sm arp-btn" style="font-size:10px">Bounce</button>
-                <button id="arp-waltz"     class="btn-sm arp-btn" style="font-size:10px">Waltz</button>
-                <button id="arp-cascading" class="btn-sm arp-btn" style="font-size:10px">Cascade</button>
-                <button id="arp-pinned"    class="btn-sm arp-btn" style="font-size:10px">Pinned</button>
-                <button id="arp-clave"     class="btn-sm arp-btn" style="font-size:10px">Clave</button>
-                <button id="arp-doubletime" class="btn-sm arp-btn" style="font-size:10px">2×Time</button>
-                <button id="arp-jazzy"     class="btn-sm arp-btn" style="font-size:10px">Jazzy</button>
-                <button id="arp-spread"    class="btn-sm arp-btn" style="font-size:10px">Spread</button>
-                <button id="arp-stride"    class="btn-sm arp-btn" style="font-size:10px">Stride</button>
-                <button id="arp-riff"      class="btn-sm arp-btn" style="font-size:10px">Riff</button>
-                <button id="arp-spiral"    class="btn-sm arp-btn" style="font-size:10px">Spiral</button>
-                <button id="arp-latin"     class="btn-sm arp-btn" style="font-size:10px">Latin</button>
-                <button id="arp-open5"     class="btn-sm arp-btn" style="font-size:10px">Open5</button>
+                <select id="arp-style-sel" class="gen-input" style="font-size:11px;flex:1">
+                  <option value="auto">Auto (random per song)</option>
+                  <optgroup label="Classic">
+                    <option value="up">Up</option>
+                    <option value="down">Down</option>
+                    <option value="updown">Up-Down</option>
+                    <option value="broken">Broken</option>
+                    <option value="alberti">Alberti</option>
+                    <option value="waltz">Waltz</option>
+                    <option value="pinned">Pinned</option>
+                    <option value="bounce">Bounce</option>
+                  </optgroup>
+                  <optgroup label="Rhythmic">
+                    <option value="clave">Clave</option>
+                    <option value="doubletime">2x Time</option>
+                    <option value="latin">Latin</option>
+                    <option value="riff">Riff</option>
+                    <option value="clockwork">Clockwork</option>
+                    <option value="heartbeat">Heartbeat</option>
+                    <option value="barrel">Barrel</option>
+                    <option value="gallop">Gallop (dotted)</option>
+                  </optgroup>
+                  <optgroup label="Harmonic">
+                    <option value="jazzy">Jazzy (7ths)</option>
+                    <option value="staircase">Staircase (7th chord)</option>
+                    <option value="spread">Spread (wide)</option>
+                    <option value="stride">Stride (piano)</option>
+                    <option value="open5">Open 5ths</option>
+                    <option value="cascading">Cascading</option>
+                    <option value="cross">Cross voice</option>
+                  </optgroup>
+                  <optgroup label="Texture">
+                    <option value="shimmer">Shimmer (add9)</option>
+                    <option value="echo">Echo</option>
+                    <option value="pluck">Pluck</option>
+                    <option value="sweep">Sweep</option>
+                    <option value="trill">Trill</option>
+                    <option value="spiral">Spiral</option>
+                  </optgroup>
+                </select>
               </div>
               <div class="gen-row" style="align-items:center">
                 <span class="gen-label">Motif Lock</span>
@@ -479,60 +504,75 @@ class App {
                 <button id="motif-clear" class="btn-sm" style="margin-left:4px">&#10005;</button>
                 <canvas id="motif-canvas" width="120" height="22" style="margin-left:6px;border:1px solid #444;background:#111;vertical-align:middle"></canvas>
               </div>
-              <div class="gen-row" style="align-items:center;gap:3px;flex-wrap:wrap">
-                <span class="gen-label">Archetypes</span>
-                <button id="arch-rand-toggle" class="btn-sm" style="font-size:10px;opacity:0.5" title="When lit, Randomize Everything also picks a random archetype &amp; arp style">&#127922; Rnd</button>
-                <button id="motif-preset-hook"     class="btn-sm" style="font-size:10px" title="4-note · leap to 5th, stepwise descent">&#8599; Hook</button>
-                <button id="motif-preset-hero"     class="btn-sm" style="font-size:10px" title="4-note · rising stepwise to 5th">&#8593; Hero</button>
-                <button id="motif-preset-sad"      class="btn-sm" style="font-size:10px" title="4-note · descending from 5th to root">&#8595; Sad</button>
-                <button id="motif-preset-wave"     class="btn-sm" style="font-size:10px" title="5-note · arch up and back">&#8767; Wave</button>
-                <button id="motif-preset-fanfare"  class="btn-sm" style="font-size:10px" title="5-note · arpeggio up through 7th, partial descent">&#9835; Fanfare</button>
-                <button id="motif-preset-quest"    class="btn-sm" style="font-size:10px" title="5-note · stepwise rise, lands on 6th (unresolved)">&#8594; Quest</button>
-                <button id="motif-preset-boss"     class="btn-sm" style="font-size:10px" title="5-note · dark — starts on 7th, drops to root">&#9760; Boss</button>
-                <button id="motif-preset-chase"    class="btn-sm" style="font-size:10px" title="5-note · active leaping root→5th→3rd→7th→5th">&#9889; Chase</button>
-                <button id="motif-preset-bounce"   class="btn-sm" style="font-size:10px" title="4-note · root-5th ostinato">&#8645; Bounce</button>
-                <button id="motif-preset-march"    class="btn-sm" style="font-size:10px" title="4-note · repeated note then rise">&#9654; March</button>
-                <button id="motif-preset-jazz"     class="btn-sm" style="font-size:10px" title="4-note · maj7 arpeggio outline">&#9837; Jazz</button>
-                <button id="motif-preset-skip"     class="btn-sm" style="font-size:10px" title="5-note · playful alternating leaps">&#8646; Skip</button>
-                <button id="motif-preset-lullaby"  class="btn-sm" style="font-size:10px" title="5-note · gentle rocking 3rd→2nd→root→2nd→3rd">&#9675; Lullaby</button>
-                <button id="motif-preset-tumble"   class="btn-sm" style="font-size:10px" title="5-note · long fall from 5th through 7th to root">&#8600; Tumble</button>
-                <button id="motif-preset-spiral"   class="btn-sm" style="font-size:10px" title="6-note · winding upward: step up, step back, repeat">&#8635; Spiral</button>
-                <button id="motif-preset-taunt"    class="btn-sm" style="font-size:10px" title="5-note · repeated root jab then 4th drop">&#8604; Taunt</button>
-                <button id="motif-preset-triumph"  class="btn-sm" style="font-size:10px" title="6-note · 5th, sustained, then descend with flair">&#9733; Triumph</button>
-                <button id="motif-preset-lament"   class="btn-sm" style="font-size:10px" title="5-note · chromatic descent using 7th-6th-4th-3rd">&#9834; Lament</button>
-                <button id="motif-preset-panic"    class="btn-sm" style="font-size:10px" title="6-note · wild alternating leaps — jagged, tense">&#10033; Panic</button>
-                <button id="motif-preset-creep"    class="btn-sm" style="font-size:10px" title="5-note · neighbor tone oscillation around root">&#9680; Creep</button>
-                <button id="motif-preset-hiccup"   class="btn-sm" style="font-size:10px" title="6-note · stuttery repeats with surprise leaps">&#8252; Hiccup</button>
-                <button id="motif-preset-boing"    class="btn-sm" style="font-size:10px" title="5-note · giant bounces between root and 7th">&#8597; Boing</button>
-                <button id="motif-preset-wobbly"   class="btn-sm" style="font-size:10px" title="6-note · wobbles up one step at a time from root">&#126; Wobbly</button>
-                <button id="motif-preset-dizzy"    class="btn-sm" style="font-size:10px" title="6-note · spins in circles, never settles">&#9862; Dizzy</button>
-                <button id="motif-preset-glitch"   class="btn-sm" style="font-size:10px" title="6-note · alternates between high and low extremes">&#9889; Glitch</button>
-                <button id="motif-preset-alien"    class="btn-sm" style="font-size:10px" title="6-note · tritone / whole-tone oscillation">&#9251; Alien</button>
-                <button id="motif-preset-trance"   class="btn-sm" style="font-size:10px" title="6-note · hypnotic repeats then sudden 6th jump">&#9736; Trance</button>
-                <button id="motif-preset-backwards" class="btn-sm" style="font-size:10px" title="6-note · descends then climbs back — reversed arch">&#8612; Bkwds</button>
-                <button id="motif-preset-dream"    class="btn-sm" style="font-size:10px" title="6-note · floaty unresolved shimmer">&#9730; Dream</button>
-                <button id="motif-preset-clock"    class="btn-sm" style="font-size:10px" title="6-note · tick-tock alternating root + step">&#9201; Clock</button>
-                <button id="motif-preset-prayer"   class="btn-sm" style="font-size:10px" title="6-note · symmetrical arch resolving to root">&#9674; Prayer</button>
-                <button id="motif-preset-stomp"    class="btn-sm" style="font-size:10px" title="6-note · three root hits, leap, return">&#9632; Stomp</button>
-                <button id="motif-preset-moonwalk" class="btn-sm" style="font-size:10px" title="6-note · gliding back-and-forth around the 5th">&#8651; Mwalk</button>
-                <button id="motif-preset-stutter"  class="btn-sm" style="font-size:10px" title="6-note · two quick repeats then a step-up pair">&#9835; Stutter</button>
-                <button id="motif-preset-sneak"    class="btn-sm" style="font-size:10px" title="6-note · creeping up then sudden leap down">&#128064; Sneak</button>
-                <button id="motif-preset-cry"      class="btn-sm" style="font-size:10px" title="6-note · falling from 5th, each note lower">&#128149; Cry</button>
-                <button id="motif-preset-dance"    class="btn-sm" style="font-size:10px" title="6-note · bright upward staircase I→III→V→III→V→VII">&#9836; Dance</button>
-                <button id="motif-preset-signal"   class="btn-sm" style="font-size:10px" title="6-note · call-and-response: two hits, answer phrase">&#9135; Signal</button>
-                <button id="motif-preset-pendulum" class="btn-sm" style="font-size:10px" title="6-note · swinging evenly around the 3rd">&#9679; Pendulm</button>
-                <button id="motif-preset-gallop"   class="btn-sm" style="font-size:10px" title="6-note · dotted-rhythm feel: two shorts then a leap">&#9650; Gallop</button>
-                <button id="motif-preset-jab"      class="btn-sm" style="font-size:10px" title="3-note · root → 5th → back, one punch">&#9733; Jab</button>
-                <button id="motif-preset-sigh"     class="btn-sm" style="font-size:10px" title="3-note · gentle fall from 5th to root">&#9834; Sigh</button>
-                <button id="motif-preset-call"     class="btn-sm" style="font-size:10px" title="3-note · three rising steps, open question">&#8599; Call</button>
-                <button id="motif-preset-drop"     class="btn-sm" style="font-size:10px" title="3-note · big drop from 7th through 4th to root">&#8600; Drop</button>
-                <button id="motif-preset-ping"     class="btn-sm" style="font-size:10px" title="3-note · root, leap high, settle on 5th">&#9675; Ping</button>
-                <button id="motif-preset-journey"  class="btn-sm" style="font-size:10px" title="8-note · rise to 5th then full stepwise descent">&#9684; Journey</button>
-                <button id="motif-preset-thunder"  class="btn-sm" style="font-size:10px" title="8-note · doubled heavy hits, climax at 7th, resolve">&#9730; Thunder</button>
-                <button id="motif-preset-hymn"     class="btn-sm" style="font-size:10px" title="8-note · chorale arch with 7th peak">&#9836; Hymn</button>
-                <button id="motif-preset-river"    class="btn-sm" style="font-size:10px" title="8-note · stepwise flowing upward">&#8767; River</button>
-                <button id="motif-preset-orbit"    class="btn-sm" style="font-size:10px" title="8-note · wide spiral back to root">&#9711; Orbit</button>
-                <button id="motif-preset-groove"   class="btn-sm" style="font-size:10px" title="8-note · funky repeats with inner movement">&#9836; Groove</button>
+              <div class="gen-row" style="align-items:center;gap:6px">
+                <span class="gen-label">Archetype</span>
+                <select id="archetype-sel" class="gen-input" style="font-size:11px;flex:1" title="Select a motif archetype — sets the repeating melodic shape for the whole song">
+                  <option value="">None (free generation)</option>
+                  <optgroup label="3-note (Short &amp; punchy)">
+                    <option value="motif-preset-jab">Jab — root, 5th, back</option>
+                    <option value="motif-preset-sigh">Sigh — gentle fall 5th to root</option>
+                    <option value="motif-preset-call">Call — three rising steps</option>
+                    <option value="motif-preset-drop">Drop — big fall 7th to root</option>
+                    <option value="motif-preset-ping">Ping — root, leap, settle on 5th</option>
+                  </optgroup>
+                  <optgroup label="4-note">
+                    <option value="motif-preset-hook">Hook — leap to 5th, descent</option>
+                    <option value="motif-preset-hero">Hero — rising stepwise to 5th</option>
+                    <option value="motif-preset-sad">Sad — descending 5th to root</option>
+                    <option value="motif-preset-bounce">Bounce — root-5th ostinato</option>
+                    <option value="motif-preset-march">March — repeated note then rise</option>
+                    <option value="motif-preset-jazz">Jazz — maj7 arpeggio</option>
+                  </optgroup>
+                  <optgroup label="5-note">
+                    <option value="motif-preset-wave">Wave — arch up and back</option>
+                    <option value="motif-preset-fanfare">Fanfare — arpeggio through 7th</option>
+                    <option value="motif-preset-quest">Quest — rise, lands on 6th</option>
+                    <option value="motif-preset-boss">Boss — 7th drops to root</option>
+                    <option value="motif-preset-chase">Chase — leaping root to 7th</option>
+                    <option value="motif-preset-skip">Skip — alternating leaps</option>
+                    <option value="motif-preset-lullaby">Lullaby — gentle rocking 3rd-root</option>
+                    <option value="motif-preset-tumble">Tumble — long fall 5th to root</option>
+                    <option value="motif-preset-taunt">Taunt — repeated jab, 4th drop</option>
+                    <option value="motif-preset-lament">Lament — chromatic descent</option>
+                    <option value="motif-preset-creep">Creep — neighbor tone oscillation</option>
+                    <option value="motif-preset-boing">Boing — giant root/7th bounces</option>
+                    <option value="motif-preset-backwards">Backwards — reversed arch</option>
+                    <option value="motif-preset-cry">Cry — falling, each note lower</option>
+                  </optgroup>
+                  <optgroup label="6-note">
+                    <option value="motif-preset-spiral">Spiral — winding upward</option>
+                    <option value="motif-preset-triumph">Triumph — 5th then descend</option>
+                    <option value="motif-preset-panic">Panic — wild jagged leaps</option>
+                    <option value="motif-preset-hiccup">Hiccup — stuttery with leaps</option>
+                    <option value="motif-preset-wobbly">Wobbly — wobbles up by step</option>
+                    <option value="motif-preset-dizzy">Dizzy — spins, never settles</option>
+                    <option value="motif-preset-glitch">Glitch — high/low extremes</option>
+                    <option value="motif-preset-alien">Alien — whole-tone oscillation</option>
+                    <option value="motif-preset-trance">Trance — hypnotic then leap</option>
+                    <option value="motif-preset-dream">Dream — floaty unresolved shimmer</option>
+                    <option value="motif-preset-clock">Clock — tick-tock alternating</option>
+                    <option value="motif-preset-prayer">Prayer — symmetrical arch</option>
+                    <option value="motif-preset-stomp">Stomp — three root hits, leap</option>
+                    <option value="motif-preset-moonwalk">Moonwalk — gliding around 5th</option>
+                    <option value="motif-preset-stutter">Stutter — repeats then step-up</option>
+                    <option value="motif-preset-sneak">Sneak — creep up, leap down</option>
+                    <option value="motif-preset-dance">Dance — bright upward staircase</option>
+                    <option value="motif-preset-signal">Signal — call and response</option>
+                    <option value="motif-preset-pendulum">Pendulum — swinging around 3rd</option>
+                    <option value="motif-preset-gallop">Gallop — dotted-rhythm feel</option>
+                  </optgroup>
+                  <optgroup label="8-note (Long &amp; flowing)">
+                    <option value="motif-preset-journey">Journey — rise to 5th then full descent</option>
+                    <option value="motif-preset-thunder">Thunder — doubled hits, climax, resolve</option>
+                    <option value="motif-preset-hymn">Hymn — chorale arch with 7th peak</option>
+                    <option value="motif-preset-river">River — stepwise flowing upward</option>
+                    <option value="motif-preset-orbit">Orbit — wide spiral back to root</option>
+                    <option value="motif-preset-groove">Groove — funky repeats with movement</option>
+                  </optgroup>
+                </select>
+                <button id="arch-rand-toggle" class="btn-sm" style="font-size:10px;opacity:0.5;white-space:nowrap" title="When lit, Randomize Everything also picks a random archetype and arp style">Rnd</button>
+                <button id="arch-clear" class="btn-sm" style="font-size:10px" title="Clear archetype and motif lock">X</button>
+                <canvas id="motif-canvas" width="80" height="22" style="border:1px solid #444;background:#111;vertical-align:middle"></canvas>
               </div>
               <div class="gen-row" style="align-items:center;gap:6px">
                 <span class="gen-label">Inspector</span>
@@ -540,6 +580,23 @@ class App {
                 <span id="motif-inspector" style="font-size:10px;opacity:0.6;font-family:monospace">motif: —</span>
                 <button id="copy-seed-btn" class="btn-sm" style="font-size:10px">copy seed</button>
                 <button id="export-json-btn" class="btn-sm" style="font-size:10px">JSON</button>
+              </div>
+              <div class="gen-row" style="align-items:center;gap:4px;flex-wrap:wrap">
+                <span class="gen-label">Steer</span>
+                <button id="steer-bright"    class="btn-sm" style="font-size:10px;opacity:0.45" title="Force major/lydian, high register, bright accompaniment">Bright</button>
+                <button id="steer-focused"   class="btn-sm" style="font-size:10px;opacity:0.45" title="Simple rhythm, max phrase repetition, hard chord-tone snap — very hooky">Focused</button>
+                <button id="steer-cinematic" class="btn-sm" style="font-size:10px;opacity:0.45" title="Minor/harmonic-minor, pedal bass, wide dynamics, no drums">Cinematic</button>
+                <button id="steer-lush"      class="btn-sm" style="font-size:10px;opacity:0.45" title="Major/lydian, heavy pad, legato, BPM 80-100, no drums — warm and cozy">Lush</button>
+                <button id="steer-punchy"    class="btn-sm" style="font-size:10px;opacity:0.45" title="Staccato, hard downbeat accents, no pad, low sparseness — tight and energetic">Punchy</button>
+                <button id="steer-lofi"      class="btn-sm" style="font-size:10px;opacity:0.45" title="Dorian/pentatonic minor, high sparseness, slow BPM, no drums — intimate and sad">Lofi</button>
+              </div>
+              <div class="gen-row" style="align-items:center;gap:4px;flex-wrap:wrap">
+                <span class="gen-label">Post-gen</span>
+                <button id="global-swing"    class="btn-sm" style="font-size:10px" title="Toggle swing: delay all off-beat notes by 15ms across every channel">Swing</button>
+                <button id="global-compress" class="btn-sm" style="font-size:10px" title="Compress velocities: bring loud notes down and quiet notes up toward the middle">Compress</button>
+                <button id="global-swell"    class="btn-sm" style="font-size:10px" title="Swell: quiet start, loud end — velocity crescendo across the whole song">Swell</button>
+                <button id="global-doubletime" class="btn-sm" style="font-size:10px" title="Double Time: halve all note timings so the song plays twice as busy at the same BPM">2x Time</button>
+                <button id="global-halftime"   class="btn-sm" style="font-size:10px" title="Half Time: double all note timings for a slow dramatic weight">0.5x Time</button>
               </div>
               <button class="btn-generate" id="gen-btn">Generate!</button>
             </div>
@@ -765,7 +822,15 @@ class App {
             <button class="btn-solo"      id="solo-${id}">SOLO</button>
             <button class="btn-mute"      id="mute-${id}">MUTE</button>
             <button class="btn-regen"     id="regen-${id}"     disabled>Regen</button>
-            <button class="btn-simplify"  id="simplify-${id}" disabled title="Simplify: thin fast note runs and add breathing room">Simplify</button>
+            <button class="btn-simplify"  id="simplify-${id}"    disabled title="Simplify: thin fast runs, add breathing room">Simplify</button>
+            <button class="btn-sm"        id="ghost-${id}"      disabled title="Ghost: drop all velocities by 25 — sits back in the mix" style="font-size:10px">Ghost</button>
+            <button class="btn-sm"        id="boost-${id}"      disabled title="Boost: raise all velocities by 20 — pushes channel forward" style="font-size:10px">Boost</button>
+            <button class="btn-sm"        id="staccato-${id}"   disabled title="Staccato: cut all note durations to 40% — punchy and separated" style="font-size:10px">Stacc</button>
+            <button class="btn-sm"        id="legato-${id}"     disabled title="Legato: extend all note durations to 95% — smooth connected line" style="font-size:10px">Legato</button>
+            <button class="btn-sm"        id="harmonize-${id}"  disabled title="Harmonize: add a scale-third below every note at -15 velocity" style="font-size:10px">Harm</button>
+            <button class="btn-sm"        id="retrograde-${id}" disabled title="Retrograde: reverse the order of all notes in time" style="font-size:10px">Retro</button>
+            <button class="btn-sm"        id="oct-up-${id}"     disabled title="Shift all notes up one octave" style="font-size:10px">Oct+</button>
+            <button class="btn-sm"        id="oct-dn-${id}"     disabled title="Shift all notes down one octave" style="font-size:10px">Oct-</button>
             <button class="btn-edit-roll" id="edit-${id}">Piano Roll</button>
             <div class="ch-transpose">
               <button class="btn-tr" id="tr-dn-${id}"     title="-1 semitone">-1</button>
@@ -1125,9 +1190,6 @@ class App {
     // Energy canvas wiring
     this.bindEnergyCanvas();
 
-    // Arp style buttons
-    this.bindArpButtons();
-
     // Motif lock wiring
     this.bindMotifLock();
   }
@@ -1209,17 +1271,6 @@ class App {
     return this.energyCurve[lo] * (1 - frac) + this.energyCurve[hi] * frac;
   }
 
-  private bindArpButtons() {
-    document.querySelectorAll('.arp-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const style = (btn as HTMLElement).id.replace('arp-', '');
-        this.arpStyleOverride = style;
-        document.querySelectorAll('.arp-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-      });
-    });
-  }
-
   private bindMotifLock() {
     const container = document.getElementById('motif-btns')!;
     const canvas = document.getElementById('motif-canvas') as HTMLCanvasElement;
@@ -1262,10 +1313,7 @@ class App {
       container.appendChild(btn);
     }
 
-    document.getElementById('motif-clear')!.addEventListener('click', () => {
-      this.lockedMotif = [];
-      drawMotifCanvas();
-    });
+    // motif-clear is now arch-clear (wired below after ARCHETYPES map)
 
     // Preset archetypes: one-click motif patterns
     const ARCHETYPES: Record<string, number[]> = {
@@ -1327,7 +1375,25 @@ class App {
       'motif-preset-groove':   [0, 0, 4, 2, 0, 0, 6, 4], // funky repeats with inner movement
     };
 
-    // Wire up the arch+arp randomize toggle
+    // Wire archetype dropdown
+    const archetypeSel = document.getElementById('archetype-sel') as HTMLSelectElement;
+    archetypeSel.addEventListener('change', () => {
+      const key = archetypeSel.value;
+      if (!key || !ARCHETYPES[key]) {
+        this.lockedMotif = [];
+      } else {
+        this.lockedMotif = [...ARCHETYPES[key]];
+      }
+      drawMotifCanvas();
+    });
+
+    // Wire arp style dropdown
+    const arpSelEl = document.getElementById('arp-style-sel') as HTMLSelectElement;
+    arpSelEl.addEventListener('change', () => {
+      this.arpStyleOverride = arpSelEl.value || 'auto';
+    });
+
+    // Wire arch+arp randomize toggle
     const archRandBtn = document.getElementById('arch-rand-toggle') as HTMLButtonElement;
     const updateArchRandBtn = () => {
       archRandBtn.style.opacity = this.randomizeArchAndArp ? '1' : '0.45';
@@ -1338,14 +1404,72 @@ class App {
       updateArchRandBtn();
     });
     updateArchRandBtn();
-    for (const [id, degrees] of Object.entries(ARCHETYPES)) {
-      document.getElementById(id)!.addEventListener('click', () => {
-        this.lockedMotif = [...degrees];
-        drawMotifCanvas();
-      });
-    }
+
+    // Wire clear button (clears both dropdown selection and manual motif lock)
+    document.getElementById('arch-clear')!.addEventListener('click', () => {
+      this.lockedMotif = [];
+      archetypeSel.value = '';
+      drawMotifCanvas();
+    });
 
     drawMotifCanvas();
+
+    // Steering buttons — Bright / Focused / Cinematic / Lush / Punchy / Lofi
+    const steerButtons: Record<string, 'bright' | 'focused' | 'cinematic' | 'lush' | 'punchy' | 'lofi'> = {
+      'steer-bright':    'bright',
+      'steer-focused':   'focused',
+      'steer-cinematic': 'cinematic',
+      'steer-lush':      'lush',
+      'steer-punchy':    'punchy',
+      'steer-lofi':      'lofi',
+    };
+
+    // Global post-gen buttons
+    // Swing is a real toggle — lights up when active, removes swing when clicked again
+    const swingBtn = document.getElementById('global-swing') as HTMLButtonElement;
+    const updateSwingBtn = () => {
+      swingBtn.style.opacity  = this.swingActive ? '1'   : '0.55';
+      swingBtn.style.outline  = this.swingActive ? '1px solid #aaa' : 'none';
+      swingBtn.style.background = this.swingActive ? 'rgba(255,255,255,0.15)' : '';
+    };
+    swingBtn.addEventListener('click', () => { this.globalSwing(); updateSwingBtn(); });
+
+    // One-shot buttons flash briefly on click to confirm the action
+    const flashBtn = (id: string, action: () => void) => {
+      const btn = document.getElementById(id) as HTMLButtonElement | null;
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        action();
+        btn.style.outline   = '1px solid #aaa';
+        btn.style.background = 'rgba(255,255,255,0.15)';
+        setTimeout(() => {
+          btn.style.outline   = '';
+          btn.style.background = '';
+        }, 500);
+      });
+    };
+    flashBtn('global-compress',   () => this.globalCompress());
+    flashBtn('global-swell',      () => this.globalSwell());
+    flashBtn('global-doubletime', () => this.globalTimeStretch(0.5, '2x Time'));
+    flashBtn('global-halftime',   () => this.globalTimeStretch(2.0, 'Half Time'));
+    const updateSteerBtns = () => {
+      for (const [id, mode] of Object.entries(steerButtons)) {
+        const btn = document.getElementById(id) as HTMLButtonElement;
+        const active = this.steeringMode === mode;
+        btn.style.opacity = active ? '1' : '0.45';
+        btn.style.outline = active ? '1px solid #aaa' : 'none';
+      }
+    };
+    for (const [id, mode] of Object.entries(steerButtons)) {
+      document.getElementById(id)!.addEventListener('click', () => {
+        this.steeringMode = this.steeringMode === mode ? null : mode;
+        updateSteerBtns();
+        this.setStatus('ok', this.steeringMode
+          ? `Steering: ${this.steeringMode} — next Generate will apply this bias`
+          : 'Steering off — fully random generation');
+      });
+    }
+    updateSteerBtns();
 
     // Inspector + export buttons
     document.getElementById('copy-seed-btn')!.addEventListener('click', () => {
@@ -1411,7 +1535,15 @@ class App {
       this.muteBtns[id]?.addEventListener('click',     () => this.toggleMute(id));
       this.soloBtns[id]?.addEventListener('click',     () => this.toggleSolo(id));
       this.regenBtns[id]?.addEventListener('click',    () => this.regenChannel(id));
-      document.getElementById(`simplify-${id}`)?.addEventListener('click', () => this.simplifyChannel(id));
+      document.getElementById(`simplify-${id}`)?.addEventListener('click',   () => this.simplifyChannel(id));
+      document.getElementById(`ghost-${id}`)?.addEventListener('click',      () => this.channelVelocityShift(id, -25, 'Ghosted'));
+      document.getElementById(`boost-${id}`)?.addEventListener('click',      () => this.channelVelocityShift(id, +20, 'Boosted'));
+      document.getElementById(`staccato-${id}`)?.addEventListener('click',   () => this.channelGate(id, 0.40, 'Staccato'));
+      document.getElementById(`legato-${id}`)?.addEventListener('click',     () => this.channelGate(id, 0.95, 'Legato'));
+      document.getElementById(`harmonize-${id}`)?.addEventListener('click',  () => this.harmonizeChannel(id));
+      document.getElementById(`retrograde-${id}`)?.addEventListener('click', () => this.retrogradeChannel(id));
+      document.getElementById(`oct-up-${id}`)?.addEventListener('click',     () => this.channelOctave(id, +12));
+      document.getElementById(`oct-dn-${id}`)?.addEventListener('click',     () => this.channelOctave(id, -12));
       this.exportChBtns[id]?.addEventListener('click', () => this.exportChannel(id));
       this.editBtns[id]?.addEventListener('click',     () => this.toggleChannelEdit(id));
       const lockBtn = document.getElementById(`lock-${id}`) as HTMLButtonElement;
@@ -1772,9 +1904,12 @@ class App {
       const arpStyles = ['auto', 'up', 'down', 'updown', 'broken', 'alberti', 'bounce', 'waltz',
         'cascading', 'pinned', 'clave', 'doubletime', 'jazzy', 'spread', 'stride', 'riff', 'spiral', 'latin', 'open5'];
       this.arpStyleOverride = arpStyles[Math.floor(Math.random() * arpStyles.length)];
-      // Reflect arp change in the UI dropdown if it exists
+      // Sync dropdowns
       const arpSel = document.getElementById('arp-style-sel') as HTMLSelectElement | null;
       if (arpSel) arpSel.value = this.arpStyleOverride;
+      // Reset archetype dropdown to blank (random pick doesn't map cleanly to a named preset)
+      const archSel = document.getElementById('archetype-sel') as HTMLSelectElement | null;
+      if (archSel) archSel.value = '';
     }
 
     // Bias toward low BPM — presets under 90 bpm get 5x weight, 90-110 get 2x, 110+ get 0.5x
@@ -2027,7 +2162,68 @@ class App {
       pulse3: this.channelStyle['pulse3'] ?? 'auto',
       pad:    this.channelStyle['pad']    ?? 'auto',
     };
-    const config: GenConfig = { mode: this.genMode, key, octave: 4, bars, bpm, scaleType: scaleRaw || undefined, generateNoise, sparseness, channelSparseness, channelStyles, motifSeed: this.lockedMotif.length > 0 ? [...this.lockedMotif] : undefined, arpStyle: this.arpStyleOverride,
+
+    // Apply steering mode overrides before building config
+    let steeredScale = scaleRaw || undefined as ScaleType | undefined;
+    let steeredSparseness = sparseness;
+    let steeredBpm = bpm;
+    let steeredChannelStyles = { ...channelStyles };
+    if (this.steeringMode === 'bright') {
+      // Force a bright scale if none set or a dark one is set
+      const darkScales = ['minor', 'harmonicMinor', 'dorian'];
+      if (!steeredScale || darkScales.includes(steeredScale)) {
+        const brightScales: ScaleType[] = ['major', 'lydian', 'pentatonicMajor', 'mixolydian'];
+        steeredScale = brightScales[Math.floor(Math.random() * brightScales.length)];
+        (document.getElementById('gen-scale') as HTMLSelectElement).value = steeredScale;
+      }
+      // Nudge BPM up slightly if very slow — bright songs need some energy
+      if (steeredBpm < 90) { steeredBpm = 95 + Math.floor(Math.random() * 20); }
+      steeredSparseness = Math.min(steeredSparseness, 0.25);
+    } else if (this.steeringMode === 'focused') {
+      // Keep existing scale; sparseness moderate; nothing else — let phrase caching + signature rhythm do the work
+      steeredSparseness = Math.min(steeredSparseness, 0.30);
+    } else if (this.steeringMode === 'cinematic') {
+      const cinematicScales: ScaleType[] = ['minor', 'harmonicMinor', 'dorian'];
+      if (!steeredScale || !cinematicScales.includes(steeredScale)) {
+        steeredScale = cinematicScales[Math.floor(Math.random() * cinematicScales.length)];
+        (document.getElementById('gen-scale') as HTMLSelectElement).value = steeredScale;
+      }
+      steeredChannelStyles = { ...steeredChannelStyles, wave: 'pedal' };
+      if (steeredBpm > 100) { steeredBpm = 72 + Math.floor(Math.random() * 24); }
+      steeredSparseness = Math.max(steeredSparseness, 0.35);
+      (document.getElementById('gen-noise') as HTMLInputElement).checked = false;
+    } else if (this.steeringMode === 'lush') {
+      // Warm cozy: major/lydian, heavy pad, legato gate, moderate BPM, no drums
+      const lushScales: ScaleType[] = ['major', 'lydian', 'pentatonicMajor'];
+      if (!steeredScale || ['minor','harmonicMinor'].includes(steeredScale)) {
+        steeredScale = lushScales[Math.floor(Math.random() * lushScales.length)];
+        (document.getElementById('gen-scale') as HTMLSelectElement).value = steeredScale;
+      }
+      if (steeredBpm > 105) { steeredBpm = 80 + Math.floor(Math.random() * 26); }
+      steeredSparseness = Math.min(steeredSparseness, 0.20);
+      steeredChannelStyles = { ...steeredChannelStyles, pad: 'pad', wave: 'pedal' };
+      (document.getElementById('gen-noise') as HTMLInputElement).checked = false;
+    } else if (this.steeringMode === 'punchy') {
+      // Tight energetic: mid/battle mode, low sparseness, no pad
+      if (this.genMode === 'ambient') this.genMode = 'mid';
+      if (steeredBpm < 110) { steeredBpm = 120 + Math.floor(Math.random() * 40); }
+      steeredSparseness = Math.min(steeredSparseness, 0.10);
+      // Suppress pad so staccato lead sits clean
+      steeredChannelStyles = { ...steeredChannelStyles };
+      (document.getElementById('gen-noise') as HTMLInputElement).checked = true;
+    } else if (this.steeringMode === 'lofi') {
+      // Sad intimate: dorian/pentatonicMinor, slow, very sparse, no drums
+      const lofiScales: ScaleType[] = ['dorian', 'pentatonicMinor', 'minor'];
+      if (!steeredScale || !lofiScales.includes(steeredScale)) {
+        steeredScale = lofiScales[Math.floor(Math.random() * lofiScales.length)];
+        (document.getElementById('gen-scale') as HTMLSelectElement).value = steeredScale;
+      }
+      if (steeredBpm > 85) { steeredBpm = 60 + Math.floor(Math.random() * 26); }
+      steeredSparseness = Math.max(steeredSparseness, 0.50);
+      (document.getElementById('gen-noise') as HTMLInputElement).checked = false;
+    }
+
+    const config: GenConfig = { mode: this.genMode, key, octave: 4, bars, bpm: steeredBpm, scaleType: steeredScale, generateNoise: this.steeringMode === 'cinematic' ? false : generateNoise, sparseness: steeredSparseness, channelSparseness, channelStyles: steeredChannelStyles, motifSeed: this.lockedMotif.length > 0 ? [...this.lockedMotif] : undefined, arpStyle: this.arpStyleOverride,
       extraChannelRoles: Object.fromEntries(
         (['extra1','extra2','extra3'] as ChannelId[])
           .filter(id => this.activeExtraChannels.has(id))
@@ -2077,20 +2273,23 @@ class App {
     const beatDur = 60 / this.state.bpm;
     const bars = Math.max(this.lastGenConfig.bars, Math.ceil(this.state.duration / (beatDur * 4)));
     const chSparse = this.channelSparseValues[id] ?? 0;
+    // Force all other channels maximally sparse so only the target channel generates.
+    // Pass the original seed so chord progressions, motif shape, and arrangement
+    // are identical to the original song — only the target channel's notes differ.
     const channelSparseness = {
-      pulse1: id === 'pulse1' ? chSparse : 0,
-      pulse2: id === 'pulse2' ? chSparse : 0,
-      wave:   id === 'wave'   ? chSparse : 0,
-      noise:  id === 'noise'  ? chSparse : 0,
-      pulse3: id === 'pulse3' ? chSparse : 0,
-      pad:    id === 'pad'    ? chSparse : 0,
+      pulse1: id === 'pulse1' ? chSparse : 1,
+      pulse2: id === 'pulse2' ? chSparse : 1,
+      wave:   id === 'wave'   ? chSparse : 1,
+      noise:  id === 'noise'  ? chSparse : 1,
+      pulse3: id === 'pulse3' ? chSparse : 1,
+      pad:    id === 'pad'    ? chSparse : 1,
     };
-    const result = generate({ ...this.lastGenConfig, bars, sparseness: 0, channelSparseness });
+    const result = generate({ ...this.lastGenConfig, bars, sparseness: 0, channelSparseness, seed: this.lastSeed });
     this.state.channels[id].notes = result.channels[id];
     this.drawPianoRoll(id, this.currentTime);
     const c = result.channels[id].length;
     this.noteCountEls[id].textContent = `${c} note${c !== 1 ? 's' : ''}`;
-    this.setStatus('ok', `Regenned ${id}!`);
+    this.setStatus('ok', `Regenned ${id} — same key, scale, and progressions as the original song`);
   }
 
   // ── Humanize ─────────────────────────────────────────────────
@@ -2181,6 +2380,149 @@ class App {
     this.updateAllCanvases();
     this.updateNoteCountBadges();
     this.setStatus('ok', `Simplified ${id} — thinned fast runs and added breathing room.`);
+  }
+
+  // ── Per-channel post-gen operations ───────────────────────────
+
+  private channelVelocityShift(id: ChannelId, delta: number, label: string) {
+    const notes = this.state.channels[id].notes;
+    if (notes.length === 0) return;
+    this.pushHistory();
+    this.state.channels[id].notes = notes.map(n => ({
+      ...n, velocity: Math.max(1, Math.min(127, n.velocity + delta)),
+    }));
+    this.updateAllCanvases();
+    this.setStatus('ok', `${label} ${id}`);
+  }
+
+  private channelGate(id: ChannelId, gateRatio: number, label: string) {
+    const notes = this.state.channels[id].notes;
+    if (notes.length === 0) return;
+    this.pushHistory();
+    const beatDur = 60 / this.state.bpm;
+    this.state.channels[id].notes = notes.map(n => {
+      // Gate is relative to the note's own spacing — keep at least 0.03s
+      const nextNoteGap = beatDur * 0.5; // approximate available space
+      return { ...n, duration: Math.max(0.03, Math.min(n.duration, nextNoteGap) * gateRatio) };
+    });
+    this.updateAllCanvases();
+    this.setStatus('ok', `${label} applied to ${id}`);
+  }
+
+  private channelOctave(id: ChannelId, semitones: number) {
+    const notes = this.state.channels[id].notes;
+    if (notes.length === 0) return;
+    this.pushHistory();
+    this.state.channels[id].notes = notes.map(n => ({
+      ...n, midi: Math.max(0, Math.min(127, n.midi + semitones)),
+    }));
+    this.updateAllCanvases();
+    this.setStatus('ok', `${id} shifted ${semitones > 0 ? 'up' : 'down'} one octave`);
+  }
+
+  private harmonizeChannel(id: ChannelId) {
+    const notes = this.state.channels[id].notes;
+    if (notes.length === 0) return;
+    this.pushHistory();
+    const harmony: NoteEvent[] = notes.map(n => ({
+      ...n,
+      midi: Math.max(0, Math.min(127, n.midi - 4)), // minor 3rd below
+      velocity: Math.max(1, n.velocity - 15),
+    }));
+    this.state.channels[id].notes = [...notes, ...harmony].sort((a, b) => a.time - b.time);
+    this.updateAllCanvases();
+    this.updateNoteCountBadges();
+    this.setStatus('ok', `Harmonized ${id} — added scale-third below each note`);
+  }
+
+  private retrogradeChannel(id: ChannelId) {
+    const notes = this.state.channels[id].notes;
+    if (notes.length === 0) return;
+    this.pushHistory();
+    const sorted = [...notes].sort((a, b) => a.time - b.time);
+    const totalDur = sorted[sorted.length - 1].time + sorted[sorted.length - 1].duration;
+    // Mirror each note's time around the midpoint
+    this.state.channels[id].notes = sorted
+      .map(n => ({ ...n, time: totalDur - n.time - n.duration }))
+      .sort((a, b) => a.time - b.time);
+    this.updateAllCanvases();
+    this.setStatus('ok', `Retrograded ${id} — note order reversed in time`);
+  }
+
+  // ── Global post-gen operations ─────────────────────────────────
+
+  private globalSwing() {
+    const hasNotes = CHANNELS.some(id => this.state.channels[id].notes.length > 0);
+    if (!hasNotes) return;
+    this.pushHistory();
+    const beatDur = 60 / this.state.bpm;
+    const eighth = beatDur * 0.5;
+    const swingMs = 0.030;
+    // Toggle: if swing is on, reverse it (subtract offset); if off, apply it (add offset)
+    const delta = this.swingActive ? -swingMs : swingMs;
+    this.swingActive = !this.swingActive;
+    for (const id of CHANNELS) {
+      this.state.channels[id].notes = this.state.channels[id].notes.map(n => {
+        const eighthPos = Math.round(n.time / eighth);
+        if (eighthPos % 2 === 1) return { ...n, time: Math.max(0, n.time + delta) };
+        return n;
+      });
+    }
+    this.updateAllCanvases();
+    this.setStatus('ok', this.swingActive ? 'Swing ON — off-beat notes shifted +30ms' : 'Swing OFF — timing restored');
+  }
+
+  private globalCompress() {
+    const hasNotes = CHANNELS.some(id => this.state.channels[id].notes.length > 0);
+    if (!hasNotes) return;
+    this.pushHistory();
+    for (const id of CHANNELS) {
+      const notes = this.state.channels[id].notes;
+      if (notes.length === 0) continue;
+      const velocities = notes.map(n => n.velocity);
+      const avg = velocities.reduce((a, b) => a + b, 0) / velocities.length;
+      // Pull each note 40% toward the average velocity
+      this.state.channels[id].notes = notes.map(n => ({
+        ...n, velocity: Math.max(1, Math.min(127, Math.round(n.velocity + (avg - n.velocity) * 0.4))),
+      }));
+    }
+    this.updateAllCanvases();
+    this.setStatus('ok', 'Compressed — velocities narrowed toward average');
+  }
+
+  private globalSwell() {
+    const hasNotes = CHANNELS.some(id => this.state.channels[id].notes.length > 0);
+    if (!hasNotes) return;
+    this.pushHistory();
+    const totalDur = this.state.duration || 1;
+    for (const id of CHANNELS) {
+      this.state.channels[id].notes = this.state.channels[id].notes.map(n => {
+        const progress = n.time / totalDur; // 0 = start, 1 = end
+        // Scale velocity: start at 60% of original, end at 115%
+        const multiplier = 0.60 + progress * 0.55;
+        return { ...n, velocity: Math.max(1, Math.min(127, Math.round(n.velocity * multiplier))) };
+      });
+    }
+    this.updateAllCanvases();
+    this.setStatus('ok', 'Swell applied — quiet start, loud end');
+  }
+
+  private globalTimeStretch(factor: number, label: string) {
+    const hasNotes = CHANNELS.some(id => this.state.channels[id].notes.length > 0);
+    if (!hasNotes) return;
+    this.pushHistory();
+    for (const id of CHANNELS) {
+      this.state.channels[id].notes = this.state.channels[id].notes.map(n => ({
+        ...n,
+        time:     n.time * factor,
+        duration: n.duration * factor,
+      }));
+    }
+    this.state.duration = this.state.duration * factor;
+    if (this.seekSlider) this.seekSlider.max = String(this.state.duration);
+    this.scheduler?.extendDuration(this.state.duration);
+    this.updateAllCanvases();
+    this.setStatus('ok', `${label} — all timings ${factor < 1 ? 'halved' : 'doubled'}`);
   }
 
   // ── Channel transpose ─────────────────────────────────────────
@@ -2574,6 +2916,16 @@ class App {
     this.updateTimeDisplay(0);
     this.currentTime = 0;
     this.humanizeBtn.disabled = false;
+    // Reset swing toggle state when a new song is generated
+    if (this.swingActive) {
+      this.swingActive = false;
+      const swingBtn = document.getElementById('global-swing') as HTMLButtonElement | null;
+      if (swingBtn) {
+        swingBtn.style.opacity   = '0.55';
+        swingBtn.style.outline   = 'none';
+        swingBtn.style.background = '';
+      }
+    }
   }
 
   // ── Playback ─────────────────────────────────────────────────
@@ -3383,8 +3735,16 @@ class App {
     for (const id of CHANNELS) {
       if (this.regenBtns[id])    this.regenBtns[id].disabled    = !canRegen;
       if (this.exportChBtns[id]) this.exportChBtns[id].disabled = !hasNotes;
-      const simplifyBtn = document.getElementById(`simplify-${id}`) as HTMLButtonElement | null;
-      if (simplifyBtn) simplifyBtn.disabled = this.state.channels[id].notes.length === 0;
+      const chHasNotes = this.state.channels[id].notes.length > 0;
+      for (const name of ['simplify','ghost','boost','staccato','legato','harmonize','retrograde','oct-up','oct-dn']) {
+        const btn = document.getElementById(`${name}-${id}`) as HTMLButtonElement | null;
+        if (btn) btn.disabled = !chHasNotes;
+      }
+    }
+    // Enable global post-gen buttons when any notes exist
+    for (const name of ['global-swing','global-compress','global-swell','global-doubletime','global-halftime']) {
+      const btn = document.getElementById(name) as HTMLButtonElement | null;
+      if (btn) btn.disabled = !hasNotes;
     }
   }
 }

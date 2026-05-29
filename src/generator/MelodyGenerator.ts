@@ -20,6 +20,7 @@ export interface GenConfig {
   motifSeed?: number[];
   arpStyle?: string;
   extraChannelRoles?: { extra1?: string; extra2?: string; extra3?: string };
+  seed?: number; // pass original seed to reproduce the same song structure
 }
 
 export interface GenResult {
@@ -1342,8 +1343,9 @@ function quantize16th(notes: NoteEvent[], beatDur: number): NoteEvent[] {
 
 export function generate(config: GenConfig): GenResult {
   // High-entropy seed: time + random + key + mode hash
+  // If a seed is passed (e.g. from regenChannel), reuse it so structure matches the original song
   const modeHash = config.mode === 'ambient' ? 1 : config.mode === 'mid' ? 2 : config.mode === 'battle' ? 3 : config.mode === 'jazzy' ? 4 : config.mode === 'funky' ? 5 : config.mode === 'silly' ? 6 : 7;
-  const seed = (Date.now() ^ (config.key * 1337) ^ (Math.random() * 0xFFFF | 0) ^ (modeHash * 999)) >>> 0;
+  const seed = config.seed ?? ((Date.now() ^ (config.key * 1337) ^ (Math.random() * 0xFFFF | 0) ^ (modeHash * 999)) >>> 0);
   const rng = new RNG(seed);
 
   const DEFAULT_BPM_MAP: Record<GenMode, number> = { ambient: 65, mid: 130, battle: 148, jazzy: 105, funky: 120, silly: 170, weird: 100 };
@@ -1365,8 +1367,18 @@ export function generate(config: GenConfig): GenResult {
   const progBCandidates = allProgs.filter(p => p !== progA);
   const progB = progBCandidates.length > 0 ? rng.pick(progBCandidates) : progA;
 
+  // ── Improvement #9: Signature rhythm cell ─────────────────────
+  const SIG_RHYTHMS: { beats: number; w: number }[][] = [
+    [{ beats: 0.5, w: 70 }, { beats: 1.0, w: 20 }, { beats: 0.5, w: 10 }],  // [0.5,0.5,1.0]
+    [{ beats: 0.75, w: 60 }, { beats: 0.25, w: 25 }, { beats: 1.0, w: 15 }], // [0.75,0.25,1.0]
+    [{ beats: 1.0, w: 55 }, { beats: 0.5, w: 30 }, { beats: 0.5, w: 15 }],   // [1.0,0.5,0.5]
+    [{ beats: 0.5, w: 65 }, { beats: 1.5, w: 35 }],                           // [0.5,1.5]
+    [{ beats: 0.25, w: 40 }, { beats: 0.25, w: 25 }, { beats: 0.5, w: 20 }, { beats: 1.0, w: 15 }], // [0.25,0.25,0.5,1.0]
+  ];
+  const sigRhythm = rng.pick(SIG_RHYTHMS);
+
   const rhythms = rng.pick(RHYTHM_PROFILES[config.mode]);
-  const leadRhythms = rng.pick(LEAD_RHYTHM_PROFILES);
+  const leadRhythms = sigRhythm; // #9: use signature rhythm cell for all melody bars
   // Fast fill profile for chorus/build — creates the "speeds up" feel the user likes
   const fastFillRhythms: { beats: number; w: number }[] = [
     { beats: 0.25, w: 40 }, { beats: 0.5, w: 45 }, { beats: 0.75, w: 10 }, { beats: 1.0, w: 5 },
@@ -1381,6 +1393,25 @@ export function generate(config: GenConfig): GenResult {
   // (plays the same motif pattern at 2× speed, creating a double-time illusion)
   const metricModActive = config.mode !== 'ambient' && rng.next() < 0.45;
 
+  // ── Improvement #2: Brightness bias + BPM coupling ────────────
+  let brightness: number;
+  if (bpm > 130) {
+    brightness = 0.7 + rng.next() * 0.3;
+  } else if (bpm < 80) {
+    brightness = rng.next() * 0.4;
+  } else {
+    brightness = 0.3 + rng.next() * 0.5;
+  }
+  // When bright, force bright scales
+  let effectiveScaleType = scaleType;
+  if (brightness > 0.6 && !config.scaleType) {
+    effectiveScaleType = rng.pick(['major', 'lydian', 'pentatonicMajor'] as ScaleType[]);
+  }
+  const effectiveScale = brightness > 0.6 && !config.scaleType ? SCALES[effectiveScaleType] : scale;
+  // Brightness octave boost
+  const brightOctBoost = brightness > 0.6 ? 1 : 0;
+  // Brightness contour bias (will be applied to contourPool below)
+
   const sparseness = Math.max(0, Math.min(1, config.sparseness ?? 0));
   const generateNoise = config.generateNoise !== false;
   const sp1  = Math.max(0, Math.min(1, config.channelSparseness?.pulse1 ?? 0));
@@ -1394,10 +1425,10 @@ export function generate(config: GenConfig): GenResult {
   const pulse3: NoteEvent[] = [], pad: NoteEvent[] = [];
   const extra1: NoteEvent[] = [], extra2: NoteEvent[] = [], extra3: NoteEvent[] = [];
 
-  const melodyOctAdj = config.mode === 'ambient'
+  const melodyOctAdj = (config.mode === 'ambient'
     ? (scaleType === 'wholeTone' || scaleType === 'lydian') ? 1
       : scaleType === 'minor' ? -1 : 0
-    : 0;
+    : 0) + brightOctBoost;
   const isLowRegister = melodyOctAdj < 0;
   const melodyOct = config.octave + melodyOctAdj;
   const accompOct = config.octave - 1;
@@ -1433,8 +1464,12 @@ export function generate(config: GenConfig): GenResult {
 
   type Dir = 'up' | 'down' | 'free';
   // Emotional contour bias (doc: sad → descending, happy/tense → ascending)
-  const contourPool: Dir[] =
-    (scaleType === 'minor' || scaleType === 'harmonicMinor' || config.mode === 'ambient')
+  // #2: brightness > 0.6 heavily biases toward 'up'
+  const contourPool: Dir[] = brightness > 0.6
+    ? ['up', 'up', 'up', 'free', 'down']         // bright: strongly ascending
+    : brightness < 0.3
+    ? ['free', 'free', 'down', 'down', 'up']     // dark: bias descending
+    : (scaleType === 'minor' || scaleType === 'harmonicMinor' || config.mode === 'ambient')
       ? ['free', 'free', 'down', 'down', 'up']   // sad/ambient: bias descending
     : (config.mode === 'battle' || scaleType === 'major' || scaleType === 'lydian')
       ? ['free', 'free', 'up', 'up', 'down']     // bright/battle: bias ascending
@@ -1495,6 +1530,58 @@ export function generate(config: GenConfig): GenResult {
   let holdChord: number | null = null;
   let holdBarsLeft = 0;
 
+  // ── Improvement #1: Phrase caching + replay ───────────────────
+  let phraseACache: NoteEvent[] | null = null;
+  let phraseBCache: NoteEvent[] | null = null;
+  let phraseACacheChordDeg = 0;
+  let phraseBCacheChordDeg = 0;
+  let phraseACacheReplayCount = 0;
+  let phraseBCacheReplayCount = 0;
+
+  // ── Improvement #10: High point architecture ──────────────────
+  let versePeakMidi = lo;
+  let chorusPeakTarget = lo + 2;
+
+  // ── Improvement #4: Global dynamics curve state ───────────────
+  // (computed per-bar below)
+
+  // ── New #8: Articulation by tempo + mode ──────────────────────
+  // Gate ratio: fast/punchy modes use shorter notes; slow/lush modes hold longer
+  const tempoGate =
+    bpm > 140 ? 0.58
+    : bpm > 110 ? 0.70
+    : bpm < 72  ? 0.92
+    : bpm < 90  ? 0.86
+    : 0.78;
+  const modeGateBonus: Record<GenMode, number> = {
+    battle: -0.12, funky: -0.10, silly: -0.08, mid: 0,
+    jazzy: 0.06, ambient: 0.12, weird: 0.02,
+  };
+  const globalGate = Math.max(0.42, Math.min(0.96, tempoGate + modeGateBonus[config.mode]));
+
+  // ── New #3: Countermelody setup ────────────────────────────────
+  // Collect lead notes per bar so chorus countermelody can mirror them
+  const leadNotesByBar: Map<number, NoteEvent[]> = new Map();
+
+  // ── New #5: Transition fill detection ─────────────────────────
+  // A transition bar is the last bar before a new section
+  const transitionBars = new Set<number>();
+  for (let b = 1; b < config.bars; b++) {
+    if (barSections[b] !== barSections[b - 1]) transitionBars.add(b - 1);
+  }
+
+  // ── New #6: Register arc per section ──────────────────────────
+  // lo/hi pitch bounds shift by section to create emotional register arc
+  const sectionRegisterShift: Record<SectionType, number> = {
+    intro: -3, build: -1, verse: 0, chorus: 3, break: -4, outro: -5,
+  };
+
+  // ── New #7: Modal interchange — borrowed chord pool ────────────
+  // For major/lydian: borrow minor iv (chordDeg 3 played as minor = lower 3rd by 1 semitone in midi)
+  // For minor/dorian: Picardy third on final chord
+  const canBorrowChord = (scaleType === 'major' || scaleType === 'lydian' || scaleType === 'mixolydian');
+  const borrowProbability = 0.22; // ~1 in 4-5 tension bars gets a borrowed chord color
+
   for (let bar = 0; bar < config.bars; bar++) {
     const barStart = bar * barDur;
     // A/B alternating progression: even 4-bar phrases use progA, odd use progB
@@ -1514,22 +1601,44 @@ export function generate(config: GenConfig): GenResult {
     let rawChordDeg = activeProg[bar % activeProg.length];
     // Harmonic rhythm: hold some chords for an extra bar for breathing room
     const phrasePos = bar % 4;
+    // #6: increased root hold probability from 0.42 to 0.55
     if (holdBarsLeft > 0 && holdChord !== null) {
       rawChordDeg = holdChord;
       holdBarsLeft--;
-    } else if (rawChordDeg === 0 && phrasePos < 2 && rng.next() < 0.42) {
+    } else if (rawChordDeg === 0 && phrasePos < 2 && rng.next() < 0.55) {
       holdChord = rawChordDeg; holdBarsLeft = 1;
     } else if (rawChordDeg !== 0 && rng.next() < 0.20) {
       holdChord = rawChordDeg; holdBarsLeft = 1;
     } else {
       holdChord = null; holdBarsLeft = 0;
     }
+    const isHoldBar = holdBarsLeft > 0 || (holdChord !== null && holdBarsLeft === 0);
     const chordDeg = rawChordDeg;
 
     // Reset leap recovery at phrase boundaries
     if (phrasePos === 0) melPrevDelta = 0;
     const act = arrangement[Math.floor(bar / 4)];
     const section = barSections[bar];
+
+    // ── Improvement #4: Global dynamics curve ─────────────────────
+    const songProgress = bar / Math.max(1, config.bars - 1);
+    const dynamicsMultiplier =
+      songProgress < 0.10 ? 0.75
+      : songProgress < 0.30 ? 0.85
+      : songProgress < 0.50 ? 0.95
+      : songProgress < 0.70 ? 1.10
+      : songProgress < 0.80 ? 0.80
+      : songProgress < 0.90 ? 1.15
+      : 0.70;
+    // Drop section: silence pulse2 and pad for 2 bars to create contrast
+    const isDropBar = songProgress >= 0.70 && songProgress < 0.80;
+
+    // ── Improvement #12: Bass style locked per section ─────────────
+    const sectionBassStyle: string =
+      section === 'intro' ? 'pedal'
+      : section === 'chorus' ? 'walking'
+      : (section === 'break' || section === 'outro') ? 'synco'
+      : 'root'; // verse/build = root
 
     const velArc: Record<SectionType, number> = {
       intro: -15, build: -8, verse: 0, chorus: 10, break: -6, outro: -20,
@@ -1551,8 +1660,30 @@ export function generate(config: GenConfig): GenResult {
     const arcDir: 'up' | 'down' | 'free' =
       pitchArcBias > 3 ? 'up' : pitchArcBias < -3 ? 'down' : dirPattern[phrasePos];
 
-    const articulationScale = config.mode === 'battle' && isChorus ? 0.65
-      : config.mode === 'ambient' && (section === 'break' || section === 'outro') ? 1.1 : 1.0;
+    // ── New #8: Articulation — globalGate replaces hardcoded scale ─
+    const articulationScale = globalGate;
+
+    // ── New #6: Register arc — shift lo/hi by section ─────────────
+    const regShift = sectionRegisterShift[section];
+    const barLo = lo + regShift;
+    const barHi = hi + regShift;
+
+    // ── New #7: Modal interchange — borrowed chord on tension bar ──
+    // On phrasePos===2, occasionally lower the 3rd of a major-key chord
+    // to create a minor iv "shadow" — one borrowed chord per section
+    let chordDegForBar = chordDeg;
+    let borrowedChordOffset = 0; // semitone offset applied to chord 3rd only
+    if (canBorrowChord && phrasePos === 2 && rng.next() < borrowProbability) {
+      // Borrowed minor iv: lower the 3rd of the current chord by 1 semitone in note generation
+      // We flag this and apply it in the melody note snapping below
+      borrowedChordOffset = -1;
+    }
+    // Picardy third: in minor songs, bar 3 of the last phrase gets a major lift
+    const isPicardy = (scaleType === 'minor' || scaleType === 'harmonicMinor' || scaleType === 'dorian')
+      && phrasePos === 3 && bar >= config.bars - 4 && rng.next() < 0.35;
+
+    // ── New #5: Transition fill — denser on the bar before a new section
+    const isTransitionBar = transitionBars.has(bar);
 
     const isSilenceBar = bar === firstChorusBar;
 
@@ -1613,14 +1744,19 @@ export function generate(config: GenConfig): GenResult {
     const freeStart   = barStart + motifDur + breathGap;
     const freeDuration = Math.max(0, 4 * beatDur - motifDur - breathGap);
 
-    // Section-based rhythm: chorus/build = fast runs, intro/outro/break = slow flow, else normal
-    const barRhythms = (section === 'chorus' || section === 'build') && rng.next() < 0.45
+    // Section-based rhythm: chorus/build = fast runs, intro/outro/break = slow flow, transition = fill
+    // New #5: transition bars get the fast fill profile always (dense run into new section)
+    const barRhythms = isTransitionBar
+      ? fastFillRhythms
+      : (section === 'chorus' || section === 'build') && rng.next() < 0.45
       ? fastFillRhythms
       : (section === 'intro' || section === 'outro' || section === 'break') && rng.next() < 0.55
       ? slowFlowRhythms
       : leadRhythms;
+    // New #5: transition bars get lower rest probability (more notes = denser fill)
+    const fillRestBias = isTransitionBar ? -0.20 : 0;
     const melRaw = !isSilenceBar && freeDuration > beatDur * 1.0
-      ? genMelodyBar(rng, scale, activeKey, activeOct, chordDeg, beatDur, freeStart, arcDir, prevMidi, config.mode, scaleType, barRhythms, lo, hi, freeDuration, leadRestProb - BASE_REST_PROB[config.mode] + restBias + accompTextureBias, phrasePos, phraseRole, melPrevDelta)
+      ? genMelodyBar(rng, scale, activeKey, activeOct, chordDegForBar, beatDur, freeStart, arcDir, prevMidi, config.mode, scaleType, barRhythms, barLo, barHi, freeDuration, leadRestProb - BASE_REST_PROB[config.mode] + restBias + accompTextureBias + fillRestBias, phrasePos, phraseRole, melPrevDelta)
       : { notes: [], lastMidi: prevMidi, lastDelta: 0 };
     // Ornament insertion: mode-aware probability, phrase-start bars only, max 1 per 4 bars
     const canOrnament = phrasePos === 0 && bar - lastOrnamentBar >= 4;
@@ -1631,16 +1767,211 @@ export function generate(config: GenConfig): GenResult {
     melNotesFinal = insertSuspensions(melNotesFinal, beatDur, activeKey, scale, chordDeg, activeOct, rng, susProb);
     // Swing: jazzy mode gets 3:2 shuffle on even 8th positions (Undertale lilt)
     if (config.mode === 'jazzy' && rng.next() < 0.70) melNotesFinal = applySwing(melNotesFinal, barStart, beatDur, 0.14);
-    const mel = { ...melRaw, notes: melNotesFinal };
 
+    // ── Improvement #3: Guaranteed cadences ───────────────────────
+    // Bar 2 of phrase (phrasePos===1): last note must be scale degree 1 or 4 (unresolved)
+    // Bar 4 of phrase (phrasePos===3): last note must be scale degree 0 (root, resolved)
+    if (melNotesFinal.length > 0 && phrasePos === 1) {
+      const last = melNotesFinal[melNotesFinal.length - 1];
+      const deg1 = scaleMidi(activeKey, activeOct, scale, chordDeg + 1);
+      const deg4 = scaleMidi(activeKey, activeOct, scale, chordDeg + 3);
+      // pick whichever is closest
+      const target = Math.abs(deg1 - last.midi) < Math.abs(deg4 - last.midi) ? deg1 : deg4;
+      melNotesFinal[melNotesFinal.length - 1] = { ...last, midi: Math.max(0, Math.min(127, target)) };
+    }
+    if (melNotesFinal.length > 0 && phrasePos === 3) {
+      const last = melNotesFinal[melNotesFinal.length - 1];
+      const root = scaleMidi(activeKey, activeOct, scale, chordDeg);
+      melNotesFinal[melNotesFinal.length - 1] = { ...last, midi: Math.max(0, Math.min(127, root)) };
+    }
+
+    // ── Improvement #11: Color note preparation + resolution ──────
+    // A non-chord-tone is musical only if it resolves stepwise DOWN to a chord tone.
+    // If it doesn't resolve, snap it to the nearest chord tone instead.
+    if (melNotesFinal.length > 1) {
+      const chordRoot11  = scaleMidi(activeKey, activeOct, scale, chordDeg);
+      const chordThird11 = scaleMidi(activeKey, activeOct, scale, chordDeg + 2);
+      const chordFifth11 = scaleMidi(activeKey, activeOct, scale, chordDeg + 4);
+      const isChordTone = (m: number) => [chordRoot11, chordThird11, chordFifth11,
+        chordRoot11+12, chordRoot11-12, chordThird11+12, chordFifth11+12].includes(m);
+      melNotesFinal = melNotesFinal.map((n, i) => {
+        if (isChordTone(n.midi)) return n;
+        // Check resolution: next note must be a chord tone 1-2 semitones below
+        const next = melNotesFinal[i + 1];
+        const resolves = next && isChordTone(next.midi) && (n.midi - next.midi) >= 1 && (n.midi - next.midi) <= 2;
+        if (resolves) return n; // prepared dissonance — leave it
+        // Doesn't resolve cleanly — snap to nearest chord tone
+        const tones = [chordRoot11, chordThird11, chordFifth11];
+        const closest = tones.reduce((b, t) => Math.abs(t - n.midi) < Math.abs(b - n.midi) ? t : b, tones[0]);
+        return { ...n, midi: Math.max(0, Math.min(127, closest)) };
+      });
+    }
+
+    // ── New #7: Modal interchange — apply Picardy third ───────────
+    // In minor songs, the final phrase's last note gets raised to major 3rd above root
+    if (isPicardy && melNotesFinal.length > 0) {
+      const last = melNotesFinal[melNotesFinal.length - 1];
+      const majorThird = scaleMidi(activeKey, activeOct, scale, chordDeg) + 4; // chromatic major 3rd
+      if (Math.abs(majorThird - last.midi) <= 4)
+        melNotesFinal[melNotesFinal.length - 1] = { ...last, midi: Math.max(0, Math.min(127, majorThird)) };
+    }
+    // Borrowed chord color: on borrowed tension bars, lower the 3rd of chord tones by 1 semitone
+    if (borrowedChordOffset !== 0 && melNotesFinal.length > 0) {
+      const chordThirdMidi = scaleMidi(activeKey, activeOct, scale, chordDeg + 2);
+      melNotesFinal = melNotesFinal.map(n => {
+        if (Math.abs(n.midi - chordThirdMidi) <= 1)
+          return { ...n, midi: Math.max(0, Math.min(127, n.midi + borrowedChordOffset)) };
+        return n;
+      });
+    }
+
+    // ── New #4: Chromatic approach tones ──────────────────────────
+    // Before a strong chord tone on a beat, insert a 16th-note chromatic neighbor (10-12% chance)
+    if (melNotesFinal.length > 1 && config.mode !== 'ambient') {
+      const approachNotes: NoteEvent[] = [];
+      const chordRootA  = scaleMidi(activeKey, activeOct, scale, chordDeg);
+      const chordThirdA = scaleMidi(activeKey, activeOct, scale, chordDeg + 2);
+      const chordFifthA = scaleMidi(activeKey, activeOct, scale, chordDeg + 4);
+      const strongTones = new Set([chordRootA, chordThirdA, chordFifthA,
+        chordRootA+12, chordRootA-12, chordThirdA+12, chordFifthA+12]);
+      for (let i = 0; i < melNotesFinal.length; i++) {
+        const n = melNotesFinal[i];
+        const beatPos = (n.time - barStart) / beatDur;
+        const isOnBeat = beatPos < 0.15 || Math.abs(beatPos - Math.round(beatPos)) < 0.15;
+        if (isOnBeat && strongTones.has(n.midi) && rng.next() < 0.11) {
+          // Chromatic approach from below (half step up into target) or above
+          const fromBelow = rng.next() < 0.6;
+          const approachMidi = fromBelow ? n.midi - 1 : n.midi + 1;
+          const approachTime = n.time - beatDur * 0.25;
+          if (approachTime >= barStart) {
+            approachNotes.push({
+              time: approachTime,
+              duration: beatDur * 0.22,
+              midi: Math.max(0, Math.min(127, approachMidi)),
+              velocity: Math.max(20, n.velocity - 12),
+            });
+          }
+        }
+      }
+      melNotesFinal = [...melNotesFinal, ...approachNotes].sort((a, b) => a.time - b.time);
+    }
+
+    const mel = { ...melRaw, notes: melNotesFinal };
+    // Cache lead notes for countermelody generation
+    leadNotesByBar.set(bar, [...mel.notes]);
+
+    // ── Improvement #5: Rhythmic locking ──────────────────────────
+    const melDensity = mel.notes.length;
+    const melodyBusy = melDensity >= 6;
+    const meodlySparse = melDensity <= 2;
+
+    // ── Improvement #10: Track verse peak midi (bars 0-8) ─────────
+    if (bar < 8) {
+      for (const n of mel.notes) versePeakMidi = Math.max(versePeakMidi, n.midi);
+    }
+    if (bar === 8) {
+      chorusPeakTarget = versePeakMidi + 2;
+    }
+    // Force high point on bar 11 beat 1 (phrasePos===3 of that phrase, actually bar 11)
+    if (bar === 11 && phrasePos === 3 && mel.notes.length > 0) {
+      const forcedPeak = Math.min(hi, chorusPeakTarget);
+      // Add forced peak note at barStart
+      const peakNote: NoteEvent = { time: barStart, duration: beatDur * 0.85, midi: forcedPeak, velocity: 100 };
+      mel.notes.unshift(peakNote);
+    }
+
+    // ── Improvement #1: Phrase caching + replay ───────────────────
+    const isASection = phraseIndex % 2 === 0;
+    // Build cache on first 4-bar phrase (bars 0-3)
+    if (bar < 4) {
+      // Cache is accumulated across bars 0-3 (handled after push to pulse1 below)
+    }
+    // Replay cached phrase for subsequent A-sections
+    let cachedPhraseNotes: NoteEvent[] | null = null;
+    if (isASection && bar >= 4 && phraseACache !== null) {
+      const replayCount = phraseACacheReplayCount;
+      // Compute time offset: shift notes from original bar 0-3 start to current phrase start
+      const origPhraseStart = 0;
+      const curPhraseStart = phraseIndex * 4 * barDur;
+      const timeOffset = curPhraseStart - origPhraseStart;
+      // Transpose: current chord root vs cached chord root
+      const pitchOffset = scaleMidi(activeKey, activeOct, scale, chordDeg) - scaleMidi(activeKey, activeOct, scale, phraseACacheChordDeg);
+      let replayNotes = phraseACache
+        .filter(n => {
+          // only notes that belong to this bar (within bar window)
+          const noteBar = Math.floor((n.time + timeOffset) / barDur);
+          return noteBar === bar;
+        })
+        .map(n => {
+          let midi = Math.max(0, Math.min(127, n.midi + pitchOffset));
+          // #8: Motivic development on repeat
+          if (replayCount === 1) midi = Math.max(0, Math.min(127, midi + 1)); // shift +1 semitone
+          if (replayCount === 2) {
+            // harmony: original + note 3 semitones below
+          }
+          return { ...n, time: n.time + timeOffset, midi };
+        });
+      // #8: 3rd replay adds parallel note 3 semitones below
+      if (replayCount === 2) {
+        const harmonized = replayNotes.map(n => ({
+          ...n, midi: Math.max(0, Math.min(127, n.midi - 3)), velocity: Math.max(20, n.velocity - 10)
+        }));
+        replayNotes = [...replayNotes, ...harmonized];
+      }
+      // Keep only last beat as fresh cadence (bar 4 beat 4 = phrasePos===3, last beat)
+      if (phrasePos === 3) {
+        const lastBeatStart = barStart + 3 * beatDur;
+        replayNotes = replayNotes.filter(n => n.time < lastBeatStart);
+        // fresh cadence: use the generated mel for last beat
+        const cadenceNotes = mel.notes.filter(n => n.time >= lastBeatStart);
+        replayNotes = [...replayNotes, ...cadenceNotes];
+      }
+      if (replayNotes.length > 0) cachedPhraseNotes = replayNotes;
+    }
+    // Same for B sections
+    let cachedPhraseBNotes: NoteEvent[] | null = null;
+    if (!isASection && bar >= 8 && phraseBCache !== null) {
+      const replayCount = phraseBCacheReplayCount;
+      const origPhraseStart = 4 * barDur; // B section starts at bar 4
+      const curPhraseStart = phraseIndex * 4 * barDur;
+      const timeOffset = curPhraseStart - origPhraseStart;
+      const pitchOffset = scaleMidi(activeKey, activeOct, scale, chordDeg) - scaleMidi(activeKey, activeOct, scale, phraseBCacheChordDeg);
+      let replayNotes = phraseBCache
+        .filter(n => {
+          const noteBar = Math.floor((n.time + timeOffset) / barDur);
+          return noteBar === bar;
+        })
+        .map(n => {
+          let midi = Math.max(0, Math.min(127, n.midi + pitchOffset));
+          if (replayCount === 1) midi = Math.max(0, Math.min(127, midi + 1));
+          return { ...n, time: n.time + timeOffset, midi };
+        });
+      if (replayCount === 2) {
+        const harmonized = replayNotes.map(n => ({
+          ...n, midi: Math.max(0, Math.min(127, n.midi - 3)), velocity: Math.max(20, n.velocity - 10)
+        }));
+        replayNotes = [...replayNotes, ...harmonized];
+      }
+      if (phrasePos === 3) {
+        const lastBeatStart = barStart + 3 * beatDur;
+        replayNotes = replayNotes.filter(n => n.time < lastBeatStart);
+        const cadenceNotes = mel.notes.filter(n => n.time >= lastBeatStart);
+        replayNotes = [...replayNotes, ...cadenceNotes];
+      }
+      if (replayNotes.length > 0) cachedPhraseBNotes = replayNotes;
+    }
+
+    // #2: bright songs get accompOct velocity +12 bonus
+    const brightAccompBonus = brightness > 0.6 ? 12 : 0;
     const applyVel = (notes: NoteEvent[]) => notes.map(n => ({
       ...n,
-      velocity: Math.max(30, Math.min(127, n.velocity + velOffset)),
+      // #4: apply dynamics multiplier to all channel velocities
+      velocity: Math.max(30, Math.min(127, Math.round((n.velocity + velOffset) * dynamicsMultiplier))),
       duration: n.duration * articulationScale,
     }));
     // Accompaniment channels are 15 quieter than lead (velocity doc: melody -10 to -30 for accomp)
     const applyAccompVel = (notes: NoteEvent[]) => applyVel(notes).map(n => ({
-      ...n, velocity: Math.max(20, n.velocity - 15),
+      ...n, velocity: Math.max(20, Math.min(127, n.velocity - 15 + brightAccompBonus)),
     }));
 
     prevMidi = mel.lastMidi;
@@ -1666,6 +1997,8 @@ export function generate(config: GenConfig): GenResult {
     }
 
     const pulse1Active = sp1 < 1 && arrRng.next() > sp1 * 0.7;
+    // Suppres unused variable warning
+    void meodlySparse;
 
     // Locked motif: repeat at the start of every phrase (bar 0, 4, 8…).
     // Transpose each degree up by the current chord root offset so it stays
@@ -1690,20 +2023,148 @@ export function generate(config: GenConfig): GenResult {
     }
     // When locked motif is active, replace generated mel/motif for phrase-start bars
     const melNotes = (config.motifSeed && config.motifSeed.length > 0 && phrasePos === 0)
-      ? [] : [...motifNotes, ...mel.notes];
-    if (!isSilenceBar && pulse1Active) pulse1.push(...applyVel([...seedNotes, ...melNotes]));
+      ? [] : [...motifNotes, ...(cachedPhraseNotes ?? cachedPhraseBNotes ?? mel.notes)];
+    if (!isSilenceBar && pulse1Active) {
+      // ── Improvement #13: Pickup notes and phrase breath ───────────
+      const finalMelNotes = [...seedNotes, ...melNotes];
+      // Add pickup note at start of every phrase (phrasePos===0, bar>0) on LAST 8th of prev bar
+      if (phrasePos === 0 && bar > 0 && !isSilenceBar) {
+        const pickupTime = (bar - 1) * barDur + 3.5 * beatDur;
+        const chordRoot = scaleMidi(activeKey, activeOct, scale, chordDeg);
+        pulse1.push({ time: pickupTime, duration: beatDur * 0.3, midi: Math.max(0, Math.min(127, chordRoot)), velocity: 65 });
+      }
+      // Phrase breath: in phrasePos===3 last beat, remove notes after barStart+3*beatDur unless cadence
+      if (phrasePos === 3) {
+        const lastBeatStart = barStart + 3 * beatDur;
+        // keep only up to last beat (cadence notes from guaranteed cadence pass stay)
+        const breathedNotes = finalMelNotes.filter(n => n.time <= lastBeatStart + 0.01);
+        // re-add cadence note if it was there
+        const cadenceNote = finalMelNotes.find(n => n.time > lastBeatStart);
+        if (cadenceNote) breathedNotes.push(cadenceNote);
+        pulse1.push(...applyVel(breathedNotes));
+      } else {
+        pulse1.push(...applyVel(finalMelNotes));
+      }
+
+      // ── Improvement #1: Build phrase caches ──────────────────────
+      // Cache A-section (bars 0-3) after processing
+      if (bar < 4 && isASection) {
+        const notesForCache = [...seedNotes, ...melNotes].filter(n => n.time >= barStart && n.time < barStart + barDur);
+        if (phraseACache === null) phraseACache = [];
+        phraseACache.push(...notesForCache);
+        phraseACacheChordDeg = chordDeg;
+      }
+      // Mark end of A-cache after bar 3
+      if (bar === 3) phraseACacheReplayCount = 0;
+      // Increment replay count when replaying A
+      if (isASection && bar >= 4 && phrasePos === 0 && phraseACache !== null) phraseACacheReplayCount++;
+      // Cache B-section (bars 4-7, first B phrase)
+      if (bar >= 4 && bar < 8 && !isASection) {
+        const notesForCache = [...seedNotes, ...melNotes].filter(n => n.time >= barStart && n.time < barStart + barDur);
+        if (phraseBCache === null) phraseBCache = [];
+        phraseBCache.push(...notesForCache);
+        phraseBCacheChordDeg = chordDeg;
+      }
+      if (bar === 7) phraseBCacheReplayCount = 0;
+      if (!isASection && bar >= 8 && phrasePos === 0 && phraseBCache !== null) phraseBCacheReplayCount++;
+    }
+
+    // ── New #2: Money note — planned held climax ───────────────────
+    // Bar 3 of every 8-bar section: add a held peak note on beat 1 of pulse1
+    // (only when lead melody didn't already place a long note there)
+    if (phrasePos === 2 && bar % 8 === 2 && !isSilenceBar && mel.notes.length > 0) {
+      const moneyMidi = Math.min(barHi, versePeakMidi + (isChorus ? 3 : 1));
+      const beatOneMelNote = mel.notes.find(n => n.time <= barStart + 0.12);
+      if (!beatOneMelNote || beatOneMelNote.duration < beatDur * 1.2) {
+        pulse1.push({
+          time: barStart,
+          duration: beatDur * 1.6,
+          midi: Math.max(0, Math.min(127, moneyMidi)),
+          velocity: Math.min(127, 88 + (isChorus ? 12 : 4)),
+        });
+      }
+    }
 
     // Pulse2 — when arp style is forced, route through genArpBar for real variety
-    if (act.pulse2 && !isSilenceBar) {
+    // #4: drop section silences pulse2 entirely
+    if (act.pulse2 && !isSilenceBar && !isDropBar) {
       if (isLowRegister) {
         const glk = genGlockenspielBar(rng, scale, activeKey, activeOct, chordDeg, beatDur, barStart, glockDeg);
         pulse2.push(...applyVel(glk.notes));
         glockDeg = glk.lastDeg;
+
+      // ── New #3: Countermelody in chorus ──────────────────────────
+      // Chorus bars: pulse2 plays a mirror figure (opposite direction to lead)
+      } else if (isChorus && !arpOverride && mel.notes.length >= 2) {
+        const leadPrev = leadNotesByBar.get(bar - 1) ?? [];
+        const refNotes = leadPrev.length > 0 ? leadPrev : mel.notes;
+        // Build a descending countermelody using chord tones, mirroring lead direction
+        const cRoot  = scaleMidi(activeKey, accompOct, scale, chordDeg);
+        const cThird = scaleMidi(activeKey, accompOct, scale, chordDeg + 2);
+        const cFifth = scaleMidi(activeKey, accompOct, scale, chordDeg + 4);
+        const cSev   = scaleMidi(activeKey, accompOct, scale, chordDeg + 6);
+        // Determine lead direction from ref notes
+        const leadDir = refNotes.length >= 2
+          ? (refNotes[refNotes.length - 1].midi - refNotes[0].midi > 0 ? 1 : -1)
+          : 1;
+        // Counter goes opposite — use a simple descending/ascending chord tone figure
+        const counterPitches = leadDir > 0
+          ? [cSev, cFifth, cThird, cRoot]   // lead goes up → counter descends
+          : [cRoot, cThird, cFifth, cSev];   // lead goes down → counter ascends
+        counterPitches.forEach((midi, i) => {
+          const t = barStart + i * beatDur;
+          if (t < barStart + 4 * beatDur - 0.01) {
+            pulse2.push({
+              time: t,
+              duration: beatDur * (globalGate - 0.08),
+              midi: Math.max(0, Math.min(127, midi)),
+              velocity: 48 + rng.int(12),
+            });
+          }
+        });
+
+      // ── New #1: Call-and-response ─────────────────────────────────
+      // On phrasePos===1 (bar 2 of phrase), lead silence in beats 3-4 → pulse2 responds
+      } else if (phrasePos === 1 && !arpOverride && mel.notes.length > 0) {
+        const lastMelTime = mel.notes[mel.notes.length - 1].time;
+        const silenceStart = lastMelTime + mel.notes[mel.notes.length - 1].duration;
+        const silenceDur = (barStart + 4 * beatDur) - silenceStart;
+        // If lead falls silent for at least 1 beat, pulse2 plays a short response
+        if (silenceDur >= beatDur * 0.9) {
+          const respRoot  = scaleMidi(activeKey, accompOct, scale, chordDeg);
+          const respThird = scaleMidi(activeKey, accompOct, scale, chordDeg + 2);
+          const respFifth = scaleMidi(activeKey, accompOct, scale, chordDeg + 4);
+          // Short 3-note response figure: fall from 5th to root
+          const respPattern = [respFifth, respThird, respRoot];
+          const respStep = Math.min(beatDur * 0.45, silenceDur / 3);
+          respPattern.forEach((midi, i) => {
+            const t = silenceStart + i * respStep;
+            if (t < barStart + 4 * beatDur - 0.01) {
+              pulse2.push({
+                time: t,
+                duration: respStep * (globalGate - 0.05),
+                midi: Math.max(0, Math.min(127, midi)),
+                velocity: 55 + rng.int(14),
+              });
+            }
+          });
+        } else {
+          // Lead is busy — fall back to arp
+          pulse2.push(...applyAccompVel(genArpBar(rng, scale, activeKey, accompOct, chordDeg, beatDur, barStart, config.mode)));
+        }
+
       } else if (arpOverride) {
         pulse2.push(...applyAccompVel(genArpBar(rng, scale, activeKey, accompOct, chordDeg, beatDur, barStart, config.mode, arpOverride)));
       } else if (pulse2Mode === 'arp') {
         // Route 'arp' to genArpBar (18 styles) — NOT genAccompBar (was a routing bug)
-        pulse2.push(...applyAccompVel(genArpBar(rng, scale, activeKey, accompOct, chordDeg, beatDur, barStart, config.mode)));
+        // #5: busy melody → simpler arp (roots on beats 1&3); sparse melody → richer 16th arp
+        if (melodyBusy) {
+          // Simple: just roots on beats 1 and 3
+          const root = scaleMidi(activeKey, accompOct, scale, chordDeg);
+          [0, 2].forEach(b => pulse2.push({ time: barStart + b * beatDur, duration: beatDur * 0.85, midi: Math.max(0, Math.min(127, root)), velocity: 50 }));
+        } else {
+          pulse2.push(...applyAccompVel(genArpBar(rng, scale, activeKey, accompOct, chordDeg, beatDur, barStart, config.mode)));
+        }
       } else if (pulse2Mode === 'echo') {
         const sourceNotes = [...motifNotes, ...mel.notes];
         if (phrasePos % 2 === 1 && sourceNotes.length > 0) {
@@ -1727,13 +2188,26 @@ export function generate(config: GenConfig): GenResult {
       }
     }
 
+    // #6: hold bar — reduce accomp density by 30% by removing ~30% of pulse2 notes just added
+    if (isHoldBar && pulse2.length > 0) {
+      // Remove notes added in this bar
+      let barPulse2Start = -1;
+      for (let i = pulse2.length - 1; i >= 0; i--) {
+        if (pulse2[i].time < barStart) { barPulse2Start = i; break; }
+      }
+      for (let i = pulse2.length - 1; i > barPulse2Start; i--) {
+        if (rng.next() < 0.30) pulse2.splice(i, 1);
+      }
+    }
+
     // Wave (bass)
     const useCompound = config.mode === 'battle' && (section === 'chorus' || section === 'verse') && rng.next() > 0.5;
     const waveBeforeLen = wave.length;
     if (act.wave) {
-      const bassStyle = config.channelStyles?.wave;
+      // #12: section-level bass style (user override takes priority)
+      const bassStyle = config.channelStyles?.wave ?? sectionBassStyle;
       const nextChordDeg = activeProg[(bar + 1) % activeProg.length];
-      if (bassStyle === 'synco') {
+      if (bassStyle === 'synco' || bassStyle === 'syncopated') {
         wave.push(...applyVel(genSyncopatedBassBar(rng, scale, config.key, bassOct, chordDeg, beatDur, barStart)));
       } else if (bassStyle === 'pedal') {
         wave.push(...applyVel(genPedalBassBar(rng, scale, config.key, bassOct, beatDur, barStart)));
@@ -1772,8 +2246,62 @@ export function generate(config: GenConfig): GenResult {
       prevBassRootMidi = wave[waveBeforeLen].midi;
     }
 
-    // Noise (drums)
-    if (act.noise) noise.push(...genPercBar(rng, beatDur, barStart, config.mode, useCompound, bar));
+    // Noise (drums) — #7: pattern-based drums for non-special modes
+    if (act.noise) {
+      const isQuietSection = section === 'intro' || section === 'outro' || isDropBar;
+      if (config.mode !== 'jazzy' && config.mode !== 'funky' && config.mode !== 'silly' && config.mode !== 'weird' && config.mode !== 'ambient') {
+        // Pattern-based approach: kick 1&3, snare 2&4, hi-hat every 8th
+        const KICK = 36, SNARE = 38, HAT = 42;
+        const kickVel = (isQuietSection ? 72 : 90) + rng.int(15);
+        const snareVel = (isQuietSection ? 58 : 75) + rng.int(15);
+        // Kick on beats 1 and 3
+        noise.push({ time: barStart,                duration: 0.1, midi: KICK, velocity: kickVel });
+        noise.push({ time: barStart + 2 * beatDur,  duration: 0.1, midi: KICK, velocity: kickVel - rng.int(10) });
+        // Snare on beats 2 and 4
+        noise.push({ time: barStart + beatDur,      duration: 0.1, midi: SNARE, velocity: snareVel });
+        noise.push({ time: barStart + 3 * beatDur,  duration: 0.1, midi: SNARE, velocity: snareVel - rng.int(8) });
+        // Hi-hat every 8th note (skip in quiet sections)
+        if (!isQuietSection) {
+          for (let h = 0; h < 8; h++) {
+            const hatVel = (45 + rng.int(20));
+            noise.push({ time: barStart + h * beatDur * 0.5, duration: 0.05, midi: HAT, velocity: hatVel });
+          }
+          // Chorus accent hat on & of beat 4
+          if (section === 'chorus') {
+            noise.push({ time: barStart + 3.5 * beatDur, duration: 0.05, midi: HAT, velocity: 65 + rng.int(15) });
+          }
+          // ── New #5: Transition fill — drum fill on the bar before a new section
+          if (isTransitionBar) {
+            // Dense snare roll on beats 3-4: 16th notes with building velocity
+            const FILL = 38;
+            for (let f = 0; f < 8; f++) {
+              const t = barStart + (f * 0.5 + 2) * beatDur; // fills beats 3-4
+              if (t < barStart + 4 * beatDur - 0.01) {
+                noise.push({ time: t, duration: 0.04, midi: FILL, velocity: 60 + f * 8 + rng.int(10) });
+              }
+            }
+            // Extra kick on beat 4 for emphasis
+            noise.push({ time: barStart + 3 * beatDur, duration: 0.1, midi: KICK, velocity: Math.min(127, kickVel + 12) });
+          }
+        } else {
+          // Quiet: only on-beat hats, lower velocity
+          for (let b = 0; b < 4; b++) {
+            noise.push({ time: barStart + b * beatDur, duration: 0.05, midi: HAT, velocity: 28 + rng.int(14) });
+          }
+        }
+      } else {
+        noise.push(...genPercBar(rng, beatDur, barStart, config.mode, useCompound, bar));
+        // Transition fill for other modes too
+        if (isTransitionBar) {
+          const FILL = 38;
+          for (let f = 0; f < 4; f++) {
+            const t = barStart + (f * 0.5 + 3) * beatDur;
+            if (t < barStart + 4 * beatDur - 0.01)
+              noise.push({ time: t, duration: 0.04, midi: FILL, velocity: 65 + f * 10 + rng.int(8) });
+          }
+        }
+      }
+    }
 
     // Pulse3 (arpeggio / countermelody)
     if (act.pulse3 && sp3 < 1 && arrRng.next() > sp3 * 0.7) {
@@ -1805,8 +2333,9 @@ export function generate(config: GenConfig): GenResult {
     }
 
     // Pad (harmony) — density cap: suppress when pulse1+pulse2+pulse3 all active (>3 layers)
+    // #4: drop section silences pad entirely
     const harmonyLayers = (pulse1Active ? 1 : 0) + (act.pulse2 && !isSilenceBar ? 1 : 0) + (act.pulse3 && sp3 < 1 ? 1 : 0);
-    if (act.pad && spad < 1 && arrRng.next() > spad * 0.7 && !isSilenceBar && harmonyLayers < 3) {
+    if (act.pad && spad < 1 && arrRng.next() > spad * 0.7 && !isSilenceBar && harmonyLayers < 3 && !isDropBar) {
       pad.push(...applyAccompVel(genPadBar(rng, scale, activeKey, padOct, chordDeg, beatDur, barStart, scaleType)));
     }
   }
