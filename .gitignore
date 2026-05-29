@@ -1,5 +1,6 @@
 node_modules/
 dist/
+release/
 *.sf2
 *.mid
 *.midi
