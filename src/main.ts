@@ -2311,7 +2311,7 @@ class App {
     this.state.channels[id].notes = result.channels[id];
     this.drawPianoRoll(id, this.currentTime);
     const c = result.channels[id].length;
-    this.noteCountEls[id].textContent = `${c} note${c !== 1 ? 's' : ''}`;
+    if (this.noteCountEls[id]) this.noteCountEls[id].textContent = `${c} note${c !== 1 ? 's' : ''}`;
     this.setStatus('ok', `Regenned ${id} — same key, scale, and progressions as the original song`);
   }
 
@@ -3725,7 +3725,10 @@ class App {
   private updateNoteCountBadges() {
     for (const id of CHANNELS) {
       const c = this.state.channels[id].notes.length;
-      this.noteCountEls[id].textContent = `${c} note${c !== 1 ? 's' : ''}`;
+      // Extra channels (extra1-3) only have a row/badge when active, so the element
+      // may not exist — guard against null instead of crashing the generator.
+      const el = this.noteCountEls[id];
+      if (el) el.textContent = `${c} note${c !== 1 ? 's' : ''}`;
     }
   }
 
