@@ -1,0 +1,82 @@
+# Builds Bloop Maker desktop installers for macOS, Windows, and Linux.
+#
+# How to use:
+#   - Push a version tag to publish a GitHub Release with installers attached:
+#       git tag v1.0.0 && git push origin v1.0.0
+#   - OR run it manually from the repo's "Actions" tab (workflow_dispatch) to get
+#     downloadable build artifacts without creating a public release.
+#
+# Builds are UNSIGNED (no Apple/Windows signing certificates). Users may see an
+# "unidentified developer" / SmartScreen warning — normal for indie itch.io tools.
+# Mac users right-click -> Open; Windows users click "More info" -> "Run anyway".
+
+name: Build Desktop Apps
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write   # required to create/attach GitHub Releases
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            name: mac
+          - os: windows-latest
+            name: windows
+          - os: ubuntu-latest
+            name: linux
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web bundle
+        run: npm run build
+
+      - name: Package desktop app
+        run: npx electron-builder --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Skip macOS code signing — we ship unsigned installers.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bloop-maker-${{ matrix.name }}
+          path: |
+            release/*.dmg
+            release/*.exe
+            release/*.AppImage
+            release/*.deb
+          if-no-files-found: ignore
+
+      - name: Attach installers to GitHub Release (tag pushes only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/*.dmg
+            release/*.exe
+            release/*.AppImage
+            release/*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
