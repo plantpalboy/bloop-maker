@@ -269,6 +269,8 @@ class App {
   private lockedMotif: number[] = [];
   // Arp style override ('auto' = random per song)
   private arpStyleOverride = 'auto';
+  // When true, Randomize Everything also picks a random archetype + arp style
+  private randomizeArchAndArp = false;
   // Last generation metadata for inspector + JSON export
   private lastSeed = 0;
   private sillyPrefix = 'bloop';
@@ -479,34 +481,58 @@ class App {
               </div>
               <div class="gen-row" style="align-items:center;gap:3px;flex-wrap:wrap">
                 <span class="gen-label">Archetypes</span>
-                <button id="motif-preset-hook"     class="btn-sm" style="font-size:10px">&#8599; Hook</button>
-                <button id="motif-preset-hero"     class="btn-sm" style="font-size:10px">&#8593; Hero</button>
-                <button id="motif-preset-sad"      class="btn-sm" style="font-size:10px">&#8595; Sad</button>
-                <button id="motif-preset-wave"     class="btn-sm" style="font-size:10px">&#8767; Wave</button>
-                <button id="motif-preset-fanfare"  class="btn-sm" style="font-size:10px">&#9835; Fanfare</button>
-                <button id="motif-preset-quest"    class="btn-sm" style="font-size:10px">&#8594; Quest</button>
-                <button id="motif-preset-boss"     class="btn-sm" style="font-size:10px">&#9760; Boss</button>
-                <button id="motif-preset-chase"    class="btn-sm" style="font-size:10px">&#9889; Chase</button>
-                <button id="motif-preset-bounce"   class="btn-sm" style="font-size:10px">&#8645; Bounce</button>
-                <button id="motif-preset-march"    class="btn-sm" style="font-size:10px">&#9654; March</button>
-                <button id="motif-preset-jazz"     class="btn-sm" style="font-size:10px">&#9837; Jazz</button>
-                <button id="motif-preset-skip"     class="btn-sm" style="font-size:10px">&#8646; Skip</button>
-                <button id="motif-preset-lullaby"  class="btn-sm" style="font-size:10px">&#9675; Lullaby</button>
-                <button id="motif-preset-tumble"   class="btn-sm" style="font-size:10px">&#8600; Tumble</button>
-                <button id="motif-preset-spiral"   class="btn-sm" style="font-size:10px">&#8635; Spiral</button>
-                <button id="motif-preset-taunt"    class="btn-sm" style="font-size:10px">&#8604; Taunt</button>
-                <button id="motif-preset-triumph"  class="btn-sm" style="font-size:10px">&#9733; Triumph</button>
-                <button id="motif-preset-lament"   class="btn-sm" style="font-size:10px">&#9834; Lament</button>
-                <button id="motif-preset-panic"    class="btn-sm" style="font-size:10px">&#10033; Panic</button>
-                <button id="motif-preset-creep"    class="btn-sm" style="font-size:10px">&#9680; Creep</button>
-                <button id="motif-preset-hiccup"   class="btn-sm" style="font-size:10px">&#8252; Hiccup</button>
-                <button id="motif-preset-boing"    class="btn-sm" style="font-size:10px">&#8597; Boing</button>
-                <button id="motif-preset-wobbly"   class="btn-sm" style="font-size:10px">&#126; Wobbly</button>
-                <button id="motif-preset-dizzy"    class="btn-sm" style="font-size:10px">&#9862; Dizzy</button>
-                <button id="motif-preset-glitch"   class="btn-sm" style="font-size:10px">&#9889; Glitch</button>
-                <button id="motif-preset-alien"    class="btn-sm" style="font-size:10px">&#9251; Alien</button>
-                <button id="motif-preset-trance"   class="btn-sm" style="font-size:10px">&#9736; Trance</button>
-                <button id="motif-preset-backwards" class="btn-sm" style="font-size:10px">&#8612; Bkwds</button>
+                <button id="arch-rand-toggle" class="btn-sm" style="font-size:10px;opacity:0.5" title="When lit, Randomize Everything also picks a random archetype &amp; arp style">&#127922; Rnd</button>
+                <button id="motif-preset-hook"     class="btn-sm" style="font-size:10px" title="4-note · leap to 5th, stepwise descent">&#8599; Hook</button>
+                <button id="motif-preset-hero"     class="btn-sm" style="font-size:10px" title="4-note · rising stepwise to 5th">&#8593; Hero</button>
+                <button id="motif-preset-sad"      class="btn-sm" style="font-size:10px" title="4-note · descending from 5th to root">&#8595; Sad</button>
+                <button id="motif-preset-wave"     class="btn-sm" style="font-size:10px" title="5-note · arch up and back">&#8767; Wave</button>
+                <button id="motif-preset-fanfare"  class="btn-sm" style="font-size:10px" title="5-note · arpeggio up through 7th, partial descent">&#9835; Fanfare</button>
+                <button id="motif-preset-quest"    class="btn-sm" style="font-size:10px" title="5-note · stepwise rise, lands on 6th (unresolved)">&#8594; Quest</button>
+                <button id="motif-preset-boss"     class="btn-sm" style="font-size:10px" title="5-note · dark — starts on 7th, drops to root">&#9760; Boss</button>
+                <button id="motif-preset-chase"    class="btn-sm" style="font-size:10px" title="5-note · active leaping root→5th→3rd→7th→5th">&#9889; Chase</button>
+                <button id="motif-preset-bounce"   class="btn-sm" style="font-size:10px" title="4-note · root-5th ostinato">&#8645; Bounce</button>
+                <button id="motif-preset-march"    class="btn-sm" style="font-size:10px" title="4-note · repeated note then rise">&#9654; March</button>
+                <button id="motif-preset-jazz"     class="btn-sm" style="font-size:10px" title="4-note · maj7 arpeggio outline">&#9837; Jazz</button>
+                <button id="motif-preset-skip"     class="btn-sm" style="font-size:10px" title="5-note · playful alternating leaps">&#8646; Skip</button>
+                <button id="motif-preset-lullaby"  class="btn-sm" style="font-size:10px" title="5-note · gentle rocking 3rd→2nd→root→2nd→3rd">&#9675; Lullaby</button>
+                <button id="motif-preset-tumble"   class="btn-sm" style="font-size:10px" title="5-note · long fall from 5th through 7th to root">&#8600; Tumble</button>
+                <button id="motif-preset-spiral"   class="btn-sm" style="font-size:10px" title="6-note · winding upward: step up, step back, repeat">&#8635; Spiral</button>
+                <button id="motif-preset-taunt"    class="btn-sm" style="font-size:10px" title="5-note · repeated root jab then 4th drop">&#8604; Taunt</button>
+                <button id="motif-preset-triumph"  class="btn-sm" style="font-size:10px" title="6-note · 5th, sustained, then descend with flair">&#9733; Triumph</button>
+                <button id="motif-preset-lament"   class="btn-sm" style="font-size:10px" title="5-note · chromatic descent using 7th-6th-4th-3rd">&#9834; Lament</button>
+                <button id="motif-preset-panic"    class="btn-sm" style="font-size:10px" title="6-note · wild alternating leaps — jagged, tense">&#10033; Panic</button>
+                <button id="motif-preset-creep"    class="btn-sm" style="font-size:10px" title="5-note · neighbor tone oscillation around root">&#9680; Creep</button>
+                <button id="motif-preset-hiccup"   class="btn-sm" style="font-size:10px" title="6-note · stuttery repeats with surprise leaps">&#8252; Hiccup</button>
+                <button id="motif-preset-boing"    class="btn-sm" style="font-size:10px" title="5-note · giant bounces between root and 7th">&#8597; Boing</button>
+                <button id="motif-preset-wobbly"   class="btn-sm" style="font-size:10px" title="6-note · wobbles up one step at a time from root">&#126; Wobbly</button>
+                <button id="motif-preset-dizzy"    class="btn-sm" style="font-size:10px" title="6-note · spins in circles, never settles">&#9862; Dizzy</button>
+                <button id="motif-preset-glitch"   class="btn-sm" style="font-size:10px" title="6-note · alternates between high and low extremes">&#9889; Glitch</button>
+                <button id="motif-preset-alien"    class="btn-sm" style="font-size:10px" title="6-note · tritone / whole-tone oscillation">&#9251; Alien</button>
+                <button id="motif-preset-trance"   class="btn-sm" style="font-size:10px" title="6-note · hypnotic repeats then sudden 6th jump">&#9736; Trance</button>
+                <button id="motif-preset-backwards" class="btn-sm" style="font-size:10px" title="6-note · descends then climbs back — reversed arch">&#8612; Bkwds</button>
+                <button id="motif-preset-dream"    class="btn-sm" style="font-size:10px" title="6-note · floaty unresolved shimmer">&#9730; Dream</button>
+                <button id="motif-preset-clock"    class="btn-sm" style="font-size:10px" title="6-note · tick-tock alternating root + step">&#9201; Clock</button>
+                <button id="motif-preset-prayer"   class="btn-sm" style="font-size:10px" title="6-note · symmetrical arch resolving to root">&#9674; Prayer</button>
+                <button id="motif-preset-stomp"    class="btn-sm" style="font-size:10px" title="6-note · three root hits, leap, return">&#9632; Stomp</button>
+                <button id="motif-preset-moonwalk" class="btn-sm" style="font-size:10px" title="6-note · gliding back-and-forth around the 5th">&#8651; Mwalk</button>
+                <button id="motif-preset-stutter"  class="btn-sm" style="font-size:10px" title="6-note · two quick repeats then a step-up pair">&#9835; Stutter</button>
+                <button id="motif-preset-sneak"    class="btn-sm" style="font-size:10px" title="6-note · creeping up then sudden leap down">&#128064; Sneak</button>
+                <button id="motif-preset-cry"      class="btn-sm" style="font-size:10px" title="6-note · falling from 5th, each note lower">&#128149; Cry</button>
+                <button id="motif-preset-dance"    class="btn-sm" style="font-size:10px" title="6-note · bright upward staircase I→III→V→III→V→VII">&#9836; Dance</button>
+                <button id="motif-preset-signal"   class="btn-sm" style="font-size:10px" title="6-note · call-and-response: two hits, answer phrase">&#9135; Signal</button>
+                <button id="motif-preset-pendulum" class="btn-sm" style="font-size:10px" title="6-note · swinging evenly around the 3rd">&#9679; Pendulm</button>
+                <button id="motif-preset-gallop"   class="btn-sm" style="font-size:10px" title="6-note · dotted-rhythm feel: two shorts then a leap">&#9650; Gallop</button>
+                <button id="motif-preset-jab"      class="btn-sm" style="font-size:10px" title="3-note · root → 5th → back, one punch">&#9733; Jab</button>
+                <button id="motif-preset-sigh"     class="btn-sm" style="font-size:10px" title="3-note · gentle fall from 5th to root">&#9834; Sigh</button>
+                <button id="motif-preset-call"     class="btn-sm" style="font-size:10px" title="3-note · three rising steps, open question">&#8599; Call</button>
+                <button id="motif-preset-drop"     class="btn-sm" style="font-size:10px" title="3-note · big drop from 7th through 4th to root">&#8600; Drop</button>
+                <button id="motif-preset-ping"     class="btn-sm" style="font-size:10px" title="3-note · root, leap high, settle on 5th">&#9675; Ping</button>
+                <button id="motif-preset-journey"  class="btn-sm" style="font-size:10px" title="8-note · rise to 5th then full stepwise descent">&#9684; Journey</button>
+                <button id="motif-preset-thunder"  class="btn-sm" style="font-size:10px" title="8-note · doubled heavy hits, climax at 7th, resolve">&#9730; Thunder</button>
+                <button id="motif-preset-hymn"     class="btn-sm" style="font-size:10px" title="8-note · chorale arch with 7th peak">&#9836; Hymn</button>
+                <button id="motif-preset-river"    class="btn-sm" style="font-size:10px" title="8-note · stepwise flowing upward">&#8767; River</button>
+                <button id="motif-preset-orbit"    class="btn-sm" style="font-size:10px" title="8-note · wide spiral back to root">&#9711; Orbit</button>
+                <button id="motif-preset-groove"   class="btn-sm" style="font-size:10px" title="8-note · funky repeats with inner movement">&#9836; Groove</button>
               </div>
               <div class="gen-row" style="align-items:center;gap:6px">
                 <span class="gen-label">Inspector</span>
@@ -1243,25 +1269,25 @@ class App {
 
     // Preset archetypes: one-click motif patterns
     const ARCHETYPES: Record<string, number[]> = {
-      'motif-preset-hook':    [0, 4, 3, 2],       // leap to 5th, stepwise descent
-      'motif-preset-hero':    [0, 1, 2, 4],       // rising stepwise to 5th
-      'motif-preset-sad':     [4, 2, 1, 0],       // descending from 5th to root
-      'motif-preset-wave':    [0, 2, 4, 2, 0],    // arch up and back
-      'motif-preset-fanfare': [0, 2, 4, 6, 4],    // arpeggio up through 7th, partial descent
-      'motif-preset-quest':   [0, 1, 2, 3, 5],    // stepwise rise, lands on 6th (unresolved)
-      'motif-preset-boss':    [6, 4, 0, 6, 4],    // dark — starts on 7th, drops to root, repeats
-      'motif-preset-chase':   [0, 4, 2, 6, 4],    // active leaping: root→5th→3rd→7th→5th
-      'motif-preset-bounce':  [0, 4, 0, 4],       // root-5th ostinato
-      'motif-preset-march':   [0, 0, 2, 4],       // repeated note then rise (march feel)
-      'motif-preset-jazz':    [0, 2, 4, 6],       // maj7 arpeggio outline
-      'motif-preset-skip':    [0, 3, 1, 4, 2],    // playful alternating leaps
-      'motif-preset-lullaby': [2, 1, 0, 1, 2],    // gentle rocking: 3rd→2nd→root→2nd→3rd
-      'motif-preset-tumble':  [4, 6, 3, 1, 0],    // long fall from 5th through 7th down to root
-      'motif-preset-spiral':  [0, 2, 1, 3, 2, 4], // winding upward: step up, step back, repeat
-      'motif-preset-taunt':   [0, 0, 3, 2, 0],    // repeated root jab then 4th drop (nyah-nyah)
-      'motif-preset-triumph': [0, 4, 4, 6, 5, 4], // 5th, sustained, then descend with flair
-      'motif-preset-lament':  [0, 6, 5, 3, 2],    // chromatic descent using 7th-6th-4th-3rd
-      'motif-preset-panic':   [0, 4, 1, 5, 2, 6], // wild alternating leaps — jagged, tense
+      'motif-preset-hook':     [0, 4, 3, 2],       // leap to 5th, stepwise descent
+      'motif-preset-hero':     [0, 1, 2, 4],       // rising stepwise to 5th
+      'motif-preset-sad':      [4, 2, 1, 0],       // descending from 5th to root
+      'motif-preset-wave':     [0, 2, 4, 2, 0],    // arch up and back
+      'motif-preset-fanfare':  [0, 2, 4, 6, 4],    // arpeggio up through 7th, partial descent
+      'motif-preset-quest':    [0, 1, 2, 3, 5],    // stepwise rise, lands on 6th (unresolved)
+      'motif-preset-boss':     [6, 4, 0, 6, 4],    // dark — starts on 7th, drops to root, repeats
+      'motif-preset-chase':    [0, 4, 2, 6, 4],    // active leaping: root→5th→3rd→7th→5th
+      'motif-preset-bounce':   [0, 4, 0, 4],       // root-5th ostinato
+      'motif-preset-march':    [0, 0, 2, 4],       // repeated note then rise (march feel)
+      'motif-preset-jazz':     [0, 2, 4, 6],       // maj7 arpeggio outline
+      'motif-preset-skip':     [0, 3, 1, 4, 2],    // playful alternating leaps
+      'motif-preset-lullaby':  [2, 1, 0, 1, 2],    // gentle rocking: 3rd→2nd→root→2nd→3rd
+      'motif-preset-tumble':   [4, 6, 3, 1, 0],    // long fall from 5th through 7th down to root
+      'motif-preset-spiral':   [0, 2, 1, 3, 2, 4], // winding upward: step up, step back, repeat
+      'motif-preset-taunt':    [0, 0, 3, 2, 0],    // repeated root jab then 4th drop (nyah-nyah)
+      'motif-preset-triumph':  [0, 4, 4, 6, 5, 4], // 5th, sustained, then descend with flair
+      'motif-preset-lament':   [0, 6, 5, 3, 2],    // chromatic descent using 7th-6th-4th-3rd
+      'motif-preset-panic':    [0, 4, 1, 5, 2, 6], // wild alternating leaps — jagged, tense
       'motif-preset-creep':    [0, 1, 0, 6, 0],    // neighbor tone oscillation around root
       // silly
       'motif-preset-hiccup':   [0, 0, 4, 0, 0, 6], // stuttery repeats with surprise leaps
@@ -1273,7 +1299,45 @@ class App {
       'motif-preset-alien':    [0, 3, 6, 3, 6, 3], // tritone / whole-tone oscillation
       'motif-preset-trance':   [0, 0, 0, 0, 5, 0], // hypnotic repeats then sudden 6th jump
       'motif-preset-backwards':[6, 4, 2, 0, 2, 4], // descends then climbs back — reversed arch
+      // new
+      'motif-preset-dream':    [0, 2, 5, 4, 6, 4], // floaty: root→3rd→6th→5th→7th→5th
+      'motif-preset-clock':    [0, 2, 0, 2, 0, 4], // tick-tock: alternating root + step
+      'motif-preset-prayer':   [4, 3, 2, 0, 2, 4], // arch resolving to root — reverent
+      'motif-preset-stomp':    [0, 0, 0, 4, 0, 0], // grounded: three root hits, leap, return
+      'motif-preset-moonwalk': [4, 3, 2, 3, 4, 3], // gliding back-and-forth around the 5th
+      'motif-preset-stutter':  [0, 0, 2, 0, 0, 4], // two quick repeats then a step-up pair
+      'motif-preset-sneak':    [0, 1, 2, 1, 0, 6], // creeping up then sudden leap down
+      'motif-preset-cry':      [4, 4, 3, 2, 1, 0], // falling from 5th, each note lower
+      'motif-preset-dance':    [0, 2, 4, 2, 4, 6], // bright upward staircase
+      'motif-preset-signal':   [0, 4, 0, 4, 6, 4], // call-and-response
+      'motif-preset-pendulum': [2, 4, 2, 0, 2, 4], // swinging around the 3rd
+      'motif-preset-gallop':   [0, 0, 4, 0, 0, 6], // dotted-rhythm feel
+      // 3-note (short, punchy)
+      'motif-preset-jab':      [0, 4, 0],           // root → 5th → back, one punch
+      'motif-preset-sigh':     [4, 2, 0],           // gentle fall from 5th to root
+      'motif-preset-call':     [0, 2, 4],           // three rising steps, open question
+      'motif-preset-drop':     [6, 3, 0],           // big drop from 7th through 4th to root
+      'motif-preset-ping':     [0, 6, 4],           // root, leap high, settle on 5th
+      // 8-note (long flowing phrases)
+      'motif-preset-journey':  [0, 1, 2, 4, 3, 2, 1, 0], // rise to 5th then full descent
+      'motif-preset-thunder':  [0, 0, 4, 4, 0, 0, 6, 4], // doubled heavy hits, climax, resolve
+      'motif-preset-hymn':     [0, 2, 4, 3, 2, 4, 6, 4], // chorale arch with 7th peak
+      'motif-preset-river':    [0, 2, 1, 3, 2, 4, 3, 5], // stepwise flowing upward
+      'motif-preset-orbit':    [0, 3, 6, 4, 2, 5, 3, 0], // wide spiral back to root
+      'motif-preset-groove':   [0, 0, 4, 2, 0, 0, 6, 4], // funky repeats with inner movement
     };
+
+    // Wire up the arch+arp randomize toggle
+    const archRandBtn = document.getElementById('arch-rand-toggle') as HTMLButtonElement;
+    const updateArchRandBtn = () => {
+      archRandBtn.style.opacity = this.randomizeArchAndArp ? '1' : '0.45';
+      archRandBtn.style.outline = this.randomizeArchAndArp ? '1px solid #aaa' : 'none';
+    };
+    archRandBtn.addEventListener('click', () => {
+      this.randomizeArchAndArp = !this.randomizeArchAndArp;
+      updateArchRandBtn();
+    });
+    updateArchRandBtn();
     for (const [id, degrees] of Object.entries(ARCHETYPES)) {
       document.getElementById(id)!.addEventListener('click', () => {
         this.lockedMotif = [...degrees];
@@ -1681,6 +1745,38 @@ class App {
   }
 
   private randomAndGenerate() {
+    if (this.randomizeArchAndArp) {
+      // Pick a random archetype (all archetypes — 3-note, 4-note, 6-note, 8-note)
+      const archetypeValues = [
+        // 3-note
+        [0, 4, 0], [4, 2, 0], [0, 2, 4], [6, 3, 0], [0, 6, 4],
+        // 4-note
+        [0, 4, 3, 2], [0, 1, 2, 4], [4, 2, 1, 0], [0, 2, 4, 6], [0, 0, 2, 4],
+        [0, 4, 0, 4], [6, 4, 0, 4], [0, 0, 0, 4], [0, 4, 2, 0], [4, 3, 2, 0],
+        // 5-6-note
+        [0, 2, 4, 2, 0], [0, 2, 4, 6, 4], [0, 1, 2, 3, 5], [6, 4, 0, 6, 4],
+        [0, 4, 2, 6, 4], [0, 3, 1, 4, 2], [2, 1, 0, 1, 2], [4, 6, 3, 1, 0],
+        [0, 2, 1, 3, 2, 4], [0, 0, 3, 2, 0], [0, 4, 4, 6, 5, 4], [0, 6, 5, 3, 2],
+        [0, 4, 1, 5, 2, 6], [0, 1, 0, 6, 0], [0, 0, 4, 0, 0, 6], [0, 6, 0, 6, 0],
+        [0, 1, 0, 2, 0, 3], [0, 3, 5, 2, 0, 3], [0, 6, 1, 5, 2, 4], [0, 3, 6, 3, 6, 3],
+        [0, 0, 0, 0, 5, 0], [6, 4, 2, 0, 2, 4], [0, 2, 5, 4, 6, 4], [0, 2, 0, 2, 0, 4],
+        [4, 3, 2, 0, 2, 4], [0, 0, 0, 4, 0, 0], [4, 3, 2, 3, 4, 3], [0, 0, 2, 0, 0, 4],
+        [0, 1, 2, 1, 0, 6], [4, 4, 3, 2, 1, 0], [0, 2, 4, 2, 4, 6], [0, 4, 0, 4, 6, 4],
+        [2, 4, 2, 0, 2, 4], [0, 0, 4, 0, 0, 6],
+        // 8-note
+        [0, 1, 2, 4, 3, 2, 1, 0], [0, 0, 4, 4, 0, 0, 6, 4], [0, 2, 4, 3, 2, 4, 6, 4],
+        [0, 2, 1, 3, 2, 4, 3, 5], [0, 3, 6, 4, 2, 5, 3, 0], [0, 0, 4, 2, 0, 0, 6, 4],
+      ];
+      this.lockedMotif = [...archetypeValues[Math.floor(Math.random() * archetypeValues.length)]];
+      // Pick a random arp style
+      const arpStyles = ['auto', 'up', 'down', 'updown', 'broken', 'alberti', 'bounce', 'waltz',
+        'cascading', 'pinned', 'clave', 'doubletime', 'jazzy', 'spread', 'stride', 'riff', 'spiral', 'latin', 'open5'];
+      this.arpStyleOverride = arpStyles[Math.floor(Math.random() * arpStyles.length)];
+      // Reflect arp change in the UI dropdown if it exists
+      const arpSel = document.getElementById('arp-style-sel') as HTMLSelectElement | null;
+      if (arpSel) arpSel.value = this.arpStyleOverride;
+    }
+
     // Bias toward low BPM — presets under 90 bpm get 5x weight, 90-110 get 2x, 110+ get 0.5x
     const weights = GEN_PRESETS.map(p => p.bpm < 90 ? 5 : p.bpm < 110 ? 2 : 0.5);
     const total = weights.reduce((a, b) => a + b, 0);

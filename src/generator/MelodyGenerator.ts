@@ -771,6 +771,7 @@ function genArpBar(
 ): NoteEvent[] {
   const notes: NoteEvent[] = [];
   const root   = scaleMidi(key, oct, scale, chordDeg);
+  const second = scaleMidi(key, oct, scale, chordDeg + 1);
   const third  = scaleMidi(key, oct, scale, chordDeg + 2);
   const fifth  = scaleMidi(key, oct, scale, chordDeg + 4);
   const sev    = scaleMidi(key, oct, scale, chordDeg + 6);
@@ -782,21 +783,23 @@ function genArpBar(
 
   type ArpStyle = 'up' | 'down' | 'updown' | 'broken' | 'alberti' | 'bounce' | 'waltz' |
                   'cascading' | 'pinned' | 'clave' | 'doubletime' | 'jazzy' |
-                  'spread' | 'stride' | 'riff' | 'spiral' | 'latin' | 'open5';
+                  'spread' | 'stride' | 'riff' | 'spiral' | 'latin' | 'open5' |
+                  'shimmer' | 'heartbeat' | 'barrel' | 'echo' | 'staircase' |
+                  'clockwork' | 'trill' | 'pluck' | 'sweep' | 'cross';
 
   const stylePool: ArpStyle[] = mode === 'battle'
-    ? ['up', 'down', 'doubletime', 'cascading', 'riff', 'open5', 'up', 'doubletime']
+    ? ['up', 'down', 'doubletime', 'cascading', 'riff', 'open5', 'staircase', 'sweep', 'barrel']
     : mode === 'ambient'
-    ? ['broken', 'waltz', 'pinned', 'broken', 'alberti', 'bounce', 'spread']
+    ? ['broken', 'waltz', 'pinned', 'alberti', 'bounce', 'spread', 'shimmer', 'pluck', 'echo']
     : mode === 'jazzy'
-    ? ['jazzy', 'broken', 'bounce', 'jazzy', 'pinned', 'cascading', 'stride']
+    ? ['jazzy', 'broken', 'bounce', 'pinned', 'cascading', 'stride', 'heartbeat', 'trill', 'cross']
     : mode === 'funky'
-    ? ['clave', 'doubletime', 'latin', 'bounce', 'clave', 'broken', 'riff']
+    ? ['clave', 'doubletime', 'latin', 'bounce', 'riff', 'barrel', 'clockwork', 'sweep']
     : mode === 'silly'
-    ? ['doubletime', 'bounce', 'up', 'down', 'spiral', 'cascading', 'open5']
+    ? ['doubletime', 'bounce', 'up', 'down', 'spiral', 'cascading', 'open5', 'staircase', 'trill']
     : mode === 'weird'
-    ? ['cascading', 'jazzy', 'pinned', 'broken', 'waltz', 'spiral', 'spread']
-    : ['updown', 'broken', 'alberti', 'bounce', 'up', 'cascading', 'pinned', 'waltz', 'stride', 'latin'];
+    ? ['cascading', 'jazzy', 'pinned', 'broken', 'spiral', 'spread', 'shimmer', 'cross', 'echo']
+    : ['updown', 'broken', 'alberti', 'bounce', 'up', 'cascading', 'pinned', 'waltz', 'stride', 'latin', 'pluck', 'heartbeat'];
 
   const style: ArpStyle = (styleOverride && styleOverride !== 'auto')
     ? styleOverride as ArpStyle
@@ -817,25 +820,38 @@ function genArpBar(
     case 'clave':      pattern = [root, fifth, root, third, fifth, root, third, fifth]; break;
     case 'doubletime': pattern = [root, third, fifth, high, root, third, fifth, high, fifth, third, root, third, fifth, high, fifth, root]; break;
     case 'jazzy':      pattern = [root, sev, third, fifth, ninth, fifth, third, sev]; break;
-    case 'spread':     pattern = [low, fifth, root, high, fifth, root, high, fifth]; break;      // wide spread voicing
-    case 'stride':     pattern = [low, third, fifth, root, low, fifth, root, third]; break;      // piano left-hand stride
-    case 'riff':       pattern = [root, third, root, fifth, root, fifth, third, root]; break;    // rock riff feel
-    case 'spiral':     pattern = [root, fifth, third, high, sev, high, fifth, third]; break;     // spiral outward
-    case 'latin':      pattern = [root, root, fifth, third, root, fifth, third, fifth]; break;   // latin syncopated feel
-    case 'open5':      pattern = [root, root + 7, high, root + 7, root, root + 7, high, root + 7]; break; // power chord 5ths
+    case 'spread':     pattern = [low, fifth, root, high, fifth, root, high, fifth]; break;
+    case 'stride':     pattern = [low, third, fifth, root, low, fifth, root, third]; break;
+    case 'riff':       pattern = [root, third, root, fifth, root, fifth, third, root]; break;
+    case 'spiral':     pattern = [root, fifth, third, high, sev, high, fifth, third]; break;
+    case 'latin':      pattern = [root, root, fifth, third, root, fifth, third, fifth]; break;
+    case 'open5':      pattern = [root, root + 7, high, root + 7, root, root + 7, high, root + 7]; break;
+    // new styles
+    case 'shimmer':    pattern = [root, ninth, fifth, high, ninth, fifth, high, ninth]; break;       // add9 shimmer, dreamy
+    case 'heartbeat':  pattern = [root, root, fifth, root, root, root, fifth, root]; break;          // two short then rest feel
+    case 'barrel':     pattern = [root, fifth, high, fifth, root, third, fifth, third]; break;       // rolling barrel organ
+    case 'echo':       pattern = [root, fifth, high, high, root, fifth, root, root]; break;          // note + delayed repeat
+    case 'staircase':  pattern = [root, third, fifth, sev, high, sev, fifth, third]; break;          // full 7th chord staircase up-down
+    case 'clockwork':  pattern = [root, third, root, third, fifth, third, fifth, high]; break;       // mechanical alternating pairs
+    case 'trill':      pattern = [root, second, root, second, third, second, third, fifth]; break;   // trilling up stepwise
+    case 'pluck':      pattern = [root, high, root, fifth, root, third, root, fifth]; break;         // plucked string feel — root anchor
+    case 'sweep':      pattern = [low, root, third, fifth, high, high5, high, fifth]; break;         // wide ascending sweep
+    case 'cross':      pattern = [root, high, third, high5, fifth, high, root, high5]; break;        // crossing voices — root vs high
   }
 
   // For some styles, occasionally use first-inversion (start on third) or second-inversion (start on fifth)
-  if (style !== 'doubletime' && rng.next() < 0.3) {
+  if (style !== 'doubletime' && style !== 'sweep' && style !== 'staircase' && rng.next() < 0.3) {
     const inv = rng.next() < 0.5 ? 1 : 2;
-    if (inv === 1) pattern = pattern.map(n => n === root ? root + 12 : n);  // 1st inversion: root goes up octave
-    else           pattern = pattern.map(n => (n === root || n === third) ? n + 12 : n); // 2nd inversion
+    if (inv === 1) pattern = pattern.map(n => n === root ? root + 12 : n);
+    else           pattern = pattern.map(n => (n === root || n === third) ? n + 12 : n);
   }
 
-  // Note length — double-time uses 16ths, others use 8ths, ambient uses quarters
+  // Note length — double-time uses 16ths, waltz/ambient uses dotted-quarters, others use 8ths
   const noteLen = style === 'doubletime'
     ? beatDur * 0.25
-    : mode === 'ambient' || style === 'waltz'
+    : style === 'trill'
+    ? beatDur * 0.25
+    : mode === 'ambient' || style === 'waltz' || style === 'shimmer' || style === 'pluck'
     ? beatDur * (2 / 3)
     : beatDur * 0.5;
 
@@ -847,12 +863,14 @@ function genArpBar(
   for (let i = 0; i < pattern.length; i++) {
     const t = barStart + i * noteLen;
     if (t >= barStart + 4 * beatDur - 0.01) break;
-    if (mode === 'ambient' && rng.next() < 0.22) continue; // ambient: sparse gaps
-    if (mode === 'weird'   && rng.next() < 0.18) continue; // weird: irregular gaps
+    if (mode === 'ambient' && rng.next() < 0.22) continue;
+    if (mode === 'weird'   && rng.next() < 0.18) continue;
+    if (style === 'heartbeat' && (i === 2 || i === 6) && rng.next() < 0.4) continue; // heartbeat gaps
     const accent = accentPattern[i % accentPattern.length];
+    const gateMult = style === 'waltz' ? 0.7 : style === 'jazzy' ? 0.65 : style === 'pluck' ? 0.55 : style === 'trill' ? 0.5 : 0.82;
     notes.push({
       time: t,
-      duration: noteLen * (style === 'waltz' ? 0.7 : style === 'jazzy' ? 0.65 : 0.82),
+      duration: noteLen * gateMult,
       midi: Math.max(0, Math.min(127, pattern[i])),
       velocity: Math.round(velBase * accent) + rng.int(10),
     });
@@ -1387,16 +1405,21 @@ export function generate(config: GenConfig): GenResult {
   const arpOct    = config.octave;
   const padOct    = config.octave - 2;
 
-  // Variable pitch range per song: 8–16 semitones
-  const pitchSpan = 8 + rng.int(9);
+  // Variable pitch range per song: 8–11 semitones (tighter cap prevents jarring leaps)
+  const pitchSpan = 8 + rng.int(4);
   const lo = (melodyOct + 1) * 12 + config.key;
   const hi = lo + pitchSpan;
 
   // Random starting pitch: root, 3rd, or 5th (or motif seed first degree)
   // More diverse starting degrees: root, 3rd, 5th, 2nd, 6th for song-to-song variety
   const startDeg = rng.weighted([{ value: 0, w: 5 }, { value: 2, w: 2 }, { value: 4, w: 2 }, { value: 1, w: 1 }, { value: 6, w: 1 }]);
+  // When an archetype motif is active, randomly shift all its degrees within the scale each
+  // generation — preserves the interval shape but changes which note it starts on.
+  const motifOffset = (config.motifSeed && config.motifSeed.length > 0)
+    ? rng.weighted([{ value: 0, w: 3 }, { value: 2, w: 2 }, { value: 4, w: 2 }, { value: -2, w: 1 }, { value: 1, w: 1 }, { value: -1, w: 1 }])
+    : 0;
   let prevMidi = (config.motifSeed && config.motifSeed.length > 0)
-    ? scaleMidi(config.key, melodyOct, scale, config.motifSeed[0])
+    ? scaleMidi(config.key, melodyOct, scale, config.motifSeed[0] + motifOffset)
     : scaleMidi(config.key, melodyOct, scale, startDeg);
   let glockDeg = 4;
 
@@ -1650,11 +1673,18 @@ export function generate(config: GenConfig): GenResult {
     const seedNotes: NoteEvent[] = [];
     if (config.motifSeed && config.motifSeed.length > 0 && phrasePos === 0 && !isSilenceBar) {
       const chordRootOffset = scaleMidi(activeKey, activeOct, scale, chordDeg) - scaleMidi(activeKey, activeOct, scale, 0);
-      const seedDur = Math.min(config.motifSeed.length, 4); // fill at most 1 bar
+      const seedDur = Math.min(config.motifSeed.length, 8); // allow up to 8-note archetypes
+      const seedRhythms: { v: number; w: number }[] = [
+        { v: 0.5, w: 2 }, { v: 0.75, w: 3 }, { v: 1.0, w: 4 }, { v: 1.5, w: 1 },
+      ];
+      let seedT = barStart;
       for (let si = 0; si < seedDur; si++) {
-        const baseMidi = scaleMidi(activeKey, activeOct, scale, config.motifSeed[si] ?? config.motifSeed[0]);
+        const baseMidi = scaleMidi(activeKey, activeOct, scale, (config.motifSeed[si] ?? config.motifSeed[0]) + motifOffset);
         const midi = Math.max(0, Math.min(127, baseMidi + chordRootOffset));
-        seedNotes.push({ time: barStart + si * beatDur, duration: beatDur * 0.85, midi, velocity: 92 + (si === 0 ? 8 : 0) });
+        const noteDur = rng.weighted(seedRhythms.map(r => ({ value: r.v * beatDur, w: r.w })));
+        if (seedT + noteDur > barStart + 4 * beatDur + 0.01) break;
+        seedNotes.push({ time: seedT, duration: noteDur * 0.85, midi, velocity: 88 + rng.int(10) + (si === 0 ? 8 : 0) });
+        seedT += noteDur;
       }
       prevMidi = seedNotes[seedNotes.length - 1].midi;
     }
@@ -1854,11 +1884,110 @@ export function generate(config: GenConfig): GenResult {
     i === 0 ? n.degreeOffset : n.degreeOffset - motif.notes[i - 1].degreeOffset
   );
 
+  // ── Post-generation quality passes ────────────────────────────
+
+  // 1. Chord-tone enforcement on strong beats for accomp / arp channels.
+  //    Notes landing within 50ms of a strong beat (beat 1 or 3) get snapped to the
+  //    nearest chord tone when they're already within 2 semitones of one.
+  const chordToneSnap = (notes: NoteEvent[]): NoteEvent[] => {
+    if (notes.length === 0) return notes;
+    return notes.map(n => {
+      const beatPos = (n.time % barDur) / beatDur;
+      const onStrong = beatPos < 0.15 || Math.abs(beatPos - 2.0) < 0.15;
+      if (!onStrong) return n;
+      // Find chord deg for this bar
+      const bar = Math.floor(n.time / barDur);
+      const pi = Math.floor(bar / 4);
+      const prog = pi % 2 === 0 ? progA : progB;
+      const cd = prog[bar % prog.length];
+      const cr  = scaleMidi(config.key, accompOct, scale, cd);
+      const ct3 = scaleMidi(config.key, accompOct, scale, cd + 2);
+      const ct5 = scaleMidi(config.key, accompOct, scale, cd + 4);
+      const tones = [cr, ct3, ct5, cr + 12, cr - 12, ct3 + 12, ct5 + 12];
+      const closest = tones.reduce((b, t) => Math.abs(t - n.midi) < Math.abs(b - n.midi) ? t : b, tones[0]);
+      if (Math.abs(closest - n.midi) <= 2) return { ...n, midi: Math.max(0, Math.min(127, closest)) };
+      return n;
+    });
+  };
+
+  // 2. Phrase-rest breathing: silence one non-lead channel for 2 bars in every 8-bar window.
+  //    This creates natural dynamic contrast without touching the melody.
+  const phraseRestBalance = (notes: NoteEvent[]): NoteEvent[] => {
+    if (config.bars < 8 || notes.length === 0) return notes;
+    // Pick a deterministic 2-bar rest window per 8-bar block using rng seed
+    const restBarInBlock = 4 + Math.floor(rng.next() * 4); // bars 4-7 of each 8-bar block
+    return notes.filter(n => {
+      const bar = Math.floor(n.time / barDur);
+      const posInBlock = bar % 8;
+      return posInBlock !== restBarInBlock && posInBlock !== (restBarInBlock + 1) % 8;
+    });
+  };
+
+  // 3. Guarantee beat-1 of bar 0 (the song's anchor) is a chord root on ALL channels.
+  const anchorBeat1 = (notes: NoteEvent[], oct: number): NoteEvent[] => {
+    if (notes.length === 0) return notes;
+    return notes.map(n => {
+      if (n.time < beatDur * 0.1) {
+        const root = scaleMidi(config.key, oct, scale, 0);
+        const candidates = [root, root + 12, root - 12];
+        const best = candidates.reduce((b, c) => Math.abs(c - n.midi) < Math.abs(b - n.midi) ? c : b, root);
+        if (Math.abs(best - n.midi) <= 5) return { ...n, midi: Math.max(0, Math.min(127, best)) };
+      }
+      return n;
+    });
+  };
+
+  // 4. Note density throttle: mode-aware max notes per bar per channel.
+  //    Ambient songs stay sparse; battle songs can be dense.
+  const densityCap: Record<GenMode, number> = {
+    ambient: 4, mid: 8, battle: 16, jazzy: 8, funky: 10, silly: 12, weird: 7,
+  };
+  const throttleDensity = (notes: NoteEvent[]): NoteEvent[] => {
+    if (notes.length === 0) return notes;
+    const cap = densityCap[config.mode];
+    const byBar = new Map<number, NoteEvent[]>();
+    for (const n of notes) {
+      const bar = Math.floor(n.time / barDur);
+      if (!byBar.has(bar)) byBar.set(bar, []);
+      byBar.get(bar)!.push(n);
+    }
+    const out: NoteEvent[] = [];
+    for (const barNotes of byBar.values()) {
+      if (barNotes.length <= cap) { out.push(...barNotes); continue; }
+      // Keep the notes on strong beats, then fill to cap from remaining
+      const strong = barNotes.filter(n => {
+        const bp = ((n.time % barDur) / beatDur);
+        return bp < 0.15 || Math.abs(bp - 2.0) < 0.15;
+      });
+      const weak = barNotes.filter(n => !strong.includes(n));
+      const keep = [...strong, ...weak].slice(0, cap);
+      out.push(...keep);
+    }
+    return out.sort((a, b) => a.time - b.time);
+  };
+
+  const applyQualityPasses = (notes: NoteEvent[], snapChords: boolean, breathe: boolean, oct: number) => {
+    let n = notes;
+    if (snapChords) n = chordToneSnap(n);
+    n = anchorBeat1(n, oct);
+    n = throttleDensity(n);
+    if (breathe) n = phraseRestBalance(n);
+    return n;
+  };
+
+  // Apply to accomp/arp (pulse2), bass (wave), pad — not melody (pulse1/pulse3)
+  const finalPulse2 = applyQualityPasses(pulse2, true, true, accompOct);
+  const finalWave   = applyQualityPasses(wave,   true, false, bassOct);
+  const finalPad    = applyQualityPasses(pad,    true, true,  padOct);
+
   return {
     channels: {
-      pulse1: normalizeVel(applyRepeatDecay(finalPulse1)), pulse2: normalizeVel(pulse2),
-      wave: normalizeVel(wave), noise: normalizeVel(noise),
-      pulse3: normalizeVel(finalPulse3), pad: normalizeVel(pad),
+      pulse1: normalizeVel(applyRepeatDecay(finalPulse1)),
+      pulse2: normalizeVel(finalPulse2),
+      wave:   normalizeVel(finalWave),
+      noise:  normalizeVel(noise),
+      pulse3: normalizeVel(finalPulse3),
+      pad:    normalizeVel(finalPad),
       extra1: normalizeVel(extra1), extra2: normalizeVel(extra2), extra3: normalizeVel(extra3),
     },
     duration: config.bars * barDur, bpm, seed, motifIntervals, metricMod: metricModActive,
