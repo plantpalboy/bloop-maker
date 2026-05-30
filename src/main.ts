@@ -286,7 +286,7 @@ class App {
   private extraChannelRoles: Partial<Record<ChannelId, string>> = {};
   private bpmLocked = false;
   private loopEnabled = false;
-  private currentTheme = 'aero';
+  private currentTheme = 'bloop';
   private vizColorIdx = 0;
   private vizCharPool: string[] = [];
   private lastMotifIntervals: number[] = [];
@@ -344,7 +344,7 @@ class App {
     // Restore dark mode and theme preference
     if (localStorage.getItem('bloopDark') === '1') document.body.classList.add('dark');
     this.vizCharPool = ASCII_POOLS[0].concat(ASCII_POOLS[4]);
-    const savedTheme = localStorage.getItem('bloopTheme') ?? 'aero';
+    const savedTheme = localStorage.getItem('bloopTheme') ?? 'bloop';
     this.applyTheme(savedTheme, false);
     this.injectSidePanels();
     this.applyDemoLimits();
@@ -742,7 +742,8 @@ class App {
         <div class="card" style="padding:6px 10px">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
             <span style="font:11px Tahoma;opacity:0.7;flex-shrink:0">Theme:</span>
-            <button class="btn-theme active" id="theme-aero"  data-theme="aero">Aero</button>
+            <button class="btn-theme active" id="theme-bloop" data-theme="bloop">Bloop</button>
+            <button class="btn-theme"        id="theme-aero"  data-theme="aero">Aero</button>
             <button class="btn-theme"        id="theme-neon"  data-theme="neon">Neon</button>
             <button class="btn-theme"        id="theme-amber" data-theme="amber">Amber</button>
             <button class="btn-theme"        id="theme-green" data-theme="green">Forest</button>
@@ -1741,7 +1742,7 @@ class App {
 
   private applyTheme(theme: string, save: boolean) {
     this.currentTheme = theme;
-    document.body.classList.remove('theme-neon', 'theme-amber', 'theme-green');
+    document.body.classList.remove('theme-bloop', 'theme-neon', 'theme-amber', 'theme-green');
     if (theme !== 'aero') document.body.classList.add(`theme-${theme}`);
     document.querySelectorAll('.btn-theme').forEach(btn => {
       btn.classList.toggle('active', (btn as HTMLElement).dataset.theme === theme);

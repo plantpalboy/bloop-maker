@@ -136,6 +136,37 @@ body.theme-green {
 body.theme-green::before { background: radial-gradient(circle, rgba(80,200,80,0.25) 0%, transparent 70%); }
 body.theme-green::after  { background: radial-gradient(circle, rgba(40,160,80,0.18) 0%, transparent 70%); }
 
+/* ── Theme: Bloop (matches the bloopmaker.net landing palette) ── */
+body.theme-bloop {
+  background: linear-gradient(160deg, #fff8de 0%, #fff0bf 50%, #fff8de 100%);
+  background-attachment: fixed;
+  --radius:   12px;
+  --win:      rgba(255,248,222,0.97);
+  --card:     rgba(255,253,240,0.96);
+  --btn-hi1:  rgba(255,236,150,0.94);
+  --btn-hi2:  rgba(255,226,120,0.88);
+  --btn-lo1:  rgba(255,212,92,0.84);
+  --btn-lo2:  rgba(255,222,112,0.90);
+  --tb-hi:    rgba(255,74,162,0.96);
+  --tb-lo:    rgba(185,108,255,0.98);
+  --b-win:    rgba(36,27,58,0.28);
+  --b-btn:    rgba(36,27,58,0.45);
+  --b-card:   rgba(36,27,58,0.22);
+  --txt:      #241b3a;
+  --txt-dis:  #9a86b8;
+  --txt-dim:  #5a4a82;
+  --acc:      #ff4aa2;
+  --acc2:     #1ba8e0;
+  --sel-bg:   #9b4dd6;
+  --sel-txt:  #ffffff;
+  --ok:       #1f9c4a;
+  --busy:     #6a4dd6;
+  --err:      #e0344e;
+  --c1: #ff4aa2; --c2: #1ba8e0; --c3: #2ec46b; --c4: #ff7a3d;
+}
+body.theme-bloop::before { background: radial-gradient(circle, rgba(255,74,162,0.16) 0%, transparent 70%); }
+body.theme-bloop::after  { background: radial-gradient(circle, rgba(38,198,255,0.14) 0%, transparent 70%); }
+
 /* ── Dark Aero ───────────────────────────────────────────── */
 body.dark {
   background:
