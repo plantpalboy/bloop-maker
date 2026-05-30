@@ -230,7 +230,7 @@ class App {
   private midiLoaded = false;
   // ── Live MIDI keyboard input ──────────────────────────────────
   private midiAccess: any = null;
-  private midiArmedChannel: ChannelId | null = null;
+  private midiArmedChannels = new Set<ChannelId>();
   private midiRecording = false;
   private midiActiveNotes = new Map<number, { startTime: number; velocity: number }>();
   private sf2FileName = '';
@@ -684,7 +684,7 @@ class App {
             <span id="midi-status" style="opacity:.75">No device connected</span>
             <button class="btn-sm" id="midi-record" disabled title="Record your live playing into the armed channel">● Record</button>
             <span id="midi-armed" style="opacity:.75;font-weight:700"></span>
-            <span style="opacity:.55;margin-left:auto">Arm a channel with its <b>MIDI</b> button, then play along or record.</span>
+            <span style="opacity:.55;margin-left:auto">Arm one or more channels with their <b>MIDI</b> button, then play along or record.</span>
           </div>
           <div class="channels-list" id="channels-list">
             ${this.visibleChannelIds().map(id => this.renderChannelRow(id)).join('')}
@@ -1743,7 +1743,7 @@ class App {
     for (const id of CHANNELS) {
       this.muteBtns[id]?.classList.toggle('active', !!this.state.channels[id].muted);
       document.getElementById(`lock-${id}`)?.classList.toggle('active', !!this.channelLocked[id]);
-      document.getElementById(`midi-arm-${id}`)?.classList.toggle('active', this.midiArmedChannel === id);
+      document.getElementById(`midi-arm-${id}`)?.classList.toggle('active', this.midiArmedChannels.has(id));
     }
     document.getElementById('add-channel-btn')?.addEventListener('click', () => {
       const extras: ChannelId[] = ['extra1', 'extra2', 'extra3'];
@@ -3846,56 +3846,60 @@ class App {
     const status = data[0] & 0xf0;
     const note = data[1];
     const velocity = data[2] ?? 0;
-    const ch = this.midiArmedChannel;
-    if (!ch) return;
+    if (this.midiArmedChannels.size === 0) return;
+    const armed = [...this.midiArmedChannels];
 
     const isNoteOn  = status === 0x90 && velocity > 0;
     const isNoteOff = status === 0x80 || (status === 0x90 && velocity === 0);
 
     if (isNoteOn) {
-      this.sampler?.noteOn(this.state.channels[ch].presetIndex, note, velocity, ch);
+      for (const ch of armed) this.sampler?.noteOn(this.state.channels[ch].presetIndex, note, velocity, ch);
       if (this.midiRecording) {
         const t = this.scheduler?.currentSongTime ?? this.currentTime;
         this.midiActiveNotes.set(note, { startTime: t, velocity });
       }
     } else if (isNoteOff) {
-      this.sampler?.noteOff(note, ch);
+      for (const ch of armed) this.sampler?.noteOff(note, ch);
       const rec = this.midiActiveNotes.get(note);
       if (rec && this.midiRecording) {
         this.midiActiveNotes.delete(note);
         const endT = this.scheduler?.currentSongTime ?? this.currentTime;
         const dur = Math.max(0.05, endT - rec.startTime);
-        this.state.channels[ch].notes.push({ time: rec.startTime, duration: dur, midi: note, velocity: rec.velocity });
-        this.state.channels[ch].notes.sort((a, b) => a.time - b.time);
-        this.drawPianoRoll(ch, this.currentTime);
+        for (const ch of armed) {
+          this.state.channels[ch].notes.push({ time: rec.startTime, duration: dur, midi: note, velocity: rec.velocity });
+          this.state.channels[ch].notes.sort((a, b) => a.time - b.time);
+          this.drawPianoRoll(ch, this.currentTime);
+        }
         this.updateNoteCountBadges();
       }
     }
   }
 
   private armMidiChannel(id: ChannelId) {
-    // Toggle: clicking the armed channel disarms it.
-    this.midiArmedChannel = this.midiArmedChannel === id ? null : id;
+    // Toggle: each channel can be independently armed. Multiple can be armed at once.
+    if (this.midiArmedChannels.has(id)) this.midiArmedChannels.delete(id);
+    else this.midiArmedChannels.add(id);
     for (const cid of CHANNELS) {
-      const btn = document.getElementById(`midi-arm-${cid}`);
-      if (btn) btn.classList.toggle('active', this.midiArmedChannel === cid);
+      document.getElementById(`midi-arm-${cid}`)?.classList.toggle('active', this.midiArmedChannels.has(cid));
     }
+    const labels = [...this.midiArmedChannels].map(c => CHANNEL_META[c].label);
     const armedEl = document.getElementById('midi-armed');
-    if (armedEl) armedEl.textContent = this.midiArmedChannel ? `Playing through: ${CHANNEL_META[this.midiArmedChannel].label}` : '';
-    if (this.midiArmedChannel) {
-      this.setStatus('ok', `${CHANNEL_META[this.midiArmedChannel].label} armed for MIDI. Play your keyboard${this.midiAccess ? '' : ' (connect a device first)'}.`);
+    if (armedEl) armedEl.textContent = labels.length ? `Playing through: ${labels.join(', ')}` : '';
+    if (labels.length) {
+      this.setStatus('ok', `${labels.join(', ')} armed for MIDI. Play your keyboard${this.midiAccess ? '' : ' (connect a device first)'}.`);
     }
   }
 
   private toggleMidiRecord() {
-    if (!this.midiArmedChannel) { this.setStatus('err', 'Arm a channel for MIDI first (its MIDI button).'); return; }
+    if (this.midiArmedChannels.size === 0) { this.setStatus('err', 'Arm at least one channel for MIDI first (its MIDI button).'); return; }
     this.midiRecording = !this.midiRecording;
     const recBtn = document.getElementById('midi-record') as HTMLButtonElement | null;
     if (recBtn) recBtn.classList.toggle('active', this.midiRecording);
+    const labels = [...this.midiArmedChannels].map(c => CHANNEL_META[c].label).join(', ');
     if (this.midiRecording) {
       this.pushHistory();
       this.midiActiveNotes.clear();
-      this.setStatus('ok', `Recording into ${CHANNEL_META[this.midiArmedChannel].label}. Press play and perform; notes are captured at the playhead.`);
+      this.setStatus('ok', `Recording into ${labels}. Press play and perform; notes are captured at the playhead.`);
     } else {
       this.midiActiveNotes.clear();
       this.setStatus('ok', 'Recording stopped.');
