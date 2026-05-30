@@ -9,6 +9,10 @@ import { exportWAV } from './midi/WavExporter';
 import { Scheduler } from './engine/Scheduler';
 import { generate, type GenConfig, type GenMode, type ScaleType } from './generator/MelodyGenerator';
 import { scramble, type ScramblerConfig } from './generator/MIDIScrambler';
+import {
+  IS_DEMO, DEMO_CHANNELS, DEMO_MODES, DEMO_PRESETS_PER_MODE, DEMO_ARP_STYLES,
+  DEMO_ARCHETYPES, DEMO_STEER_MODES, DEMO_MAX_BARS, FULL_VERSION_URL,
+} from './demo';
 
 const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 
@@ -343,6 +347,21 @@ class App {
     const savedTheme = localStorage.getItem('bloopTheme') ?? 'aero';
     this.applyTheme(savedTheme, false);
     this.injectSidePanels();
+    this.applyDemoLimits();
+    this.injectDemoBanner();
+  }
+
+  // Thin top banner shown only in the demo build, with a link to buy the full version.
+  private injectDemoBanner() {
+    if (!IS_DEMO) return;
+    const bar = document.createElement('div');
+    bar.id = 'demo-banner';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#ff8a3d;color:#1a1a1a;'
+      + 'font:600 12px/1.4 Tahoma,sans-serif;text-align:center;padding:6px 12px;box-shadow:0 2px 8px rgba(0,0,0,.3)';
+    bar.innerHTML = `🎵 You're using the <b>Bloop Maker demo</b> — 4 channels, limited presets, no file export. `
+      + `<a href="${FULL_VERSION_URL}" target="_blank" rel="noopener" style="color:#1a1a1a;text-decoration:underline;font-weight:800">Get the full version →</a>`;
+    document.body.appendChild(bar);
+    document.body.style.paddingTop = '30px';
   }
 
   // ── Render ────────────────────────────────────────────────────
@@ -379,9 +398,13 @@ class App {
         </div>
         <div class="win-menu-item" id="menu-presets">Presets
           <div class="win-dropdown" id="presets-dropdown">
-            ${(['ambient','mid','battle','jazzy','funky','silly','weird'] as GenMode[]).map(mode => {
+            ${(IS_DEMO
+                ? (DEMO_MODES as GenMode[])
+                : (['ambient','mid','battle','jazzy','funky','silly','weird'] as GenMode[])
+              ).map(mode => {
               const modeLabel = mode.charAt(0).toUpperCase() + mode.slice(1);
-              const presets = GEN_PRESETS.map((p, i) => ({ p, i })).filter(x => x.p.mode === mode);
+              let presets = GEN_PRESETS.map((p, i) => ({ p, i })).filter(x => x.p.mode === mode);
+              if (IS_DEMO) presets = presets.slice(0, DEMO_PRESETS_PER_MODE);
               return `<div class="win-dropdown-submenu" data-mode="${mode}">${modeLabel} &#9658;<div class="win-submenu">${presets.map(({ p, i }) => `<div class="win-dropdown-item" data-preset-idx="${i}">${p.label}</div>`).join('')}</div></div>`;
             }).join('')}
           </div>
@@ -647,11 +670,15 @@ class App {
         <div class="card">
           <div class="card-title ct-channels">Channels</div>
           <div class="channels-list" id="channels-list">
-            ${CHANNELS.filter(id => !['extra1','extra2','extra3'].includes(id) || this.activeExtraChannels.has(id)).map(id => this.renderChannelRow(id)).join('')}
+            ${this.visibleChannelIds().map(id => this.renderChannelRow(id)).join('')}
+            ${IS_DEMO ? `
+            <div style="margin-top:6px;font:10px Tahoma;color:var(--txt-dis)">Demo: 4 channels — the full version adds arp, pad, and 3 extra channels.</div>
+            ` : `
             <div style="margin-top:6px;display:flex;gap:6px;align-items:center">
               <button class="toolbar-btn" id="add-channel-btn" title="Add an extra instrument channel">+ Add Channel</button>
               <span id="extra-ch-hint" style="font:10px Tahoma;color:var(--txt-dis)">${this.activeExtraChannels.size === 0 ? 'Up to 3 extra channels' : `${this.activeExtraChannels.size}/3 added`}</span>
             </div>
+            `}
           </div>
         </div>
 
@@ -1511,6 +1538,7 @@ class App {
   }
 
   private exportJSON() {
+    if (this.demoGate('JSON export')) return;
     const NOTE_NAMES_FULL = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
     if (!this.lastGenConfig) { this.setStatus('err', 'Generate something first!'); return; }
     const meta = {
@@ -1553,7 +1581,7 @@ class App {
   }
 
   private bindChannelRowEvents() {
-    const visibleChannels = CHANNELS.filter(id => !['extra1','extra2','extra3'].includes(id) || this.activeExtraChannels.has(id));
+    const visibleChannels = this.visibleChannelIds();
     for (const id of visibleChannels) {
       this.muteBtns[id]?.addEventListener('click',     () => this.toggleMute(id));
       this.soloBtns[id]?.addEventListener('click',     () => this.toggleSolo(id));
@@ -1812,6 +1840,7 @@ class App {
   }
 
   private saveProject() {
+    if (this.demoGate('Project save')) return;
     const hasNotes = CHANNELS.some(id => this.state.channels[id].notes.length > 0);
     if (!hasNotes) { this.setStatus('err', 'Nothing to save yet!'); return; }
     const project: BloopProject = {
@@ -1947,6 +1976,7 @@ class App {
   }
 
   private addMoreBars(bars = 16) {
+    if (this.demoGate('Adding more bars')) return;
     if (!this.lastGenConfig) { this.setStatus('err', 'Generate something first!'); return; }
     this.pushHistory();
     const extra = generate({ ...this.lastGenConfig, bars });
@@ -2161,9 +2191,12 @@ class App {
   private runGenerator() {
     const key           = parseInt((document.getElementById('gen-key')   as HTMLInputElement).value, 10);
     const bpm           = parseInt((document.getElementById('gen-bpm')   as HTMLInputElement).value, 10) || 130;
-    const bars          = parseInt((document.getElementById('gen-bars')  as HTMLInputElement).value, 10) || 32;
+    let   bars          = parseInt((document.getElementById('gen-bars')  as HTMLInputElement).value, 10) || 32;
     const scaleRaw      = (document.getElementById('gen-scale') as HTMLSelectElement).value as ScaleType | '';
     const generateNoise = (document.getElementById('gen-noise') as HTMLInputElement).checked;
+
+    // Demo: cap song length.
+    if (IS_DEMO && bars > DEMO_MAX_BARS) bars = DEMO_MAX_BARS;
 
     const sparseness = parseFloat((document.getElementById('gen-sparseness') as HTMLInputElement).value);
     const channelSparseness = {
@@ -2171,8 +2204,9 @@ class App {
       pulse2: this.channelGenEnabled['pulse2'] === false ? 1 : (this.channelSparseValues['pulse2'] ?? 0),
       wave:   this.channelGenEnabled['wave']   === false ? 1 : (this.channelSparseValues['wave']   ?? 0),
       noise:  this.channelGenEnabled['noise']  === false ? 1 : (this.channelSparseValues['noise']  ?? 0),
-      pulse3: this.channelGenEnabled['pulse3'] === false ? 1 : (this.channelSparseValues['pulse3'] ?? 0),
-      pad:    this.channelGenEnabled['pad']    === false ? 1 : (this.channelSparseValues['pad']    ?? 0),
+      // Demo: only 4 channels — pulse3 (arp) and pad never generate.
+      pulse3: IS_DEMO ? 1 : (this.channelGenEnabled['pulse3'] === false ? 1 : (this.channelSparseValues['pulse3'] ?? 0)),
+      pad:    IS_DEMO ? 1 : (this.channelGenEnabled['pad']    === false ? 1 : (this.channelSparseValues['pad']    ?? 0)),
       extra1: this.channelGenEnabled['extra1'] === false ? 1 : (this.channelSparseValues['extra1'] ?? 0.3),
       extra2: this.channelGenEnabled['extra2'] === false ? 1 : (this.channelSparseValues['extra2'] ?? 0.3),
       extra3: this.channelGenEnabled['extra3'] === false ? 1 : (this.channelSparseValues['extra3'] ?? 0.3),
@@ -2697,6 +2731,7 @@ class App {
   // ── MIDI / SF2 loaders ────────────────────────────────────────
 
   private async loadMIDI(file: File) {
+    if (this.demoGate('Importing MIDI')) return;
     this.setStatus('busy', `Loading ${file.name}...`);
     try {
       const buf = await file.arrayBuffer();
@@ -2750,8 +2785,10 @@ class App {
       const sf2 = parseSF2(buf);
       sfProg.style.width = '100%';
 
-      // Append to loaded fonts list (don't replace)
-      this.loadedSF2s.push({ name: file.name, sf2 });
+      // Full version: append to the loaded fonts list. Demo: only 1 font at a time,
+      // so replace any existing font instead of stacking them.
+      if (IS_DEMO) this.loadedSF2s = [{ name: file.name, sf2 }];
+      else this.loadedSF2s.push({ name: file.name, sf2 });
       const sf2Idx = this.loadedSF2s.length - 1;
       this.state.sf2 = this.loadedSF2s[0].sf2; // primary SF2
 
@@ -3122,6 +3159,7 @@ class App {
   // ── Export ────────────────────────────────────────────────────
 
   private runDownload() {
+    if (this.demoGate('MIDI export')) return;
     const total = CHANNELS.reduce((s, id) => s + this.state.channels[id].notes.length, 0);
     if (total === 0) { this.setStatus('err', 'Nothing to export yet!'); return; }
     try {
@@ -3201,6 +3239,7 @@ class App {
   }
 
   private exportChannel(id: ChannelId) {
+    if (this.demoGate('Channel MIDI export')) return;
     const ch = this.state.channels[id];
     if (ch.notes.length === 0) { this.setStatus('err', `${id} has no notes!`); return; }
     try {
@@ -3210,6 +3249,7 @@ class App {
   }
 
   private async runWAVExport() {
+    if (this.demoGate('WAV export')) return;
     if (this.loadedSF2s.length === 0) { this.setStatus('err', 'Load an SF2 soundfont first!'); return; }
     const total = CHANNELS.reduce((s, id) => s + (this.state.channels[id]?.notes.length ?? 0), 0);
     if (total === 0) { this.setStatus('err', 'No notes to export!'); return; }
@@ -3735,6 +3775,60 @@ class App {
   private setStatus(type: 'ok' | 'busy' | 'err', text: string) {
     this.statusEl.className  = `win-status ${type}`;
     this.statusPanel.textContent = text;
+  }
+
+  // ── Demo gating helpers ───────────────────────────────────────
+
+  // The channels visible/usable in this build (4 in the demo, all in full).
+  private visibleChannelIds(): ChannelId[] {
+    if (IS_DEMO) return CHANNELS.filter(id => DEMO_CHANNELS.includes(id));
+    return CHANNELS.filter(id => !['extra1','extra2','extra3'].includes(id) || this.activeExtraChannels.has(id));
+  }
+
+  // Call at the top of a gated action. Returns true (and shows an upgrade prompt)
+  // if this is the demo build, meaning the caller should stop.
+  private demoGate(actionLabel: string): boolean {
+    if (!IS_DEMO) return false;
+    this.setStatus('err', `${actionLabel} is available in the full version of Bloop Maker — get it at ${FULL_VERSION_URL.replace(/^https?:\/\//, '')}`);
+    return true;
+  }
+
+  // In the demo, trim the arp + archetype dropdowns to the allowed subsets and
+  // cap the bars input. Runs once after the UI is built.
+  private applyDemoLimits() {
+    if (!IS_DEMO) return;
+
+    const trimSelect = (id: string, allowed: Set<string>, keepEmpty: boolean) => {
+      const sel = document.getElementById(id) as HTMLSelectElement | null;
+      if (!sel) return;
+      sel.querySelectorAll('option').forEach(opt => {
+        if (keepEmpty && opt.value === '') return;
+        if (!allowed.has(opt.value)) opt.remove();
+      });
+      // Drop any optgroups left empty after trimming.
+      sel.querySelectorAll('optgroup').forEach(g => {
+        if (g.querySelectorAll('option').length === 0) g.remove();
+      });
+    };
+    trimSelect('arp-style-sel', DEMO_ARP_STYLES, false);
+    trimSelect('archetype-sel', DEMO_ARCHETYPES, true);
+
+    // Cap the bars input.
+    const barsEl = document.getElementById('gen-bars') as HTMLInputElement | null;
+    if (barsEl) {
+      barsEl.max = String(DEMO_MAX_BARS);
+      if (parseInt(barsEl.value, 10) > DEMO_MAX_BARS) barsEl.value = String(DEMO_MAX_BARS);
+      barsEl.title = `Demo limited to ${DEMO_MAX_BARS} bars`;
+    }
+
+    // Hide the full-version-only steer buttons.
+    for (const id of ['steer-lush', 'steer-punchy', 'steer-lofi']) {
+      const btn = document.getElementById(id);
+      if (btn && !DEMO_STEER_MODES.has(id.replace('steer-', ''))) btn.style.display = 'none';
+    }
+
+    // Hide the WAV export button entirely (paid feature).
+    if (this.wavBtn) this.wavBtn.style.display = 'none';
   }
 
   private formatTime(s: number): string {
