@@ -228,6 +228,11 @@ class App {
   private isDraggingSeek = false;
   private lastGenConfig: GenConfig | null = null;
   private midiLoaded = false;
+  // ── Live MIDI keyboard input ──────────────────────────────────
+  private midiAccess: any = null;
+  private midiArmedChannel: ChannelId | null = null;
+  private midiRecording = false;
+  private midiActiveNotes = new Map<number, { startTime: number; velocity: number }>();
   private sf2FileName = '';
   private genMode: GenMode = 'mid';
   private currentSongTitle = '';
@@ -674,6 +679,13 @@ class App {
         <!-- Channels -->
         <div class="card">
           <div class="card-title ct-channels">Channels</div>
+          <div class="midi-bar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;font:11px Tahoma;padding:6px 8px;border:1px solid var(--b-card);border-radius:var(--radius);background:var(--btn-hi2)">
+            <button class="btn-sm" id="midi-connect">Connect MIDI Keyboard</button>
+            <span id="midi-status" style="opacity:.75">No device connected</span>
+            <button class="btn-sm" id="midi-record" disabled title="Record your live playing into the armed channel">● Record</button>
+            <span id="midi-armed" style="opacity:.75;font-weight:700"></span>
+            <span style="opacity:.55;margin-left:auto">Arm a channel with its <b>MIDI</b> button, then play along or record.</span>
+          </div>
           <div class="channels-list" id="channels-list">
             ${this.visibleChannelIds().map(id => this.renderChannelRow(id)).join('')}
             ${IS_DEMO ? `
@@ -854,6 +866,7 @@ class App {
           <div class="ch-btns">
             <button class="btn-solo"      id="solo-${id}">SOLO</button>
             <button class="btn-mute"      id="mute-${id}">MUTE</button>
+            <button class="btn-midi-arm"  id="midi-arm-${id}" title="Arm this channel for live MIDI keyboard input (play along / record)">MIDI</button>
             <button class="btn-regen"     id="regen-${id}"     disabled>Regen</button>
             <button class="btn-simplify"  id="simplify-${id}"    disabled title="Simplify: thin fast runs, add breathing room">Simplify</button>
             <button class="btn-sm"        id="ghost-${id}"      disabled title="Ghost: drop all velocities by 25 — sits back in the mix" style="font-size:10px">Ghost</button>
@@ -1090,6 +1103,8 @@ class App {
     });
 
     document.getElementById('gen-btn')!.addEventListener('click', () => this.runGenerator());
+    document.getElementById('midi-connect')?.addEventListener('click', () => void this.connectMIDI());
+    document.getElementById('midi-record')?.addEventListener('click', () => this.toggleMidiRecord());
 
     // Tap tempo
     let tapTimes: number[] = [];
@@ -1591,6 +1606,7 @@ class App {
     for (const id of visibleChannels) {
       this.muteBtns[id]?.addEventListener('click',     () => this.toggleMute(id));
       this.soloBtns[id]?.addEventListener('click',     () => this.toggleSolo(id));
+      document.getElementById(`midi-arm-${id}`)?.addEventListener('click', () => this.armMidiChannel(id));
       this.regenBtns[id]?.addEventListener('click',    () => this.regenChannel(id));
       document.getElementById(`simplify-${id}`)?.addEventListener('click',   () => this.simplifyChannel(id));
       document.getElementById(`ghost-${id}`)?.addEventListener('click',      () => this.channelVelocityShift(id, -25, 'Ghosted'));
@@ -3775,6 +3791,95 @@ class App {
       // may not exist — guard against null instead of crashing the generator.
       const el = this.noteCountEls[id];
       if (el) el.textContent = `${c} note${c !== 1 ? 's' : ''}`;
+    }
+  }
+
+  // ── Live MIDI keyboard input ──────────────────────────────────
+
+  private async connectMIDI() {
+    const nav = navigator as any;
+    if (!nav.requestMIDIAccess) {
+      this.setStatus('err', 'Web MIDI is not supported in this browser. Try Chrome, Edge, or the desktop app.');
+      return;
+    }
+    try {
+      this.midiAccess = await nav.requestMIDIAccess({ sysex: false });
+    } catch {
+      this.setStatus('err', 'MIDI access was denied.');
+      return;
+    }
+    const attach = () => {
+      const inputs: any[] = Array.from(this.midiAccess.inputs.values());
+      for (const inp of inputs) inp.onmidimessage = (e: any) => this.handleMIDIMessage(e.data);
+      const names = inputs.map(i => i.name).filter(Boolean);
+      const statusEl = document.getElementById('midi-status');
+      if (statusEl) statusEl.textContent = names.length ? `Connected: ${names.join(', ')}` : 'No MIDI inputs found (plug one in)';
+      const recBtn = document.getElementById('midi-record') as HTMLButtonElement | null;
+      if (recBtn) recBtn.disabled = names.length === 0;
+    };
+    attach();
+    this.midiAccess.onstatechange = attach; // re-attach on hot-plug
+    this.setStatus('ok', 'MIDI connected. Arm a channel with its MIDI button to play.');
+  }
+
+  private handleMIDIMessage(data: Uint8Array) {
+    if (!data || data.length < 2) return;
+    const status = data[0] & 0xf0;
+    const note = data[1];
+    const velocity = data[2] ?? 0;
+    const ch = this.midiArmedChannel;
+    if (!ch) return;
+
+    const isNoteOn  = status === 0x90 && velocity > 0;
+    const isNoteOff = status === 0x80 || (status === 0x90 && velocity === 0);
+
+    if (isNoteOn) {
+      this.sampler?.noteOn(this.state.channels[ch].presetIndex, note, velocity, ch);
+      if (this.midiRecording) {
+        const t = this.scheduler?.currentSongTime ?? this.currentTime;
+        this.midiActiveNotes.set(note, { startTime: t, velocity });
+      }
+    } else if (isNoteOff) {
+      this.sampler?.noteOff(note, ch);
+      const rec = this.midiActiveNotes.get(note);
+      if (rec && this.midiRecording) {
+        this.midiActiveNotes.delete(note);
+        const endT = this.scheduler?.currentSongTime ?? this.currentTime;
+        const dur = Math.max(0.05, endT - rec.startTime);
+        this.state.channels[ch].notes.push({ time: rec.startTime, duration: dur, midi: note, velocity: rec.velocity });
+        this.state.channels[ch].notes.sort((a, b) => a.time - b.time);
+        this.drawPianoRoll(ch, this.currentTime);
+        this.updateNoteCountBadges();
+      }
+    }
+  }
+
+  private armMidiChannel(id: ChannelId) {
+    // Toggle: clicking the armed channel disarms it.
+    this.midiArmedChannel = this.midiArmedChannel === id ? null : id;
+    for (const cid of CHANNELS) {
+      const btn = document.getElementById(`midi-arm-${cid}`);
+      if (btn) btn.classList.toggle('active', this.midiArmedChannel === cid);
+    }
+    const armedEl = document.getElementById('midi-armed');
+    if (armedEl) armedEl.textContent = this.midiArmedChannel ? `Playing through: ${CHANNEL_META[this.midiArmedChannel].label}` : '';
+    if (this.midiArmedChannel) {
+      this.setStatus('ok', `${CHANNEL_META[this.midiArmedChannel].label} armed for MIDI. Play your keyboard${this.midiAccess ? '' : ' (connect a device first)'}.`);
+    }
+  }
+
+  private toggleMidiRecord() {
+    if (!this.midiArmedChannel) { this.setStatus('err', 'Arm a channel for MIDI first (its MIDI button).'); return; }
+    this.midiRecording = !this.midiRecording;
+    const recBtn = document.getElementById('midi-record') as HTMLButtonElement | null;
+    if (recBtn) recBtn.classList.toggle('active', this.midiRecording);
+    if (this.midiRecording) {
+      this.pushHistory();
+      this.midiActiveNotes.clear();
+      this.setStatus('ok', `Recording into ${CHANNEL_META[this.midiArmedChannel].label}. Press play and perform; notes are captured at the playhead.`);
+    } else {
+      this.midiActiveNotes.clear();
+      this.setStatus('ok', 'Recording stopped.');
     }
   }
 

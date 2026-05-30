@@ -32,6 +32,8 @@ export class SF2Sampler {
   private audioBufferCaches: Map<number, Map<number, AudioBuffer>> = new Map();
 
   private activeNodes: AudioBufferSourceNode[] = [];
+  // Sustaining voices for real-time MIDI play (keyed by `${channelId}:${midiNote}`)
+  private liveVoices = new Map<string, { src: AudioBufferSourceNode; gain: GainNode; gainValue: number; releaseSec: number }>();
   private masterGain: GainNode;
   private compressor: DynamicsCompressorNode;
   private analyser: AnalyserNode;
@@ -295,6 +297,67 @@ export class SF2Sampler {
     this.activeNodes.push(src);
 
     if (this.activeNodes.length > 512) this.activeNodes.splice(0, 128);
+  }
+
+  // ── Real-time MIDI play (held until noteOff) ───────────────────
+  noteOn(presetIndex: number, midiNote: number, velocity: number, channelId?: ChannelId): void {
+    if (this.sf2List.length === 0) return;
+    const key = `${channelId ?? 'm'}:${midiNote}`;
+    this.noteOff(midiNote, channelId); // retrigger if already held
+
+    const sf2Idx = channelId ? (this.channelSF2Idx.get(channelId) ?? 0) : 0;
+    const sf2 = this.sf2List[sf2Idx] ?? this.sf2List[0];
+    const zone = this.findZone(sf2, presetIndex, midiNote, velocity);
+    if (!zone) return;
+    const hdr = sf2.sampleHeaders[zone.sampleIndex];
+    let audioBuf: AudioBuffer;
+    try { audioBuf = this.getAudioBuffer(sf2Idx, sf2, zone); } catch { return; }
+
+    const totalCents =
+      (midiNote - zone.rootKey) * (zone.scaleTuning || 100) +
+      zone.coarseTune * 100 + zone.fineTune + hdr.pitchCorrection;
+    const playbackRate = Math.max(0.01, Math.min(64, Math.pow(2, totalCents / 1200)));
+    const attackSec  = Math.max(0.001, Math.min(0.4, timecentsToSec(zone.attackVolEnv)));
+    const releaseSec = Math.max(0.02,  Math.min(1.5, timecentsToSec(zone.releaseVolEnv)));
+    const attGain    = Math.pow(10, -Math.min(960, zone.initialAttenuation) / 200);
+    const gainValue  = attGain * (velocity / 127);
+
+    const now = this.ctx.currentTime;
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(gainValue, now + attackSec);
+    const dest = channelId ? (this.channelGains.get(channelId) ?? this.masterGain) : this.masterGain;
+    gain.connect(dest);
+
+    const src = this.ctx.createBufferSource();
+    src.buffer = audioBuf;
+    src.playbackRate.value = playbackRate;
+    if (zone.loopMode & 1) {
+      const lsFrames = zone.loopStart - hdr.start;
+      const leFrames = zone.loopEnd   - hdr.start;
+      if (lsFrames >= 0 && leFrames > lsFrames && leFrames <= audioBuf.length) {
+        src.loop = true;
+        src.loopStart = lsFrames / hdr.sampleRate;
+        src.loopEnd   = leFrames / hdr.sampleRate;
+      }
+    }
+    src.connect(gain);
+    src.start(now);
+    this.liveVoices.set(key, { src, gain, gainValue, releaseSec });
+  }
+
+  noteOff(midiNote: number, channelId?: ChannelId): void {
+    const key = `${channelId ?? 'm'}:${midiNote}`;
+    const v = this.liveVoices.get(key);
+    if (!v) return;
+    this.liveVoices.delete(key);
+    const now = this.ctx.currentTime;
+    try {
+      v.gain.gain.cancelScheduledValues(now);
+      v.gain.gain.setValueAtTime(v.gain.gain.value || v.gainValue, now);
+      v.gain.gain.linearRampToValueAtTime(0, now + v.releaseSec);
+      v.src.stop(now + v.releaseSec + 0.05);
+    } catch {}
   }
 
   stopAll(): void {

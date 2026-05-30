@@ -2,7 +2,7 @@
 // This is an ADDITIVE desktop wrapper — the web app (npm run dev / build) is unaffected.
 // In dev it loads the Vite dev server; when packaged it loads the built dist/index.html.
 
-const { app, BrowserWindow, shell, Menu } = require('electron');
+const { app, BrowserWindow, shell, Menu, session } = require('electron');
 const path = require('path');
 
 // Dev server URL is passed in by the `dev:electron` npm script. When packaged this is undefined.
@@ -89,6 +89,9 @@ function buildMenu() {
 }
 
 app.whenReady().then(() => {
+  // Allow MIDI device access (Web MIDI) for the live keyboard feature.
+  session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(true));
+
   buildMenu();
   createWindow();
 
