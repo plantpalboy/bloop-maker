@@ -54,7 +54,7 @@ const appIndex = 'demo/app/index.html';
 if (existsSync(appIndex)) {
   let html = readFileSync(appIndex, 'utf8');
   html = html.replace(/<title>[\s\S]*?<\/title>/,
-    '<title>Try Bloop Maker Free — In-Browser Game Music Generator Demo</title>');
+    '<title>Bloop Maker — Generative Music Program | Free In-Browser Game Music Generator Demo</title>');
   html = html.replace(/(<meta name="description" content=")[^"]*(")/,
     '$1Try Bloop Maker free in your browser — a no-AI game music generator built on music-theory rules. Generate original chiptune and video game music; the full version exports MIDI and WAV and runs offline.$2');
   html = html.replace(/(<link rel="canonical" href=")[^"]*(")/,

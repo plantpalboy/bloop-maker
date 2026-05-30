@@ -422,7 +422,7 @@ class App {
         <div class="win-menu-item" id="menu-help">Help
           <div class="win-dropdown">
             <div class="win-dropdown-item" data-action="show-faq">FAQ / How to Use</div>
-            <div class="win-dropdown-item" data-action="show-shortcuts">Keyboard Shortcuts</div>
+            <div class="win-dropdown-item" data-action="show-tour">Show Welcome Tour</div>
             <div class="win-dropdown-sep"></div>
             <div class="win-dropdown-item" data-action="show-about">About</div>
             <div class="win-dropdown-item" data-action="visit-site">bloopmaker.net &#8599;</div>
@@ -435,8 +435,6 @@ class App {
         <button class="toolbar-btn" id="redo-btn" disabled>Redo</button>
         <div class="toolbar-sep"></div>
         <button class="toolbar-btn dark-toggle" id="dark-btn" title="Toggle dark mode">Dark</button>
-        <div class="toolbar-sep"></div>
-        <button class="toolbar-btn" id="hotkeys-btn" title="Keyboard shortcuts">? Keys</button>
       </div>
 
       <div class="win-body">
@@ -674,6 +672,20 @@ class App {
                 </select>
               </div>
               <button class="btn-scramble" id="scramble-btn" disabled>Scramble MIDI!</button>
+
+              <div class="shortcuts-panel">
+                <div class="shortcuts-title">Keyboard Shortcuts</div>
+                <div class="shortcuts-grid">
+                  <span><kbd>Space</kbd> Play / Pause</span>
+                  <span><kbd>R</kbd> Restart &amp; Play</span>
+                  <span><kbd>F</kbd> Generate</span>
+                  <span><kbd>X</kbd> Randomize &amp; Generate</span>
+                  <span><kbd>G</kbd> Random presets</span>
+                  <span><kbd>Ctrl</kbd>+<kbd>Z</kbd> Undo</span>
+                  <span><kbd>Ctrl</kbd>+<kbd>Y</kbd> Redo</span>
+                  <span><kbd>&uarr;</kbd>/<kbd>&darr;</kbd> BPM &plusmn;1 (Shift &plusmn;5)</span>
+                </div>
+              </div>
             </div>
           </div>
           <div class="progress-wrap" id="progress-wrap">
@@ -1138,7 +1150,6 @@ class App {
       this.updateSidePanelColors();
       if (this.oscAnalyser) { this.startMatrixOsc(); } else { this.startMatrixIdle(); }
     });
-    document.getElementById('hotkeys-btn')!.addEventListener('click', (e) => { e.stopPropagation(); this.showShortcuts(); });
     document.getElementById('add-channel-btn')?.addEventListener('click', () => {
       const extras: ChannelId[] = ['extra1', 'extra2', 'extra3'];
       const next = extras.find(e => !this.activeExtraChannels.has(e));
@@ -1678,8 +1689,8 @@ class App {
       case 'more-bars':        this.addMoreBars(16); break;
       case 'random-preset':    this.randomAndGenerate(); break;
       case 'show-faq':         this.faqModal.classList.add('open'); break;
-      case 'show-shortcuts':   this.showShortcuts(); break;
       case 'show-about':       this.aboutModal.classList.add('open'); break;
+      case 'show-tour':        this.startTour(); break;
       case 'visit-site':       window.open('https://bloopmaker.net', '_blank', 'noopener'); break;
     }
   }
@@ -2168,38 +2179,6 @@ class App {
     }, 2000);
   }
 
-  private showShortcuts() {
-    let tip = document.getElementById('hotkeys-tip');
-    if (tip) { tip.remove(); return; }
-    tip = document.createElement('div');
-    tip.id = 'hotkeys-tip';
-    tip.innerHTML = `
-      <div style="font-weight:bold;margin-bottom:6px;font-size:11px;text-transform:uppercase;letter-spacing:1px">Keyboard Shortcuts</div>
-      <table style="border-collapse:collapse;width:100%">
-        <tr><td style="padding:2px 10px 2px 0;font-weight:bold">Space</td><td>Play / Pause</td></tr>
-        <tr><td style="padding:2px 10px 2px 0;font-weight:bold">R</td><td>Restart &amp; Play</td></tr>
-        <tr><td style="padding:2px 10px 2px 0;font-weight:bold">F</td><td>Generate music</td></tr>
-        <tr><td style="padding:2px 10px 2px 0;font-weight:bold">G</td><td>Randomize SF2 presets</td></tr>
-        <tr><td style="padding:2px 10px 2px 0;font-weight:bold">X</td><td>Randomize &amp; Generate</td></tr>
-        <tr><td style="padding:2px 10px 2px 0;font-weight:bold">↑ / ↓</td><td>BPM +1 / −1 (Shift ±5)</td></tr>
-        <tr><td style="padding:2px 10px 2px 0;font-weight:bold">Backspace</td><td>Seek back 5 sec</td></tr>
-        <tr><td style="padding:2px 10px 2px 0;font-weight:bold">Ctrl+Z</td><td>Undo</td></tr>
-        <tr><td style="padding:2px 10px 2px 0;font-weight:bold">Ctrl+Y</td><td>Redo</td></tr>
-      </table>
-      <div style="margin-top:6px;font-size:10px;opacity:0.6">Click anywhere to close</div>
-    `;
-    Object.assign(tip.style, {
-      position: 'fixed', top: '40px', left: '50%', transform: 'translateX(-50%)',
-      background: 'var(--card-bg)', border: '1px solid var(--b-btn)',
-      borderRadius: '8px', padding: '12px 16px', zIndex: '9999',
-      fontFamily: 'Tahoma, Arial, sans-serif', fontSize: '12px',
-      color: 'var(--txt)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-      minWidth: '240px', cursor: 'pointer',
-    });
-    tip.addEventListener('click', () => tip!.remove());
-    document.body.appendChild(tip);
-    setTimeout(() => document.addEventListener('click', function h() { tip?.remove(); document.removeEventListener('click', h); }, { once: true }), 10);
-  }
 
   // ── Helpers ──────────────────────────────────────────────────
 
@@ -2230,6 +2209,9 @@ class App {
     ];
     return WORDS[Math.floor(Math.random() * WORDS.length)];
   }
+
+  // Onboarding tour — implemented in a later step.
+  private startTour() {}
 
   private colorTitle(text: string): string {
     const COLORS = ['#e63030','#1a8fff','#e8b800','#22aa44','#e63030','#1a8fff','#e8b800','#22aa44'];

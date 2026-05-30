@@ -785,6 +785,41 @@ body.dark .gen-select { color: #88b8e4 !important; }
 .channel-note-count { font-size:10px; font-weight:bold; min-width:54px; text-align:right; color: var(--txt-dis); }
 
 .ch-controls { display:flex; align-items:stretch; gap:8px; position:relative; z-index:1; }
+/* Keyboard shortcuts panel under the Scramble button */
+.shortcuts-panel {
+  margin-top: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--b-card);
+  border-radius: var(--radius);
+  background: var(--btn-hi2);
+}
+.shortcuts-title {
+  font: 700 10px Tahoma, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.7;
+  margin-bottom: 6px;
+}
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+  font: 11px Tahoma, sans-serif;
+}
+.shortcuts-grid kbd {
+  display: inline-block;
+  min-width: 14px;
+  padding: 1px 5px;
+  margin: 0 1px;
+  font: 700 10px "Courier New", monospace;
+  text-align: center;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid var(--b-card);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  color: #333;
+}
+
 .ch-btns { display:flex; align-items:center; gap:4px; flex-wrap:wrap; flex:1; }
 /* Small group labels that separate clusters of channel buttons so each
    group's purpose (Mix / Live / Song / Note tools / Pitch / Edit) is clear. */
