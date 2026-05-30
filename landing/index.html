@@ -137,7 +137,10 @@
     .btn-demo { background: var(--bloop-mint); }
     .btn-demo:hover { background: #5cf0d6; }
     .btn-mini { font-size: 15px; padding: 8px 16px; border-width: 3px; box-shadow: 0 4px 0 var(--bloop-ink); border-radius: 12px; background: var(--bloop-yellow); }
-    .buybar .btn-demo { background: var(--bloop-mint); }
+    .buybar { flex-wrap: wrap; }
+    .buybar .btn-demo  { background: var(--bloop-mint); }
+    .buybar .btn-info  { background: var(--bloop-blue); }
+    .buybar .btn-info2 { background: var(--bloop-purple); color: #fff; }
 
     .platforms { text-align: center; font-weight: 900; font-size: 15px; opacity: .7; margin-bottom: 26px; letter-spacing: .5px; }
 
@@ -253,6 +256,8 @@
 
   <div class="buybar">
     <span class="mini-logo">b<b>loop</b>maker</span>
+    <a class="btn btn-mini btn-info" href="./how-it-works.html">How It Works</a>
+    <a class="btn btn-mini btn-info2" href="./faq.html">FAQ</a>
     <a class="btn btn-mini btn-demo" href="./app/">Try Demo</a>
     <a class="btn btn-mini" href="https://plantpalboy.itch.io/">Get it · $12.99</a>
   </div>
