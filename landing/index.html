@@ -8,6 +8,12 @@
   <meta name="description" content="Bloop Maker makes original chiptune and video game music from music-theory rules, no AI, no samples, no copyright risk. Piano-roll editor, MIDI + WAV export, runs offline. Windows, Mac, Linux." />
   <meta name="keywords" content="game music generator, MIDI generator, chiptune maker, no AI music, royalty free game music, procedural music, indie game music, 8-bit music generator" />
   <meta name="theme-color" content="#fff8de" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon/favicon-16x16.png">
+  <link rel="shortcut icon" href="./favicon/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="./favicon/apple-touch-icon.png">
+  <link rel="manifest" href="./favicon/site.webmanifest">
+  <meta property="og:image" content="https://bloopmaker.net/favicon/android-chrome-512x512.png" />
 
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Bloop Maker, Game Music, No AI" />
@@ -125,6 +131,22 @@
 
     /* CTA buttons */
     .cta-row { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin: 6px 0 30px; }
+    .cta-row .btn-ex { background: var(--bloop-orange); }
+
+    .hero-sample {
+      max-width: 560px; margin: 0 auto 34px; text-align: center;
+      border: 4px solid var(--bloop-ink); border-radius: 18px; background: #fff;
+      box-shadow: 0 6px 0 var(--bloop-ink); padding: 18px 20px 20px;
+    }
+    .hero-sample .hs-head { margin: 0 0 4px; font-weight: 900; font-size: 20px; color: var(--bloop-purple); }
+    .hero-sample .hs-cap { margin: 0 0 12px; font-size: 14px; opacity: .85; }
+    .hero-sample .hs-wave {
+      position: relative; width: 100%; height: 64px; margin: 0 0 12px;
+      border: 3px solid var(--bloop-ink); border-radius: 12px; overflow: hidden; background: var(--bloop-soft); cursor: pointer;
+    }
+    .hero-sample .hs-wave canvas { display: block; width: 100%; height: 100%; }
+    .hero-sample audio { width: 100%; }
+    .hero-sample .hs-more { margin: 12px 0 0; font-size: 14px; font-weight: 900; }
     .btn {
       font-family: inherit; font-weight: 900; font-size: 20px; cursor: pointer;
       padding: 16px 30px; border-radius: 18px; border: 4px solid var(--bloop-ink);
@@ -202,6 +224,14 @@
     .page li::marker { color: var(--bloop-pink); font-weight: 900; }
 
     .note { font-size: 16px; opacity: .92; margin-top: 36px; }
+
+    .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 10px 0 22px; }
+    .compare-col { border: 3px solid var(--bloop-ink); border-radius: 16px; background: #fff; box-shadow: 0 5px 0 var(--bloop-ink); padding: 6px 20px 14px; }
+    .cc-full-col { background: rgba(255,225,74,.18); }
+    .cc-head { text-align: center; font-size: 20px; font-weight: 900; margin: 14px 0 4px; }
+    .cc-free { color: var(--bloop-blue); }
+    .cc-full { color: var(--bloop-orange); }
+    @media (max-width: 600px) { .compare { grid-template-columns: 1fr; } }
 
     .ending { text-align: center; font-size: clamp(22px,4vw,34px); line-height: 1.2; font-weight: 900; margin: 42px 0 10px; color: var(--bloop-pink); animation: pulse 2s ease-in-out infinite; }
     .ending em { color: var(--bloop-purple); font-style: normal; }
@@ -295,11 +325,22 @@
       a little bloop machine that makes game music with you. no <em>AI slop</em>, no scraped songs. just notes.
     </p>
 
-    <div class="platforms">Windows · macOS · Linux<br>runs offline · makes a song the second you ask · no account</div>
+    <div class="platforms">Windows · macOS · Linux<br>runs offline · generates songs instantly · no account</div>
 
     <div class="cta-row">
       <button class="btn btn-info" data-modal="features-modal">Features &amp; How It Works</button>
       <button class="btn btn-info2" data-modal="faq-modal">FAQ</button>
+      <a class="btn btn-ex" href="./examples.html">hear the bloops →</a>
+    </div>
+
+    <!-- Homepage audio sample: auto-loads the first song from examples/manifest.json.
+         Stays hidden until at least one example exists. -->
+    <div class="hero-sample" id="hero-sample" style="display:none">
+      <p class="hs-head">this is what it makes</p>
+      <p class="hs-cap">press play. real song, made by the little bloop machine, right here. no waiting.</p>
+      <div class="hs-wave" id="hs-wave"><canvas></canvas></div>
+      <audio id="hs-audio" controls preload="none"></audio>
+      <p class="hs-more"><a href="./examples.html">more examples →</a></p>
     </div>
 
     <div class="gallery" id="gallery">
@@ -368,6 +409,32 @@
       <li>pick a mode, hit <strong>Generate</strong></li>
       <li>shape it, then <strong>Save MIDI</strong> or <strong>Save WAV</strong></li>
     </ol>
+
+    <div class="list-title"><span>free demo</span> <span>vs the whole thing</span></div>
+    <p>the demo is the real deal, just smaller. play with it as long as you like, then grab the full one whenever it feels right.</p>
+    <div class="compare">
+      <div class="compare-col">
+        <h3 class="cc-head cc-free">free demo</h3>
+        <ul>
+          <li>4 channels to fill up</li>
+          <li>a little handful of presets, arp styles, and song shapes</li>
+          <li>shorter songs</li>
+          <li>no file export — it stays in the app for now</li>
+        </ul>
+      </div>
+      <div class="compare-col cc-full-col">
+        <h3 class="cc-head cc-full">full · $12.99</h3>
+        <ul>
+          <li>all 6+ channels</li>
+          <li>every preset, every arp style, every archetype</li>
+          <li>longer songs, room to wander</li>
+          <li>export your bloops as MIDI + WAV</li>
+          <li>per-channel soundfonts, pick your own sounds</li>
+          <li>yours forever. offline. no account, ever.</li>
+        </ul>
+      </div>
+    </div>
+    <p style="text-align:center;font-weight:900;color:var(--bloop-purple)">twelve bucks and change, and the whole little machine is yours to keep. go ahead, give it a shot :)</p>
 
     <div class="cta-row">
       <a class="btn btn-buy" href="https://plantpalboy.itch.io/">Get Bloop Maker · $12.99</a>
@@ -507,6 +574,73 @@
   </footer>
 
   <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+
+  <!-- Homepage audio sample: pull the first song from the examples manifest, draw
+       its waveform, sync a progress fill + click-to-seek. Hidden if no examples. -->
+  <script>
+    (function () {
+      const BASE = './examples/';
+      const box = document.getElementById('hero-sample');
+      const wrap = document.getElementById('hs-wave');
+      const canvas = wrap.querySelector('canvas');
+      const audio = document.getElementById('hs-audio');
+      const COLOR = '#ff4aa2';
+      let peaks = null, ctx = null;
+
+      function paint() {
+        const dpr = window.devicePixelRatio || 1, w = wrap.clientWidth, h = wrap.clientHeight;
+        canvas.width = w * dpr; canvas.height = h * dpr;
+        const c = canvas.getContext('2d');
+        c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, w, h);
+        if (!peaks) return;
+        const mid = h / 2, n = peaks.length, bw = w / n;
+        const prog = (audio.duration ? audio.currentTime / audio.duration : 0) * w;
+        for (let x = 0; x < n; x++) {
+          const a = Math.max(2, peaks[x] * (h * 0.92)), px = x * bw;
+          c.fillStyle = px <= prog ? COLOR : 'rgba(36,27,58,0.22)';
+          c.fillRect(px, mid - a / 2, Math.max(1, bw - 1), a);
+        }
+      }
+      async function drawWave(url) {
+        try {
+          const buf = await fetch(url).then((r) => r.arrayBuffer());
+          ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+          const dec = await ctx.decodeAudioData(buf), raw = dec.getChannelData(0);
+          const N = 180, block = Math.floor(raw.length / N) || 1, out = new Float32Array(N);
+          let max = 0;
+          for (let i = 0; i < N; i++) {
+            let s = 0; for (let j = 0; j < block; j++) s += Math.abs(raw[i * block + j] || 0);
+            out[i] = s / block; if (out[i] > max) max = out[i];
+          }
+          if (max > 0) for (let i = 0; i < N; i++) out[i] /= max;
+          peaks = out; paint();
+        } catch (e) { /* keep audio controls, skip the waveform */ }
+      }
+      wrap.addEventListener('click', (e) => {
+        if (peaks && audio.duration) {
+          const r = wrap.getBoundingClientRect();
+          audio.currentTime = ((e.clientX - r.left) / r.width) * audio.duration;
+          if (audio.paused) audio.play();
+        }
+      });
+      audio.addEventListener('timeupdate', paint);
+      audio.addEventListener('seeked', paint);
+      window.addEventListener('resize', paint);
+
+      fetch(BASE + 'manifest.json', { cache: 'no-cache' })
+        .then((r) => r.ok ? r.json() : [])
+        .then((songs) => {
+          if (!Array.isArray(songs) || !songs.length) return; // stay hidden
+          const song = songs[0];
+          audio.src = BASE + encodeURIComponent(song.wav);
+          box.style.display = 'block';
+          new IntersectionObserver((en, io) => {
+            if (en[0].isIntersecting) { io.disconnect(); drawWave(audio.src); }
+          }, { rootMargin: '200px' }).observe(wrap);
+        })
+        .catch(() => {});
+    })();
+  </script>
 
   <script>
   // ── Popups ─────────────────────────────────────────────────────
