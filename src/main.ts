@@ -872,12 +872,20 @@ class App {
         </div>
         <div class="ch-controls">
           <div class="ch-btns">
-            <button class="btn-solo"      id="solo-${id}">SOLO</button>
-            <button class="btn-mute"      id="mute-${id}">MUTE</button>
-            <button class="btn-midi-arm"  id="midi-arm-${id}" title="Arm this channel for live MIDI keyboard input (play along / record)">MIDI</button>
-            <button class="btn-regen"     id="regen-${id}"     disabled>Regen</button>
+            <span class="ch-grp-lbl">Mix</span>
+            <button class="btn-solo"      id="solo-${id}" title="Solo: mute every other channel and hear only this one">SOLO</button>
+            <button class="btn-mute"      id="mute-${id}" title="Mute: silence this channel">MUTE</button>
+
+            <span class="ch-grp-lbl">Live</span>
+            <button class="btn-midi-arm"  id="midi-arm-${id}" title="Arm this channel for your live MIDI keyboard (play along / record into it)">🎹 Arm</button>
+
+            <span class="ch-grp-lbl">Song</span>
+            <button class="btn-regen"     id="regen-${id}"     disabled title="Regenerate just this channel, keeping the same key and chords">Regen</button>
+            <button class="btn-lock" id="lock-${id}" title="Lock: protect this channel so Generate / Regen never changes it">LOCK</button>
             <button class="btn-sm"        id="clear-${id}"     title="Clear all notes from this channel" style="font-size:10px">Clear</button>
-            <button class="btn-simplify"  id="simplify-${id}"    disabled title="Simplify: thin fast runs, add breathing room">Simplify</button>
+
+            <span class="ch-grp-lbl">Note tools</span>
+            <button class="btn-simplify"  id="simplify-${id}"    disabled title="Simplify: thin out fast runs, add breathing room">Simplify</button>
             <button class="btn-sm"        id="ghost-${id}"      disabled title="Ghost: drop all velocities by 25 — sits back in the mix" style="font-size:10px">Ghost</button>
             <button class="btn-sm"        id="boost-${id}"      disabled title="Boost: raise all velocities by 20 — pushes channel forward" style="font-size:10px">Boost</button>
             <button class="btn-sm"        id="staccato-${id}"   disabled title="Staccato: cut all note durations to 40% — punchy and separated" style="font-size:10px">Stacc</button>
@@ -886,15 +894,18 @@ class App {
             <button class="btn-sm"        id="retrograde-${id}" disabled title="Retrograde: reverse the order of all notes in time" style="font-size:10px">Retro</button>
             <button class="btn-sm"        id="oct-up-${id}"     disabled title="Shift all notes up one octave" style="font-size:10px">Oct+</button>
             <button class="btn-sm"        id="oct-dn-${id}"     disabled title="Shift all notes down one octave" style="font-size:10px">Oct-</button>
-            <button class="btn-edit-roll" id="edit-${id}">Piano Roll</button>
+
+            <span class="ch-grp-lbl">Pitch</span>
             <div class="ch-transpose">
               <button class="btn-tr" id="tr-dn-${id}"     title="-1 semitone">-1</button>
               <button class="btn-tr" id="tr-up-${id}"     title="+1 semitone">+1</button>
               <button class="btn-tr" id="tr-oct-dn-${id}" title="-1 octave" style="width:26px;font-size:9px">-12</button>
               <button class="btn-tr" id="tr-oct-up-${id}" title="+1 octave" style="width:26px;font-size:9px">+12</button>
             </div>
-            <button class="btn-export-ch" id="export-ch-${id}" disabled>MIDI</button>
-            <button class="btn-lock" id="lock-${id}" title="Lock channel — Regen won't change it">LOCK</button>
+
+            <span class="ch-grp-lbl">Edit</span>
+            <button class="btn-edit-roll" id="edit-${id}" title="Open the piano roll to draw / erase notes">Piano Roll</button>
+            <button class="btn-export-ch" id="export-ch-${id}" disabled title="Save this channel as a .mid (MIDI) file">💾 Save MIDI</button>
             <div class="ch-sparse-wrap" title="Generation sparseness — how often this channel rests">
               <button class="btn-gen-toggle ${this.channelGenEnabled[id] !== false ? 'active' : ''}" id="gen-toggle-${id}" title="Toggle channel in generation">GEN</button>
               <input type="range" class="ch-sparse" id="sparse-${id}" min="0" max="1" value="${this.channelSparseValues[id] ?? 0}" step="0.05" ${this.channelGenEnabled[id] === false ? 'disabled' : ''}>

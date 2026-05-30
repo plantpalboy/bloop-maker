@@ -577,7 +577,6 @@ input[type="checkbox"]:checked::after {
   white-space: pre;
   color: var(--b-ink, #333);
   align-self: center;
-  transform: scaleX(-1); /* flip to face the speech bubble */
 }
 .status-bubble {
   flex: 1;
@@ -787,6 +786,21 @@ body.dark .gen-select { color: #88b8e4 !important; }
 
 .ch-controls { display:flex; align-items:stretch; gap:8px; position:relative; z-index:1; }
 .ch-btns { display:flex; align-items:center; gap:4px; flex-wrap:wrap; flex:1; }
+/* Small group labels that separate clusters of channel buttons so each
+   group's purpose (Mix / Live / Song / Note tools / Pitch / Edit) is clear. */
+.ch-grp-lbl {
+  font: 700 8px Tahoma, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--txt-dis, #888);
+  opacity: 0.85;
+  padding: 0 3px 0 6px;
+  margin-left: 3px;
+  border-left: 1px solid rgba(0,0,0,0.18);
+  white-space: nowrap;
+  align-self: center;
+}
+.ch-btns > .ch-grp-lbl:first-child { border-left: none; margin-left: 0; padding-left: 0; }
 
 /* Channel-row buttons */
 .btn-solo, .btn-mute, .btn-regen, .btn-simplify, .btn-export-ch, .btn-edit-roll, .btn-midi-arm {
