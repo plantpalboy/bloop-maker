@@ -965,33 +965,33 @@ class App {
           <div class="modal-body" style="font-size:12px;line-height:1.6">
 
             <h3>What is this?</h3>
-            <p>Bloop Maker is a <strong>procedural MIDI composer</strong>. It generates original video game style music from scratch using coded music theory rules — chord progressions, melody contour, motif repetition, harmonic rhythm, bass logic, and drum patterns. No AI. No internet. No samples copied from other music. Everything runs in your browser.</p>
+            <p>Bloop Maker is a <strong>procedural MIDI composer</strong>. it writes original video-game-style music from scratch using coded music-theory rules, chord progressions, melody contour, motif repetition, harmonic rhythm, bass logic, drum patterns. no AI. no internet. no samples copied from other music. it all runs right in your browser.</p>
 
             <h3>Step 1 — Get a Soundfont</h3>
-            <p>To hear audio you need a free <strong>.sf2 soundfont file</strong>. Search for <em>GeneralUser GS sf2</em> or <em>FluidR3 GM sf2</em> — both are free and work well. Drag the file into the Soundfont box. Without a soundfont you can still generate and export MIDI, you just won't hear playback inside the app.</p>
+            <p>to hear audio you need a free <strong>.sf2 soundfont file</strong>. search for <em>GeneralUser GS sf2</em> or <em>FluidR3 GM sf2</em>, both are free and work great. drag the file into the Soundfont box. without a soundfont you can still generate and export MIDI, you just won't hear playback inside the app.</p>
 
             <h3>Step 2 — Generate a Song</h3>
-            <p>Pick a <strong>Preset</strong> from the dropdown for a quick start, or set Mode / BPM / Key / Scale manually. Hit <strong>Generate!</strong>. Press <strong>Space</strong> or the play button to hear it.</p>
-            <p>Use the <strong>Steer</strong> buttons before generating to push toward a feel: <em>Bright</em> forces cheerful major/lydian songs, <em>Cinematic</em> forces dark minor with no drums, <em>Lush</em> makes warm cozy music, <em>Punchy</em> makes tight energetic songs, <em>Lofi</em> makes sparse slow intimate songs, <em>Focused</em> maximises hook repetition.</p>
+            <p>pick a <strong>Preset</strong> from the dropdown for a quick start, or set Mode / BPM / Key / Scale yourself. hit <strong>Generate!</strong>. press <strong>Space</strong> or the play button to hear it.</p>
+            <p>use the <strong>Steer</strong> buttons before generating to push toward a feel: <em>Bright</em> forces cheerful major/lydian songs, <em>Cinematic</em> forces dark minor with no drums, <em>Lush</em> makes warm cozy music, <em>Punchy</em> makes tight energetic songs, <em>Lofi</em> makes sparse slow intimate songs, <em>Focused</em> maxes out hook repetition.</p>
 
             <h3>Step 3 — Shape It</h3>
-            <p><strong>Archetype</strong> — pick a motif shape from the dropdown (3, 4, 5, 6, or 8 notes). This pattern repeats as the main hook throughout the song, transposed to each chord. <strong>Arp Style</strong> controls how the harmony channel plays chords — try different ones to change the texture completely.</p>
-            <p><strong>Regen</strong> on any channel regenerates just that one channel while keeping everything else. It uses the same seed as the original generation so the result stays in key and in the same chord progression.</p>
+            <p><strong>Archetype</strong> — pick a motif shape from the dropdown (3, 4, 5, 6, or 8 notes). this pattern repeats as the main hook through the whole song, moved to fit each chord. <strong>Arp Style</strong> controls how the harmony channel plays its chords, try a few, they change the texture completely.</p>
+            <p><strong>Regen</strong> on any channel regenerates just that one channel and keeps everything else. it uses the same seed as the original generation, so the result stays in key and in the same chord progression.</p>
 
             <h3>Step 4 — Refine with Post-Gen Buttons</h3>
-            <p>Per-channel: <strong>Simplify</strong> thins fast runs · <strong>Ghost</strong> pulls the channel back in the mix · <strong>Boost</strong> pushes it forward · <strong>Stacc</strong> makes notes punchy and short · <strong>Legato</strong> makes them smooth and connected · <strong>Harm</strong> adds a harmony note below every note · <strong>Retro</strong> reverses the note order · <strong>Oct+ / Oct-</strong> shifts the whole channel up or down an octave.</p>
-            <p>Global: <strong>Swing</strong> delays off-beat notes 30ms across all channels (toggle — click again to remove) · <strong>Compress</strong> narrows the velocity range · <strong>Swell</strong> adds a volume crescendo from start to end · <strong>2x Time</strong> halves all timings (twice as busy) · <strong>0.5x Time</strong> doubles all timings (half as busy).</p>
+            <p>Per-channel: <strong>Simplify</strong> thins out fast runs · <strong>Ghost</strong> pulls the channel back in the mix · <strong>Boost</strong> pushes it forward · <strong>Stacc</strong> makes notes punchy and short · <strong>Legato</strong> makes them smooth and connected · <strong>Harm</strong> adds a harmony note below every note · <strong>Retro</strong> reverses the note order · <strong>Oct+ / Oct-</strong> shifts the whole channel up or down an octave.</p>
+            <p>Global: <strong>Swing</strong> delays off-beat notes 30ms across all channels (toggle, click again to remove) · <strong>Compress</strong> narrows the velocity range · <strong>Swell</strong> adds a volume crescendo from start to end · <strong>2x Time</strong> halves all timings (twice as busy) · <strong>0.5x Time</strong> doubles all timings (half as busy).</p>
 
             <h3>Step 5 — Edit Notes</h3>
-            <p>Click <strong>Piano Roll</strong> on any channel to open the note editor. Click empty space to add a note. Click a note to remove it. Drag right while placing to extend the duration. Scroll wheel to zoom. Click the piano keys on the left to preview pitches.</p>
+            <p>click <strong>Piano Roll</strong> on any channel to open the note editor. click empty space to add a note. click a note to remove it. drag right while placing to stretch the duration. scroll wheel to zoom. click the piano keys on the left to preview pitches.</p>
 
             <h3>Step 6 — Export</h3>
-            <p><strong>Save MIDI</strong> — exports a standard .mid file. Open it in any DAW, notation software, or MIDI device. What you hear is what you get — all edits and post-gen changes are included.</p>
-            <p><strong>Save WAV</strong> — renders to audio using the loaded soundfont. Requires a soundfont.</p>
-            <p>Each channel also has its own MIDI export button for exporting just that channel.</p>
+            <p><strong>Save MIDI</strong> — exports a standard .mid file. open it in any DAW, notation software, or MIDI device. what you hear is what you get, all your edits and post-gen changes come along.</p>
+            <p><strong>Save WAV</strong> — renders to audio using the loaded soundfont. needs a soundfont.</p>
+            <p>each channel also has its own <strong>Save MIDI</strong> button, for exporting just that one channel.</p>
 
             <h3>Playback Modes</h3>
-            <p>Normal = plays once · Loop (↻) = replays the same bars seamlessly · Infinite = auto-appends more bars so the song never ends.</p>
+            <p>Normal = plays once · Loop (↻) = replays the same bars seamlessly · Infinite = auto-adds more bars so the song never ends.</p>
 
             <h3>Keyboard Shortcuts</h3>
             <div class="tip" style="font-size:11px">
@@ -1006,14 +1006,14 @@ class App {
             </div>
 
             <h3>FAQ</h3>
-            <p><strong>Does this use AI?</strong> No. Music is generated entirely by coded music theory rules — chord progression tables, melody algorithms, motif logic, and pattern generators written in TypeScript. No machine learning, no neural networks, no external APIs.</p>
-            <p><strong>Does it need the internet?</strong> No. Once the page loads it runs completely offline. No data leaves your machine.</p>
-            <p><strong>Why does it sound dark/weird sometimes?</strong> Some modes and scales skew that way by design. Use the <em>Bright</em> or <em>Lush</em> steer button before generating to push toward cheerful results. The <em>Focused</em> steer makes hooks more repetitive and recognisable.</p>
-            <p><strong>How do I get the same song again?</strong> Copy the seed from the Inspector row (or the Copy Seed button) and share it. The same seed + same settings always produces the same song.</p>
-            <p><strong>Why does per-channel Regen sound different from the original?</strong> It uses the same seed and same chord progression as the original, but some randomness (ornaments, rhythm variation) changes per call. It will always be in the same key and scale.</p>
-            <p><strong>Can I import my own MIDI?</strong> Yes — drop any .mid file into the MIDI drop zone. Then edit, scramble, or re-export it.</p>
+            <p><strong>Does this use AI?</strong> no. the music is made entirely by coded music-theory rules, chord progression tables, melody algorithms, motif logic, and pattern generators written in TypeScript. no machine learning, no neural networks, no external APIs.</p>
+            <p><strong>Does it need the internet?</strong> no. once the page loads it runs completely offline. nothing leaves your machine.</p>
+            <p><strong>Why does it sound dark/weird sometimes?</strong> some modes and scales lean that way on purpose. use the <em>Bright</em> or <em>Lush</em> steer button before generating to push toward cheerful. the <em>Focused</em> steer makes hooks more repetitive and easy to recognize.</p>
+            <p><strong>How do I get the same song again?</strong> copy the seed from the Inspector row (or the Copy Seed button) and share it. the same seed + the same settings always make the same song.</p>
+            <p><strong>Why does per-channel Regen sound different from the original?</strong> it uses the same seed and same chord progression as the original, but a little randomness (ornaments, rhythm variation) changes each time you call it. it'll always stay in the same key and scale.</p>
+            <p><strong>Can I import my own MIDI?</strong> yes, drop any .mid file into the MIDI drop zone. then edit it, scramble it, or re-export it.</p>
 
-            <p style="margin-top:16px;color:var(--txt-dis);font-size:10px;text-align:center">Bloop Maker — procedural game music composer · runs offline · no AI<br>More info, guides, and the full version at <a href="https://bloopmaker.net" target="_blank" rel="noopener">bloopmaker.net</a></p>
+            <p style="margin-top:16px;color:var(--txt-dis);font-size:10px;text-align:center">Bloop Maker — procedural game music composer · runs offline · no AI<br>more info and guides at <a href="https://bloopmaker.net" target="_blank" rel="noopener">bloopmaker.net</a></p>
           </div>
           <div class="modal-footer">
             <button id="faq-close-btn">Got it!</button>
