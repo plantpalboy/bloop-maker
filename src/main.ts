@@ -362,8 +362,8 @@ class App {
     const btn = 'display:inline-block;padding:4px 12px;border-radius:8px;border:2px solid #1a1a1a;'
       + 'font-weight:800;text-decoration:none;color:#1a1a1a;white-space:nowrap';
     bar.innerHTML =
-      `<span style="flex:1;min-width:0">You're using the <b>Bloop Maker demo</b> — 4 channels, limited features, no file export.</span>`
-      + `<a href="${FULL_VERSION_URL}" target="_blank" rel="noopener" style="${btn}background:#ffe14a">Buy — $12.99</a>`
+      `<span style="flex:1;min-width:0">You're using the <b>Bloop Maker demo</b>. 4 channels, limited features, no file export.</span>`
+      + `<a href="${FULL_VERSION_URL}" target="_blank" rel="noopener" style="${btn}background:#ffe14a">Buy · $12.99</a>`
       + `<a href="../" style="${btn}background:#36e0c4">Back to homepage</a>`;
     document.body.appendChild(bar);
     document.body.style.paddingTop = '34px';
