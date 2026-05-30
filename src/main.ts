@@ -684,9 +684,9 @@ class App {
           <div class="midi-bar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;font:11px Tahoma;padding:6px 8px;border:1px solid var(--b-card);border-radius:var(--radius);background:var(--btn-hi2)">
             <button class="btn-sm" id="midi-connect">Connect MIDI Keyboard</button>
             <span id="midi-status" style="opacity:.75">No device connected</span>
-            <button class="btn-sm" id="midi-record" disabled title="Record your live playing into the armed channel">● Record</button>
+            <button class="btn-sm" id="midi-record" disabled title="Start playing + recording your live keyboard into the armed track(s). Click again to stop.">● Record</button>
             <span id="midi-armed" style="opacity:.75;font-weight:700"></span>
-            <span style="opacity:.55;margin-left:auto">Arm one or more channels with their <b>MIDI</b> button, then play along or record.</span>
+            <span style="opacity:.55;margin-left:auto">To record: <b>1.</b> Connect &amp; <b>Arm</b> a track · <b>2.</b> press <b>● Record</b> · <b>3.</b> play · <b>4.</b> Record again to stop.</span>
           </div>
           <div class="channels-list" id="channels-list">
             ${this.visibleChannelIds().map(id => this.renderChannelRow(id)).join('')}
@@ -877,7 +877,7 @@ class App {
             <button class="btn-mute"      id="mute-${id}" title="Mute: silence this channel">MUTE</button>
 
             <span class="ch-grp-lbl">Live</span>
-            <button class="btn-midi-arm"  id="midi-arm-${id}" title="Arm this channel for your live MIDI keyboard (play along / record into it)">🎹 Arm</button>
+            <button class="btn-midi-arm"  id="midi-arm-${id}" title="Arm this channel for your live MIDI keyboard (play along / record into it)">Arm</button>
 
             <span class="ch-grp-lbl">Song</span>
             <button class="btn-regen"     id="regen-${id}"     disabled title="Regenerate just this channel, keeping the same key and chords">Regen</button>
@@ -1121,7 +1121,7 @@ class App {
 
     document.getElementById('gen-btn')!.addEventListener('click', () => this.runGenerator());
     document.getElementById('midi-connect')?.addEventListener('click', () => void this.connectMIDI());
-    document.getElementById('midi-record')?.addEventListener('click', () => this.toggleMidiRecord());
+    document.getElementById('midi-record')?.addEventListener('click', () => void this.toggleMidiRecord());
 
     // Tap tempo
     let tapTimes: number[] = [];
@@ -3076,10 +3076,19 @@ class App {
     else { this.currentTime = 0; void this.startPlayback(); }
   }
 
-  private async startPlayback() {
+  private async startPlayback(allowEmpty = false) {
     if (this.loadedSF2s.length === 0) { this.setStatus('err', 'Load an SF2 soundfont to enable playback!'); return; }
     const total = CHANNELS.reduce((s, id) => s + this.state.channels[id].notes.length, 0);
-    if (total === 0) { this.setStatus('err', 'No notes yet -- generate something or load a MIDI!'); return; }
+    if (total === 0) {
+      if (!allowEmpty) { this.setStatus('err', 'No notes yet -- generate something or load a MIDI!'); return; }
+      // Recording into an empty song: give it a default 8-bar clock to record
+      // against, so the playhead actually moves and notes land in time.
+      if (this.state.duration <= 0) {
+        const bpm = this.state.bpm || 120;
+        this.state.duration = (60 / bpm) * 4 * 8;
+        this.seekSlider.max = String(this.state.duration);
+      }
+    }
 
     this.ensureAudioContext();
     if (!this.audioCtx) return;
@@ -3917,7 +3926,7 @@ class App {
     };
     attach();
     this.midiAccess.onstatechange = attach; // re-attach on hot-plug
-    this.setStatus('ok', 'MIDI connected. Arm a channel with its MIDI button to play.');
+    this.setStatus('ok', 'MIDI connected. Click "Arm" on a track to play it, then "● Record" to capture.');
   }
 
   private handleMIDIMessage(data: Uint8Array) {
@@ -3980,12 +3989,22 @@ class App {
     document.getElementById('jam-btn')?.classList.toggle('active', on);
   }
 
-  private toggleMidiRecord() {
-    if (this.midiArmedChannels.size === 0) { this.setStatus('err', 'Arm at least one channel for MIDI first (its MIDI button).'); return; }
+  private async toggleMidiRecord() {
+    if (this.midiArmedChannels.size === 0) { this.setStatus('err', 'Arm a channel first: click "Arm" on the track you want to record into.'); return; }
     if (this.midiRecording) { this.setMidiRecording(false); this.setStatus('ok', 'Recording stopped.'); return; }
+    // Start the song rolling (from the current playhead) so your playing is
+    // captured in time. Loop so a take keeps cycling until you stop. Works even
+    // on a totally empty track (allowEmpty gives it a clock).
+    if (!this.loopEnabled) {
+      this.loopEnabled = true;
+      document.getElementById('loop-btn')?.classList.add('active');
+      if (this.scheduler) this.scheduler.loop = true;
+    }
+    if (!this.state.isPlaying) await this.startPlayback(true);
+    if (!this.state.isPlaying) return; // couldn't start (no SF2 loaded)
     this.setMidiRecording(true);
     const labels = [...this.midiArmedChannels].map(c => CHANNEL_META[c].label).join(', ');
-    this.setStatus('ok', `Recording into ${labels}. Press play and perform; notes are captured at the playhead.`);
+    this.setStatus('ok', `Recording into ${labels}. Play your keyboard now — press Record again to stop.`);
   }
 
   // Jam mode: restart from the top, turn looping on, start playback, and record.
@@ -4001,8 +4020,8 @@ class App {
     }
     this.currentTime = 0;
     if (this.state.isPlaying) this.seekTo(0);
-    else await this.startPlayback();
-    if (!this.state.isPlaying) return; // couldn't start (no SF2 or no notes yet)
+    else await this.startPlayback(true); // allow recording into an empty track
+    if (!this.state.isPlaying) return; // couldn't start (no SF2 loaded)
     this.setMidiRecording(true);
     const labels = [...this.midiArmedChannels].map(c => CHANNEL_META[c].label).join(', ');
     this.setStatus('ok', `Jam mode: looping and recording into ${labels}. Hit pause or the record/jam button to stop.`);
