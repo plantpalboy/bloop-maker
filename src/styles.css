@@ -301,7 +301,28 @@ body.dark select option {
     0 0 22px rgba(60,180,255,0.35),
     1px 2px 0 rgba(0,0,0,0.35);
   transition: transform 0.14s cubic-bezier(.34,1.56,.64,1), color 0.12s, text-shadow 0.12s;
+  animation: titlewiggle 2.2s ease-in-out infinite;
 }
+/* Each letter wiggles on its own offset so the whole title ripples. */
+.title-letter:nth-child(1)  { animation-delay: 0s;    }
+.title-letter:nth-child(2)  { animation-delay: 0.12s; }
+.title-letter:nth-child(3)  { animation-delay: 0.24s; }
+.title-letter:nth-child(4)  { animation-delay: 0.36s; }
+.title-letter:nth-child(5)  { animation-delay: 0.48s; }
+.title-letter:nth-child(6)  { animation-delay: 0.60s; }
+.title-letter:nth-child(7)  { animation-delay: 0.72s; }
+.title-letter:nth-child(8)  { animation-delay: 0.84s; }
+.title-letter:nth-child(9)  { animation-delay: 0.96s; }
+.title-letter:nth-child(10) { animation-delay: 1.08s; }
+.title-letter:nth-child(11) { animation-delay: 1.20s; }
+@keyframes titlewiggle {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25%      { transform: translateY(-4px) rotate(-3deg); }
+  75%      { transform: translateY(2px) rotate(3deg); }
+}
+/* Hover wins over the idle wiggle and freezes it for a clean pop. */
+.title-letter:hover { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .title-letter { animation: none; } }
 .title-letter:hover {
   transform: scale(1.32) rotate(-7deg) translateY(-4px);
   color: #b8ffee;

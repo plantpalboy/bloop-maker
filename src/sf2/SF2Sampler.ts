@@ -167,34 +167,17 @@ export class SF2Sampler {
       const ibagStart = instruments[instIdx].bagIndex;
       const ibagEnd   = instruments[instIdx + 1]?.bagIndex ?? instrumentBags.length;
 
-      for (let ibagIdx = ibagStart; ibagIdx < ibagEnd; ibagIdx++) {
-        if (ibagIdx >= instrumentBags.length) break;
-        const igenStart = instrumentBags[ibagIdx].genNdx;
-        const igenEnd   = instrumentBags[ibagIdx + 1]?.genNdx ?? instrumentGens.length;
-
-        const z = new Map<number, { amount: number; amountLo: number; amountHi: number }>();
-        for (let gi = igenStart; gi < igenEnd; gi++) {
-          const g = instrumentGens[gi];
-          if (g) z.set(g.oper, g);
-        }
-
-        const kr = z.get(GEN_KEY_RANGE);
-        if (kr && (midiNote < kr.amountLo || midiNote > kr.amountHi)) continue;
-
-        const vr = z.get(GEN_VEL_RANGE);
-        if (vr && (velocity < vr.amountLo || velocity > vr.amountHi)) continue;
-
+      // Build a resolved zone from an instrument bag's generators. Returns null
+      // if the bag has no playable sample.
+      const resolve = (z: Map<number, { amount: number; amountLo: number; amountHi: number }>): ResolvedZone | null => {
         const sid = z.get(GEN_SAMPLE_ID);
-        if (!sid || sid.amount >= sampleHeaders.length) continue;
-
+        if (!sid || sid.amount >= sampleHeaders.length) return null;
         const sampleIndex = sid.amount;
         const hdr = sampleHeaders[sampleIndex];
-
         const rkGen = z.get(GEN_OVERRIDE_ROOT_KEY);
         const rootKey = (rkGen && rkGen.amount < 128 && rkGen.amount !== 255)
           ? rkGen.amount
           : hdr.originalPitch;
-
         return {
           sampleIndex,
           rootKey,
@@ -208,7 +191,45 @@ export class SF2Sampler {
           loopStart: hdr.loopStart,
           loopEnd:   hdr.loopEnd,
         };
+      };
+
+      // Track the closest-by-key zone so a keyRange gap never produces silence:
+      // if no zone covers the exact note, we fall back to the nearest one and
+      // pitch-shift it (this is what fixes individual "dead" keys in soundfonts
+      // whose preset zones don't cover every note).
+      let fallback: ResolvedZone | null = null;
+      let fallbackDist = Infinity;
+
+      for (let ibagIdx = ibagStart; ibagIdx < ibagEnd; ibagIdx++) {
+        if (ibagIdx >= instrumentBags.length) break;
+        const igenStart = instrumentBags[ibagIdx].genNdx;
+        const igenEnd   = instrumentBags[ibagIdx + 1]?.genNdx ?? instrumentGens.length;
+
+        const z = new Map<number, { amount: number; amountLo: number; amountHi: number }>();
+        for (let gi = igenStart; gi < igenEnd; gi++) {
+          const g = instrumentGens[gi];
+          if (g) z.set(g.oper, g);
+        }
+
+        const vr = z.get(GEN_VEL_RANGE);
+        if (vr && (velocity < vr.amountLo || velocity > vr.amountHi)) continue;
+
+        const kr = z.get(GEN_KEY_RANGE);
+        const inRange = !kr || (midiNote >= kr.amountLo && midiNote <= kr.amountHi);
+
+        if (inRange) {
+          const zone = resolve(z);
+          if (zone) return zone;
+        } else if (kr) {
+          // Out of range: remember it as a fallback if it's the closest so far.
+          const dist = midiNote < kr.amountLo ? kr.amountLo - midiNote : midiNote - kr.amountHi;
+          if (dist < fallbackDist) {
+            const zone = resolve(z);
+            if (zone) { fallback = zone; fallbackDist = dist; }
+          }
+        }
       }
+      if (fallback) return fallback;
     }
     return null;
   }
