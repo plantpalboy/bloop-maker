@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Examples — hear Bloop Maker's actual sound output</title>
+  <meta name="description" content="Listen to real songs made with Bloop Maker — unedited MIDI output with a soundfont applied. Play each one in your browser and download the WAV, the MIDI notes, and the song info." />
+  <meta name="theme-color" content="#fff8de" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Bloop Maker Examples" />
+  <meta property="og:description" content="Real, unedited songs made with Bloop Maker. Play them and download the WAV + MIDI." />
+  <meta property="og:url" content="https://bloopmaker.net/examples.html" />
+  <link rel="canonical" href="https://bloopmaker.net/examples.html" />
+  <link rel="stylesheet" href="./site.css?v=2" />
+
+  <style>
+    /* animated header note, matching the playful motion of the other pages */
+    h1 .note { display: inline-block; animation: hnote 1.7s ease-in-out infinite; color: var(--bloop-orange); }
+    @keyframes hnote { 0%,100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-10px) rotate(6deg); } }
+
+    .ex-list { display: grid; gap: 22px; margin: 28px 0 10px; }
+    .ex-card {
+      border: 3px solid var(--bloop-ink); border-radius: 18px; background: #fff;
+      box-shadow: 0 6px 0 var(--bloop-ink); padding: 18px 18px 20px;
+    }
+    .ex-card h2 { margin: 0 0 4px; font-size: clamp(20px, 3.5vw, 28px); }
+    .ex-card h2::before { content: none; }
+    .ex-num { color: var(--bloop-pink); }
+    .ex-desc { margin: 0 0 6px; }
+    .ex-font { font-size: 14px; font-weight: 900; color: var(--bloop-purple); margin: 0 0 12px; }
+    .ex-font code { background: var(--bloop-soft); border: 2px solid var(--bloop-ink); border-radius: 8px; padding: 1px 7px; }
+    /* waveform drawn from the WAV; --wv = this card's palette color */
+    .ex-wave {
+      position: relative; width: 100%; height: 72px; margin: 4px 0 12px;
+      border: 3px solid var(--bloop-ink); border-radius: 12px; overflow: hidden;
+      background: var(--bloop-soft); cursor: pointer;
+    }
+    .ex-wave canvas { display: block; width: 100%; height: 100%; }
+    .ex-wave .wave-msg {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 13px; color: var(--bloop-purple); pointer-events: none;
+    }
+    .ex-card audio { width: 100%; margin: 0 0 14px; }
+    .ex-dl { display: flex; gap: 10px; flex-wrap: wrap; }
+    .ex-dl .btn { font-size: 14px; padding: 7px 14px; }
+    .btn-wav  { background: var(--bloop-orange); }
+    .btn-midi { background: var(--bloop-green); }
+    .btn-nfo  { background: var(--bloop-blue); }
+
+    .ex-empty {
+      border: 3px dashed rgba(36,27,58,.3); border-radius: 18px; padding: 30px;
+      text-align: center; font-weight: 900; color: var(--bloop-purple);
+    }
+    .ex-note { font-size: 15px; color: var(--bloop-purple); font-weight: 900; margin: 0 0 22px; }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <a class="home" href="./">b<b>loop</b>maker</a>
+    <a class="btn btn-nav" href="./">Home</a>
+    <a class="btn btn-info" href="./how-it-works.html">How It Works</a>
+    <a class="btn btn-info2" href="./faq.html">FAQ</a>
+    <a class="btn btn-nav" href="./about.html">About</a>
+    <a class="btn btn-demo" href="./app/">Try Demo</a>
+    <a class="btn btn-buy" href="https://plantpalboy.itch.io/">Get it · $12.99</a>
+  </div>
+
+  <main class="wrap">
+    <h1><span class="a">ex</span><span class="b">amples</span> <span class="note">♫</span></h1>
+    <p class="lede">real songs, straight out of Bloop Maker</p>
+    <p class="ex-note">every track below is <strong>unedited MIDI</strong> that Bloop Maker generated, played through a soundfont. nothing tweaked by hand — this is the actual sound output. press play, and grab the WAV, the MIDI notes, or the song info.</p>
+
+    <div class="ex-list" id="ex-list">
+      <div class="ex-empty">loading examples…</div>
+    </div>
+
+    <div class="cta-block">
+      <a class="btn btn-big btn-demo" href="./app/">Try the free demo</a>
+      <a class="btn btn-big btn-buy" href="https://plantpalboy.itch.io/">Get Bloop Maker · $12.99</a>
+    </div>
+  </main>
+
+  <footer>
+    <div class="subscribe">
+      <p>✦ get bloop news &amp; updates by email ✦</p>
+      <form action="https://buttondown.com/api/emails/embed-subscribe/SNCKPCK"
+            method="post" target="popupwindow"
+            onsubmit="window.open('https://buttondown.com/SNCKPCK', 'popupwindow')">
+        <input type="email" name="email" placeholder="you@email.com" aria-label="Email address" required>
+        <button type="submit" class="btn btn-buy">Subscribe</button>
+      </form>
+    </div>
+    <p style="margin:0 0 10px"><a href="./">Home</a> · <a href="./how-it-works.html">How It Works</a> · <a href="./faq.html">FAQ</a> · <a href="./about.html">About</a> · <a href="./examples.html">Examples</a> · <a href="./app/">Free Demo</a></p>
+    © <span id="year"></span> <a href="https://snckpck.com" target="_blank" rel="noopener">SNCKPCK</a> · <a href="mailto:contact@snckpck.com">contact@snckpck.com</a>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    const BASE = './examples/';
+    const list = document.getElementById('ex-list');
+    // bloop palette — each card gets the next color for its waveform
+    const PALETTE = ['#ff4aa2', '#26c6ff', '#b96cff', '#ff7a3d', '#7cff6b', '#36e0c4'];
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, (c) =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function card(song, i) {
+      const el = document.createElement('div');
+      el.className = 'ex-card';
+      const color = PALETTE[i % PALETTE.length];
+      const dl = (file, label, cls) => file
+        ? `<a class="btn ${cls}" href="${BASE}${encodeURIComponent(file)}" download>${label}</a>` : '';
+      el.innerHTML = `
+        <h2><span class="ex-num">${String(i + 1).padStart(2, '0')}.</span> ${esc(song.title)}</h2>
+        ${song.description ? `<p class="ex-desc">${esc(song.description)}</p>` : ''}
+        ${song.soundfont ? `<p class="ex-font">soundfont: <code>${esc(song.soundfont)}</code></p>` : ''}
+        <div class="ex-wave" style="--wv:${color}" data-wav="${esc(song.wav)}">
+          <canvas></canvas>
+          <div class="wave-msg">waveform loads when visible…</div>
+        </div>
+        <audio controls preload="none" src="${BASE}${encodeURIComponent(song.wav)}"></audio>
+        <div class="ex-dl">
+          ${dl(song.wav, '⬇ WAV', 'btn-wav')}
+          ${dl(song.mid, '⬇ MIDI notes', 'btn-midi')}
+          ${dl(song.info, '⬇ MIDI info', 'btn-nfo')}
+        </div>`;
+      wireWave(el, color);
+      return el;
+    }
+
+    // Decode the WAV (lazily, when the card scrolls into view), draw its peaks on
+    // the canvas, then keep a progress fill + click-to-seek synced with <audio>.
+    let audioCtx = null;
+    function wireWave(card, color) {
+      const wrap = card.querySelector('.ex-wave');
+      const canvas = wrap.querySelector('canvas');
+      const msg = wrap.querySelector('.wave-msg');
+      const audio = card.querySelector('audio');
+      let peaks = null; // Float32Array of 0..1 amplitudes
+
+      function paint() {
+        const dpr = window.devicePixelRatio || 1;
+        const w = wrap.clientWidth, h = wrap.clientHeight;
+        canvas.width = w * dpr; canvas.height = h * dpr;
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, w, h);
+        if (!peaks) return;
+        const mid = h / 2, n = peaks.length, bw = w / n;
+        const prog = (audio.duration ? audio.currentTime / audio.duration : 0) * w;
+        for (let x = 0; x < n; x++) {
+          const a = Math.max(2, peaks[x] * (h * 0.92));
+          const px = x * bw;
+          ctx.fillStyle = px <= prog ? color : 'rgba(36,27,58,0.22)';
+          ctx.fillRect(px, mid - a / 2, Math.max(1, bw - 1), a);
+        }
+      }
+
+      async function load() {
+        try {
+          msg.textContent = 'loading waveform…';
+          const buf = await fetch(BASE + encodeURIComponent(wrap.dataset.wav)).then((r) => r.arrayBuffer());
+          audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+          const decoded = await audioCtx.decodeAudioData(buf);
+          const raw = decoded.getChannelData(0);
+          const N = 180, block = Math.floor(raw.length / N) || 1;
+          const out = new Float32Array(N);
+          let max = 0;
+          for (let i = 0; i < N; i++) {
+            let sum = 0;
+            for (let j = 0; j < block; j++) sum += Math.abs(raw[i * block + j] || 0);
+            out[i] = sum / block;
+            if (out[i] > max) max = out[i];
+          }
+          if (max > 0) for (let i = 0; i < N; i++) out[i] /= max; // normalize
+          peaks = out;
+          msg.remove();
+          paint();
+        } catch (e) {
+          msg.textContent = 'preview unavailable';
+        }
+      }
+
+      // seek by clicking the waveform
+      wrap.addEventListener('click', (e) => {
+        if (peaks && audio.duration) {
+          const rect = wrap.getBoundingClientRect();
+          audio.currentTime = ((e.clientX - rect.left) / rect.width) * audio.duration;
+          if (audio.paused) audio.play();
+        }
+      });
+      audio.addEventListener('timeupdate', paint);
+      audio.addEventListener('seeked', paint);
+      window.addEventListener('resize', paint);
+
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((en) => { if (en.isIntersecting) { io.disconnect(); load(); } });
+      }, { rootMargin: '200px' });
+      io.observe(wrap);
+    }
+
+    fetch(BASE + 'manifest.json', { cache: 'no-cache' })
+      .then((r) => { if (!r.ok) throw new Error('no manifest'); return r.json(); })
+      .then((songs) => {
+        list.innerHTML = '';
+        if (!Array.isArray(songs) || songs.length === 0) {
+          list.innerHTML = '<div class="ex-empty">no examples yet — check back soon! ♫</div>';
+          return;
+        }
+        songs.forEach((s, i) => list.appendChild(card(s, i)));
+      })
+      .catch(() => {
+        list.innerHTML = '<div class="ex-empty">no examples yet — check back soon! ♫</div>';
+      });
+  </script>
+  <!-- GoatCounter — privacy-friendly pageview analytics (no cookies, renders nothing visible) -->
+  <script data-goatcounter="https://bloopmaker.goatcounter.com/count"
+          async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
