@@ -334,6 +334,7 @@ class App {
   private reverbWetSlider!:  HTMLInputElement;
   private reverbDecaySlider!: HTMLInputElement;
   private faqModal!:         HTMLElement;
+  private aboutModal!:       HTMLElement;
   private projectLoadInput!: HTMLInputElement;
   private bloopBuffer = '';
 
@@ -381,7 +382,7 @@ class App {
       <input type="file" id="load-project-input" accept=".bloop" style="display:none">
 
           <div class="win-titlebar">
-            <span class="win-title-text">${this.colorTitle('Bloop Maker')}</span>
+            <a class="win-title-text" href="https://bloopmaker.net" target="_blank" rel="noopener" title="Visit bloopmaker.net" style="text-decoration:none">${this.colorTitle('Bloop Maker')}</a>
           </div>
 
       <div class="win-menubar">
@@ -422,6 +423,9 @@ class App {
           <div class="win-dropdown">
             <div class="win-dropdown-item" data-action="show-faq">FAQ / How to Use</div>
             <div class="win-dropdown-item" data-action="show-shortcuts">Keyboard Shortcuts</div>
+            <div class="win-dropdown-sep"></div>
+            <div class="win-dropdown-item" data-action="show-about">About</div>
+            <div class="win-dropdown-item" data-action="visit-site">bloopmaker.net &#8599;</div>
           </div>
         </div>
       </div>
@@ -844,6 +848,7 @@ class App {
     this.reverbWetSlider   = document.getElementById('reverb-wet')    as HTMLInputElement;
     this.reverbDecaySlider = document.getElementById('reverb-decay')  as HTMLInputElement;
     this.faqModal       = document.getElementById('faq-modal')!;
+    this.aboutModal     = document.getElementById('about-modal')!;
     this.projectLoadInput = document.getElementById('load-project-input') as HTMLInputElement;
     this.matrixCanvas     = document.getElementById('matrix-canvas')       as HTMLCanvasElement;
 
@@ -904,8 +909,7 @@ class App {
 
             <span class="ch-grp-lbl">Edit</span>
             <button class="btn-edit-roll" id="edit-${id}" title="Open the piano roll to draw / erase notes">Piano Roll</button>
-            <button class="btn-export-ch" id="export-ch-${id}" disabled title="Save this channel as a .mid (MIDI) file">💾 Save MIDI</button>
-            <span class="ch-grp-lbl">Generate</span>
+            <button class="btn-export-ch" id="export-ch-${id}" disabled title="Save this channel as a .mid (MIDI) file">Save MIDI</button>
             <div class="ch-sparse-wrap" title="Sparseness: how often this channel rests when you Generate. 0% = busy/full, 100% = empty (skip this channel).">
               <span class="ch-slider-lbl">Sparse</span>
               <input type="range" class="ch-sparse" id="sparse-${id}" min="0" max="1" value="${this.channelSparseValues[id] ?? 0}" step="0.05">
@@ -1009,10 +1013,46 @@ class App {
             <p><strong>Why does per-channel Regen sound different from the original?</strong> It uses the same seed and same chord progression as the original, but some randomness (ornaments, rhythm variation) changes per call. It will always be in the same key and scale.</p>
             <p><strong>Can I import my own MIDI?</strong> Yes — drop any .mid file into the MIDI drop zone. Then edit, scramble, or re-export it.</p>
 
-            <p style="margin-top:16px;color:var(--txt-dis);font-size:10px;text-align:center">Bloop Maker — procedural game music composer · runs offline · no AI</p>
+            <p style="margin-top:16px;color:var(--txt-dis);font-size:10px;text-align:center">Bloop Maker — procedural game music composer · runs offline · no AI<br>More info, guides, and the full version at <a href="https://bloopmaker.net" target="_blank" rel="noopener">bloopmaker.net</a></p>
           </div>
           <div class="modal-footer">
             <button id="faq-close-btn">Got it!</button>
+          </div>
+        </div>
+      </div>
+      ${this.renderAboutModal()}
+    `;
+  }
+
+  private renderAboutModal(): string {
+    const DOG = [
+      '  / \\__',
+      ' (    @\\___',
+      ' /         O',
+      '/   (_____/',
+      '/_____/   U',
+    ].join('\n');
+    return `
+      <div id="about-modal" class="modal-overlay">
+        <div class="modal-window" style="max-width:520px">
+          <div class="modal-titlebar">
+            <span class="modal-title-text">About SNCKPCK</span>
+            <button class="modal-close" id="about-close">Close</button>
+          </div>
+          <div class="modal-body" style="font-size:12px;line-height:1.6">
+            <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+              <pre aria-hidden="true" style="font:700 11px/1.05 'Courier New',monospace;margin:0;white-space:pre">${DOG}</pre>
+              <div style="flex:1;min-width:220px">
+                <p>SNCKPCK is an online artist making songs, books, and playful, friendly little tools, weird software for planet earth.</p>
+                <p>more bloops and experiments live over at <a href="https://snckpck.com" target="_blank" rel="noopener">snckpck.com</a></p>
+              </div>
+            </div>
+            <h3>Say hi</h3>
+            <p>got a question, a bug, an idea, or just want to send a bloop? email <a href="mailto:contact@snckpck.com">contact@snckpck.com</a>.</p>
+            <p style="margin-top:16px;color:var(--txt-dis);font-size:10px;text-align:center">Bloop Maker is made by SNCKPCK · <a href="https://bloopmaker.net" target="_blank" rel="noopener">bloopmaker.net</a></p>
+          </div>
+          <div class="modal-footer">
+            <button id="about-close-btn">Got it!</button>
           </div>
         </div>
       </div>
@@ -1266,6 +1306,12 @@ class App {
     document.getElementById('faq-close')!.addEventListener('click', closeFAQ);
     document.getElementById('faq-close-btn')!.addEventListener('click', closeFAQ);
     this.faqModal.addEventListener('click', e => { if (e.target === this.faqModal) closeFAQ(); });
+
+    // About modal close
+    const closeAbout = () => this.aboutModal.classList.remove('open');
+    document.getElementById('about-close')!.addEventListener('click', closeAbout);
+    document.getElementById('about-close-btn')!.addEventListener('click', closeAbout);
+    this.aboutModal.addEventListener('click', e => { if (e.target === this.aboutModal) closeAbout(); });
 
     // Project load input
     this.projectLoadInput.addEventListener('change', e => {
@@ -1633,6 +1679,8 @@ class App {
       case 'random-preset':    this.randomAndGenerate(); break;
       case 'show-faq':         this.faqModal.classList.add('open'); break;
       case 'show-shortcuts':   this.showShortcuts(); break;
+      case 'show-about':       this.aboutModal.classList.add('open'); break;
+      case 'visit-site':       window.open('https://bloopmaker.net', '_blank', 'noopener'); break;
     }
   }
 
