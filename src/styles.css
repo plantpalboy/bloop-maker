@@ -571,12 +571,13 @@ input[type="checkbox"]:checked::after {
   flex: 0 0 auto;
   margin: 0 6px 0 0;
   font-family: "Courier New", monospace;
-  font-size: 9px;
+  font-size: 7px;
   line-height: 1.05;
   font-weight: 700;
   white-space: pre;
   color: var(--b-ink, #333);
   align-self: center;
+  transform: scaleX(-1); /* flip to face the speech bubble */
 }
 .status-bubble {
   flex: 1;
