@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>About SNCKPCK, the studio behind Bloop Maker</title>
+  <title>About SNCKPCK — the studio behind Bloop Maker</title>
   <meta name="description" content="About SNCKPCK, the tiny independent studio that makes Bloop Maker and other playful tools. Get in touch at contact@snckpck.com." />
   <meta name="theme-color" content="#fff8de" />
   <meta property="og:type" content="website" />
@@ -135,7 +135,7 @@
       // If no Web3Forms key is set yet, fall back to opening the user's email client.
       if (!key || key === 'YOUR_WEB3FORMS_ACCESS_KEY') {
         const name = encodeURIComponent(form.name.value);
-        const msg = encodeURIComponent(form.message.value + '\n\nfrom ' + form.name.value + ' (' + form.email.value + ')');
+        const msg = encodeURIComponent(form.message.value + '\n\n— ' + form.name.value + ' (' + form.email.value + ')');
         window.location.href = 'mailto:contact@snckpck.com?subject=' + encodeURIComponent('Hi from ' + form.name.value) + '&body=' + msg;
         return;
       }
