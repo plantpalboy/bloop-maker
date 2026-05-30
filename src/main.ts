@@ -3067,13 +3067,17 @@ class App {
   }
 
   private togglePlay() {
-    if (this.state.isPlaying) this.pausePlayback(); else void this.startPlayback();
+    // If a channel is armed (or we're recording), allow play even on an empty
+    // song so the playhead moves and you can perform / record against it.
+    const allowEmpty = this.midiArmedChannels.size > 0 || this.midiRecording;
+    if (this.state.isPlaying) this.pausePlayback(); else void this.startPlayback(allowEmpty);
   }
 
   private restartAndPlay() {
-    if (!CHANNELS.some(id => this.state.channels[id].notes.length > 0)) return;
+    const allowEmpty = this.midiArmedChannels.size > 0 || this.midiRecording;
+    if (!allowEmpty && !CHANNELS.some(id => this.state.channels[id].notes.length > 0)) return;
     if (this.state.isPlaying) { this.seekTo(0); }
-    else { this.currentTime = 0; void this.startPlayback(); }
+    else { this.currentTime = 0; void this.startPlayback(allowEmpty); }
   }
 
   private async startPlayback(allowEmpty = false) {
