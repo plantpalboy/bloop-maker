@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>About SNCKPCK — the studio behind Bloop Maker</title>
+  <title>About SNCKPCK, the studio behind Bloop Maker</title>
   <meta name="description" content="About SNCKPCK, the tiny independent studio that makes Bloop Maker and other playful tools. Get in touch at contact@snckpck.com." />
   <meta name="theme-color" content="#fff8de" />
   <meta property="og:type" content="website" />
@@ -33,7 +33,24 @@
     .snck-link:hover { color: var(--bloop-purple); }
     @keyframes snckbounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 
-    .contact-form { max-width: 520px; }
+    /* animated divider: each note bobs, each squiggle waves, independently */
+    .divider2 { text-align: center; font-size: 30px; letter-spacing: 10px; color: var(--bloop-pink); margin: 36px 0; }
+    .divider2 span { display: inline-block; }
+    .d-note  { animation: dnote 1.7s ease-in-out infinite; }
+    .d-squig { animation: dsquig 2.3s ease-in-out infinite; color: var(--bloop-blue); }
+    .divider2 .d-note:nth-of-type(3)  { animation-delay: .55s; }
+    .divider2 .d-note:last-child      { animation-delay: 1.1s; }
+    .divider2 .d-squig:nth-of-type(4) { animation-delay: .8s; }
+    @keyframes dnote  { 0%,100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-12px) rotate(4deg); } }
+    @keyframes dsquig { 0%,100% { transform: translateX(-7px); } 50% { transform: translateX(7px); } }
+
+    /* spinning star before "Say hi" (override site.css static ::before) */
+    .sayhi::before { content: none; }
+    .spin-star { display: inline-block; animation: starspin 3s linear infinite; color: var(--bloop-purple); }
+    @keyframes starspin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+
+    .contact-form { max-width: 520px; margin: 0 auto; }
+    .sayhi, .sayhi + p { text-align: center; }
     .contact-form label { display: block; font-weight: 900; margin: 14px 0 4px; }
     .contact-form input, .contact-form textarea {
       width: 100%; font-family: inherit; font-size: 16px; padding: 10px 12px;
@@ -43,7 +60,7 @@
     .form-result { margin-top: 14px; font-weight: 900; min-height: 22px; }
     .form-result.ok  { color: #1f9c4a; }
     .form-result.err { color: #e0344e; }
-    @media (prefers-reduced-motion: reduce) { .dog, .snck-link { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .dog, .snck-link, .d-note, .d-squig, .spin-star { animation: none; } }
   </style>
 </head>
 <body>
@@ -53,6 +70,7 @@
     <a class="btn btn-nav" href="./">Home</a>
     <a class="btn btn-info" href="./how-it-works.html">How It Works</a>
     <a class="btn btn-info2" href="./faq.html">FAQ</a>
+    <a class="btn btn-demo" href="./app/">Try Demo</a>
     <a class="btn btn-buy" href="https://plantpalboy.itch.io/">Get it · $12.99</a>
   </div>
 
@@ -66,16 +84,14 @@
 /   (_____/
 /_____/   U</pre>
       <div class="about-blurb">
-        <p>SNCKPCK is a tiny one-person studio making playful little tools and weird, friendly software. <strong>Bloop Maker</strong> is one of them: a desktop app that writes original game music with you, no AI, no fuss.</p>
+        <p>SNCKPCK is an online artist making songs, books, and playful, friendly little tools, weird software for planet earth.</p>
         <p>more bloops and experiments live over at <a class="snck-link" href="https://snckpck.com" target="_blank" rel="noopener">snckpck.com</a></p>
       </div>
     </div>
 
-    <p style="opacity:.75">(this little blurb is a placeholder, swap in your own story whenever you like.)</p>
+    <div class="divider2" aria-hidden="true"><span class="d-note">♫</span><span class="d-squig">〰</span><span class="d-note">♫</span><span class="d-squig">〰</span><span class="d-note">♫</span></div>
 
-    <div class="divider">♫ 〰 ♫ 〰 ♫</div>
-
-    <h2>Say hi</h2>
+    <h2 class="sayhi"><span class="spin-star">✦</span> Say hi</h2>
     <p>got a question, a bug, an idea, or just want to send a bloop? drop a note below and it lands straight in the inbox.</p>
 
     <form class="contact-form" id="contact-form">
@@ -119,7 +135,7 @@
       // If no Web3Forms key is set yet, fall back to opening the user's email client.
       if (!key || key === 'YOUR_WEB3FORMS_ACCESS_KEY') {
         const name = encodeURIComponent(form.name.value);
-        const msg = encodeURIComponent(form.message.value + '\n\n— ' + form.name.value + ' (' + form.email.value + ')');
+        const msg = encodeURIComponent(form.message.value + '\n\nfrom ' + form.name.value + ' (' + form.email.value + ')');
         window.location.href = 'mailto:contact@snckpck.com?subject=' + encodeURIComponent('Hi from ' + form.name.value) + '&body=' + msg;
         return;
       }
