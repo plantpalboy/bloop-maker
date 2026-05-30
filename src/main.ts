@@ -351,17 +351,22 @@ class App {
     this.injectDemoBanner();
   }
 
-  // Thin top banner shown only in the demo build, with a link to buy the full version.
+  // Top banner shown only in the demo build: a note plus Buy + Back-to-homepage buttons.
   private injectDemoBanner() {
     if (!IS_DEMO) return;
     const bar = document.createElement('div');
     bar.id = 'demo-banner';
     bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#ff8a3d;color:#1a1a1a;'
-      + 'font:600 12px/1.4 Tahoma,sans-serif;text-align:center;padding:6px 12px;box-shadow:0 2px 8px rgba(0,0,0,.3)';
-    bar.innerHTML = `🎵 You're using the <b>Bloop Maker demo</b> — 4 channels, limited presets, no file export. `
-      + `<a href="${FULL_VERSION_URL}" target="_blank" rel="noopener" style="color:#1a1a1a;text-decoration:underline;font-weight:800">Get the full version →</a>`;
+      + 'font:700 12px/1.4 Tahoma,sans-serif;display:flex;align-items:center;gap:8px;padding:6px 10px;'
+      + 'box-shadow:0 2px 8px rgba(0,0,0,.3)';
+    const btn = 'display:inline-block;padding:4px 12px;border-radius:8px;border:2px solid #1a1a1a;'
+      + 'font-weight:800;text-decoration:none;color:#1a1a1a;white-space:nowrap';
+    bar.innerHTML =
+      `<span style="flex:1;min-width:0">You're using the <b>Bloop Maker demo</b> — 4 channels, limited features, no file export.</span>`
+      + `<a href="${FULL_VERSION_URL}" target="_blank" rel="noopener" style="${btn}background:#ffe14a">Buy — $12.99</a>`
+      + `<a href="../" style="${btn}background:#36e0c4">Back to homepage</a>`;
     document.body.appendChild(bar);
-    document.body.style.paddingTop = '30px';
+    document.body.style.paddingTop = '34px';
   }
 
   // ── Render ────────────────────────────────────────────────────

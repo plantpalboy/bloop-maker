@@ -92,7 +92,7 @@
     .squiggles { text-align: center; font-size: 28px; letter-spacing: 8px; text-indent: 8px; margin: 8px 0 26px; animation: wiggle 2.4s ease-in-out infinite; }
     @keyframes wiggle { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
 
-    .subtitle {
+    .page .subtitle {
       text-align: center; font-size: clamp(17px, 2.6vw, 25px); font-weight: 900;
       line-height: 1.2; margin: 0 auto 26px; max-width: 680px;
     }
@@ -165,6 +165,52 @@
     .ending em { color: var(--bloop-purple); font-style: normal; }
     @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.035); } }
 
+    /* Info buttons (open the popups) */
+    .btn-info  { background: var(--bloop-blue); }
+    .btn-info:hover  { background: #54d4ff; }
+    .btn-info2 { background: var(--bloop-purple); color: #fff; }
+    .btn-info2:hover { background: #c98bff; }
+
+    /* Popups / modals */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(36,27,58,.55); backdrop-filter: blur(3px);
+      display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--bloop-soft); border: 5px solid var(--bloop-ink); border-radius: 22px;
+      max-width: 760px; width: 100%; max-height: 90vh; display: flex; flex-direction: column;
+      box-shadow: 0 16px 0 rgba(36,27,58,.3); overflow: hidden;
+    }
+    .modal-top {
+      flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 14px 18px; background: var(--bloop-yellow); border-bottom: 4px dashed rgba(36,27,58,.2);
+    }
+    .modal-h { margin: 0; font-size: clamp(20px,4vw,30px); font-weight: 900; letter-spacing: -.03em; }
+    .modal-x {
+      font-family: inherit; font-weight: 900; font-size: 15px; cursor: pointer; white-space: nowrap;
+      padding: 8px 18px; border-radius: 12px; border: 3px solid var(--bloop-ink);
+      background: var(--bloop-pink); color: #fff; box-shadow: 0 4px 0 var(--bloop-ink);
+    }
+    .modal-x:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--bloop-ink); }
+    .modal-body { flex: 1 1 auto; overflow-y: auto; padding: 22px 26px; font-size: 16px; line-height: 1.65; }
+    .modal-body h3 { font-size: clamp(19px,3.4vw,24px); margin: 26px 0 8px; font-weight: 900; letter-spacing: -.02em; }
+    .modal-body h3:first-child { margin-top: 0; }
+    .modal-body h3:nth-of-type(odd)  { color: var(--bloop-pink); }
+    .modal-body h3:nth-of-type(even) { color: var(--bloop-blue); }
+    .modal-body p { margin: 0 0 16px; }
+    .modal-body strong { color: #111; font-weight: 900; }
+    .modal-body ul, .modal-body ol { padding-left: 1.3em; margin: 0 0 18px; }
+    .modal-body li { margin: 7px 0; }
+    .modal-body li::marker { color: var(--bloop-pink); font-weight: 900; }
+    .modal-step { font-weight: 900; color: var(--bloop-purple); }
+    .modal-bottom {
+      flex: 0 0 auto; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+      padding: 16px; background: var(--bloop-soft); border-top: 4px dashed rgba(36,27,58,.2);
+    }
+    .modal-bottom .btn { font-size: 17px; padding: 12px 22px; }
+
     footer { text-align: center; font-size: 14px; opacity: .7; padding: 30px 16px 50px; }
     footer a { color: var(--bloop-pink); font-weight: 900; }
 
@@ -200,6 +246,11 @@
     </p>
 
     <div class="platforms">Windows · macOS · Linux · runs offline · no account</div>
+
+    <div class="cta-row">
+      <button class="btn btn-info" data-modal="features-modal">Features &amp; How It Works</button>
+      <button class="btn btn-info2" data-modal="faq-modal">FAQ</button>
+    </div>
 
     <div class="gallery" id="gallery">
       <div class="stage" id="gal-stage"></div>
@@ -272,10 +323,120 @@
       <a class="btn btn-demo" href="./app/">Try the free demo</a>
     </div>
 
-    <div class="ending">
-      <em>One time purchase. Yours forever. No AI, no subscriptions, no nonsense. Just Bloops made for people making cool things.</em>
-    </div>
+  </div>
 
+  <!-- ── Features & How It Works popup ─────────────────────────── -->
+  <div class="modal-overlay" id="features-modal" role="dialog" aria-modal="true" aria-label="Features and how it works">
+    <div class="modal">
+      <div class="modal-top">
+        <h2 class="modal-h">What it is &amp; how it works</h2>
+        <button class="modal-x" data-close>Close</button>
+      </div>
+      <div class="modal-body">
+        <h3>What Bloop Maker is</h3>
+        <p>Bloop Maker is a <strong>desktop app that composes original video game music</strong>. You pick a vibe, press one button, and it writes a complete multi-track song. You can edit every note, shape the feel, and export the result as a MIDI file or finished audio. It runs entirely on your own computer, works offline, and uses <strong>no AI</strong> and <strong>no samples</strong> — so every song is yours to use, with no copyright strings attached.</p>
+
+        <h3>How it works behind the scenes</h3>
+        <p>Bloop Maker doesn't guess or imitate other music. It <strong>builds songs from music-theory rules written in code</strong>, step by step, the way a game procedurally builds a level:</p>
+        <ul>
+          <li><span class="modal-step">Seed.</span> Every song starts from a seed number. The same seed always produces the exact same song, so you can save and share them.</li>
+          <li><span class="modal-step">Chords.</span> It chooses a key and scale, then builds a chord progression from music-theory tables. Two progressions alternate to keep things moving.</li>
+          <li><span class="modal-step">Motif.</span> It generates a short, catchy melodic "hook" of a few notes, scores it for quality, and regenerates it until it's strong.</li>
+          <li><span class="modal-step">Signature rhythm.</span> It commits to one rhythmic pattern used across the whole song, so the melody feels consistent instead of random.</li>
+          <li><span class="modal-step">Phrase memory.</span> The first few bars are remembered and replayed (in key with the current chord) in later sections, with small variations each time — that's what gives a song a recognizable hook instead of aimless notes.</li>
+          <li><span class="modal-step">Structure.</span> It plans an intro, verse, chorus, break, and outro, changing the energy, pitch range, and bass behavior in each section.</li>
+          <li><span class="modal-step">Filling the bars.</span> Melody, harmony, bass, drums, and pad are written bar by bar — snapping key notes to chord tones, recovering from big leaps, and adding ornaments, suspensions, call-and-response, and countermelody.</li>
+          <li><span class="modal-step">Polish.</span> Final passes lock strong beats to chord tones, sprinkle in chromatic approach notes and borrowed chords for color, add drum fills before section changes, and shape a dynamics curve so the song breathes.</li>
+        </ul>
+
+        <h3>Generating music</h3>
+        <ul>
+          <li>7 mood modes: ambient, mid, battle, jazzy, funky, silly, weird</li>
+          <li>9 musical scales (major, minor, lydian, dorian, mixolydian, harmonic minor, pentatonic, whole-tone)</li>
+          <li>6 one-click steering modes: bright, focused, cinematic, lush, punchy, lo-fi</li>
+          <li>50+ melodic archetypes (the shape of your hook)</li>
+          <li>28 arpeggio styles for the harmony</li>
+          <li>Guaranteed phrase repetition, cadences, and motif development</li>
+          <li>Modal interchange, call-and-response, countermelody, and chromatic color notes</li>
+          <li>Pattern-based drums with fills, plus a per-section dynamics curve</li>
+        </ul>
+
+        <h3>Channels &amp; arrangement</h3>
+        <ul>
+          <li>6 core channels (lead, harmony, bass, drums, arp, pad) plus up to 3 extra</li>
+          <li>Per-channel solo, mute, lock, and regenerate</li>
+          <li>Per-channel style, instrument, soundfont, volume, pan, transpose, and sparseness</li>
+        </ul>
+
+        <h3>Editing &amp; shaping</h3>
+        <ul>
+          <li>Full piano-roll editor — add, remove, and resize individual notes</li>
+          <li>Per-channel tools: Simplify, Ghost, Boost, Staccato, Legato, Harmonize, Reverse, Octave shift</li>
+          <li>Global tools: Swing, Compress, Swell, Double-Time, Half-Time</li>
+          <li>Undo / redo everything</li>
+        </ul>
+
+        <h3>Sound &amp; export</h3>
+        <ul>
+          <li>SoundFont (.sf2) support — bring any instruments; load several at once</li>
+          <li>Built-in reverb, humanize, and swing for playback feel</li>
+          <li>Export standard <strong>MIDI</strong> (opens in any DAW) and <strong>WAV</strong> audio</li>
+          <li>Export single channels on their own, or save a full project to reopen later</li>
+          <li>Import your own MIDI files to edit and remix</li>
+        </ul>
+
+        <h3>Everything else</h3>
+        <ul>
+          <li>Deterministic seeds — share a seed, get the exact same song</li>
+          <li>Normal, loop, and infinite playback modes</li>
+          <li>Runs fully offline — no account, no subscription, no cloud</li>
+          <li>Windows, macOS, and Linux</li>
+        </ul>
+      </div>
+      <div class="modal-bottom">
+        <a class="btn btn-buy" href="https://plantpalboy.itch.io/">Get Bloop Maker — $12.99</a>
+        <a class="btn btn-demo" href="./app/">Try the free demo</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── FAQ popup ─────────────────────────────────────────────── -->
+  <div class="modal-overlay" id="faq-modal" role="dialog" aria-modal="true" aria-label="Frequently asked questions">
+    <div class="modal">
+      <div class="modal-top">
+        <h2 class="modal-h">FAQ</h2>
+        <button class="modal-x" data-close>Close</button>
+      </div>
+      <div class="modal-body">
+        <h3>Does Bloop Maker use AI?</h3>
+        <p>No. Every song is generated by music-theory rules written in code — chord progressions, melody logic, motif repetition, and drum patterns. There's no machine learning, no training data, and nothing scraped from other music.</p>
+
+        <h3>Is the music safe to use commercially?</h3>
+        <p>Yes. Because the music is built by code and not sampled from anything, it's yours free and clear. Use it in commercial games, monetized videos, live streams, trailers, and personal projects without copyright worries.</p>
+
+        <h3>Does it need the internet?</h3>
+        <p>No. After you download it, Bloop Maker runs completely offline. No account, no cloud, no data leaves your computer.</p>
+
+        <h3>What do I need to hear sound?</h3>
+        <p>A free SoundFont file (.sf2) — search "GeneralUser GS sf2" or "FluidR3 GM sf2". Drag it in and you'll hear audio. Without one you can still generate and export MIDI; you just won't hear it play inside the app.</p>
+
+        <h3>What can I export?</h3>
+        <p>Standard MIDI files that open in any DAW (FL Studio, Ableton, LMMS, Reaper, and more), WAV audio rendered with your soundfont, individual channels on their own, and full project files you can reopen later.</p>
+
+        <h3>What's different in the free demo?</h3>
+        <p>The demo lets you fully experience generating, editing, and hearing Bloop Maker, but it's limited to 4 channels, a few presets, arps, and archetypes, shorter songs, and no file export. The full version unlocks everything and lets you save and export your music.</p>
+
+        <h3>Why does my computer warn the app is unsigned?</h3>
+        <p>Code-signing certificates are expensive for solo developers, so the builds aren't signed. On macOS, right-click the app and choose Open. On Windows, click "More info" then "Run anyway". This is normal for indie tools — the app is safe and offline.</p>
+
+        <h3>What platforms does it run on?</h3>
+        <p>Windows, macOS, and Linux.</p>
+      </div>
+      <div class="modal-bottom">
+        <a class="btn btn-buy" href="https://plantpalboy.itch.io/">Get Bloop Maker — $12.99</a>
+        <a class="btn btn-demo" href="./app/">Try the free demo</a>
+      </div>
+    </div>
   </div>
 
   <footer>
@@ -283,6 +444,25 @@
   </footer>
 
   <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+
+  <script>
+  // ── Popups ─────────────────────────────────────────────────────
+  function closeModals() {
+    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+    document.body.style.overflow = '';
+  }
+  document.querySelectorAll('[data-modal]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const m = document.getElementById(btn.getAttribute('data-modal'));
+      if (m) { m.classList.add('open'); document.body.style.overflow = 'hidden'; }
+    });
+  });
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeModals));
+  document.querySelectorAll('.modal-overlay').forEach(o => {
+    o.addEventListener('click', e => { if (e.target === o) closeModals(); }); // click backdrop to close
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModals(); });
+  </script>
 
   <script>
   // ── Media gallery ──────────────────────────────────────────────
