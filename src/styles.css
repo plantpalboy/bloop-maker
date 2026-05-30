@@ -785,6 +785,40 @@ body.dark .gen-select { color: #88b8e4 !important; }
 .channel-note-count { font-size:10px; font-weight:bold; min-width:54px; text-align:right; color: var(--txt-dis); }
 
 .ch-controls { display:flex; align-items:stretch; gap:8px; position:relative; z-index:1; }
+/* ── Onboarding tour ─────────────────────────────────────── */
+#tour-overlay {
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(0,0,0,0.55);
+}
+.tour-spotlight {
+  position: fixed;
+  border: 3px solid #ffd23f;
+  border-radius: 10px;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.55), 0 0 18px rgba(255,210,63,0.8);
+  pointer-events: none;
+  transition: top .25s, left .25s, width .25s, height .25s;
+}
+.tour-box {
+  position: fixed;
+  width: 320px; max-width: calc(100vw - 24px);
+  background: #fff; color: #222;
+  border: 3px solid #222; border-radius: 14px;
+  box-shadow: 0 8px 0 rgba(0,0,0,0.35);
+  padding: 14px 16px;
+  font-family: Tahoma, Arial, sans-serif;
+  transition: top .25s, left .25s;
+}
+.tour-title { font-weight: 900; font-size: 15px; margin-bottom: 6px; }
+.tour-body  { font-size: 12px; line-height: 1.5; margin-bottom: 12px; }
+.tour-controls { display: flex; align-items: center; gap: 6px; }
+.tour-progress { font-size: 11px; font-weight: 700; opacity: 0.6; }
+.tour-controls button {
+  font-family: inherit; font-weight: 900; font-size: 12px; cursor: pointer;
+  padding: 5px 12px; border: 2px solid #222; border-radius: 8px; background: #ffe46b;
+}
+.tour-controls .tour-skip { background: #eee; }
+.tour-controls .tour-next { background: #7fe0c4; }
+
 /* Keyboard shortcuts panel under the Scramble button */
 .shortcuts-panel {
   margin-top: 12px;

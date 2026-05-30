@@ -355,6 +355,11 @@ class App {
     this.injectSidePanels();
     this.applyDemoLimits();
     this.injectDemoBanner();
+    // Auto-show the welcome tour on a visitor's first visit (closable, and
+    // replayable later from Help → Show Welcome Tour).
+    if (!localStorage.getItem('bloopTourSeen')) {
+      setTimeout(() => this.startTour(), 600);
+    }
   }
 
   // Top banner shown only in the demo build: a note plus Buy + Back-to-homepage buttons.
@@ -2225,8 +2230,88 @@ class App {
     return WORDS[Math.floor(Math.random() * WORDS.length)];
   }
 
-  // Onboarding tour — implemented in a later step.
-  private startTour() {}
+  // Onboarding tour: a sequence of steps that spotlight a UI element with a
+  // tooltip + Next/Back/Skip. Auto-shows once on first visit (localStorage),
+  // replayable from Help. Closable at any time.
+  private startTour() {
+    document.getElementById('tour-overlay')?.remove();
+
+    const steps: { sel: string; title: string; body: string }[] = [
+      { sel: '#sf2-drop',      title: '1. Drop a Soundfont', body: 'Drag a free .sf2 file here so you can hear sound. Search “GeneralUser GS sf2”. Without one you can still generate and export MIDI.' },
+      { sel: '#gen-btn',       title: '2. Generate a Song',  body: 'Pick a Preset or set Mode / BPM / Key, then hit Generate! to write an original song from music-theory rules — no AI.' },
+      { sel: '#play-btn',      title: '3. Press Play',       body: 'Play, pause, loop, and turn on the metronome here. Or press Space anytime.' },
+      { sel: '#channels-list', title: '4. Shape the Channels', body: 'Each instrument is a channel. Regen one, mute/solo, open the Piano Roll to edit notes, or Arm a channel to record your MIDI keyboard.' },
+      { sel: '#download-btn',  title: '5. Export',           body: 'Save MIDI for any DAW, or Save WAV to render audio with your soundfont. That’s it — have fun!' },
+    ];
+
+    const overlay = document.createElement('div');
+    overlay.id = 'tour-overlay';
+    overlay.innerHTML = `
+      <div class="tour-spotlight"></div>
+      <div class="tour-box">
+        <div class="tour-title"></div>
+        <div class="tour-body"></div>
+        <div class="tour-controls">
+          <span class="tour-progress"></span>
+          <span style="flex:1"></span>
+          <button class="tour-skip">Skip</button>
+          <button class="tour-back">Back</button>
+          <button class="tour-next">Next</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const spotlight = overlay.querySelector('.tour-spotlight') as HTMLElement;
+    const box       = overlay.querySelector('.tour-box') as HTMLElement;
+    const titleEl   = overlay.querySelector('.tour-title') as HTMLElement;
+    const bodyEl    = overlay.querySelector('.tour-body') as HTMLElement;
+    const progEl    = overlay.querySelector('.tour-progress') as HTMLElement;
+    const backBtn   = overlay.querySelector('.tour-back') as HTMLButtonElement;
+    const nextBtn   = overlay.querySelector('.tour-next') as HTMLButtonElement;
+    const skipBtn   = overlay.querySelector('.tour-skip') as HTMLButtonElement;
+
+    let i = 0;
+    const close = () => { localStorage.setItem('bloopTourSeen', '1'); overlay.remove(); window.removeEventListener('resize', show); };
+
+    const show = () => {
+      const step = steps[i];
+      const target = document.querySelector(step.sel) as HTMLElement | null;
+      titleEl.textContent = step.title;
+      bodyEl.textContent  = step.body;
+      progEl.textContent  = `${i + 1} / ${steps.length}`;
+      backBtn.style.visibility = i === 0 ? 'hidden' : 'visible';
+      nextBtn.textContent = i === steps.length - 1 ? 'Done' : 'Next';
+
+      if (target) {
+        target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        const r = target.getBoundingClientRect();
+        const pad = 6;
+        spotlight.style.display = 'block';
+        spotlight.style.top    = `${r.top - pad}px`;
+        spotlight.style.left   = `${r.left - pad}px`;
+        spotlight.style.width  = `${r.width + pad * 2}px`;
+        spotlight.style.height = `${r.height + pad * 2}px`;
+        // Place the box below the target, or above if no room.
+        const below = r.bottom + 12;
+        const boxTop = below + 180 > window.innerHeight ? Math.max(12, r.top - 12 - 160) : below;
+        box.style.transform = '';
+        box.style.top  = `${boxTop}px`;
+        box.style.left = `${Math.min(Math.max(12, r.left), window.innerWidth - 332)}px`;
+      } else {
+        spotlight.style.display = 'none';
+        box.style.top  = '50%';
+        box.style.left = '50%';
+        box.style.transform = 'translate(-50%,-50%)';
+      }
+    };
+
+    nextBtn.addEventListener('click', () => { if (i < steps.length - 1) { i++; show(); } else close(); });
+    backBtn.addEventListener('click', () => { if (i > 0) { i--; show(); } });
+    skipBtn.addEventListener('click', close);
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+    window.addEventListener('resize', show);
+    show();
+  }
 
   private colorTitle(text: string): string {
     const COLORS = ['#e63030','#1a8fff','#e8b800','#22aa44','#e63030','#1a8fff','#e8b800','#22aa44'];
