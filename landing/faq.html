@@ -57,16 +57,16 @@
     <p class="lede">Everything people usually want to know about Bloop Maker, the game music generator that uses music theory instead of AI.</p>
 
     <h2>Does Bloop Maker use AI?</h2>
-    <p>No. Bloop Maker generates music using <strong>music-theory rules written in code</strong>, chord progressions, melody logic, motif repetition, harmonic rhythm, and drum patterns. There is no machine learning, no neural network, no training data, and nothing scraped from other people's music. It composes the way a game procedurally generates a level: from rules, not from a model.</p>
+    <p>No. It generates music using <strong>music-theory rules written in code</strong>: chord progressions, melody logic, motif repetition, and drum patterns. No machine learning, no training data, nothing scraped. It composes the way a game generates a level: from rules, not from a model.</p>
 
     <h2>Where do the rules come from, if not AI?</h2>
-    <p>Two places. First, established <strong>music theory</strong>, the same principles taught in any music classroom about chords, scales, melody, and resolving tension. Second, <strong>the conventions of game music itself</strong>: the generator leans into the melodic, harmonic, and rhythmic patterns the genre is known for, expressed as weighted choices. The crucial difference from AI is that Bloop Maker is <strong>rule-based and deterministic</strong> rather than a model trained on songs, so the same input always gives the same output and nothing is hidden inside a black box. <a href="./how-it-works.html">Read the full explanation here.</a></p>
+    <p>Two places: established <strong>music theory</strong> (chords, scales, melody, resolving tension), and <strong>the conventions of game music itself</strong> (the patterns the genre is known for, expressed as weighted choices). The key difference from AI is that Bloop Maker is <strong>rule-based and deterministic</strong>, not a model trained on songs. <a href="./how-it-works.html">Full explanation here.</a></p>
 
     <h2>Is the music royalty-free and safe to use commercially?</h2>
-    <p>Yes. Because the music is built by deterministic code and not sampled from existing recordings, the output is <strong>yours, free and clear</strong>. Use it in commercial games, monetized YouTube videos, Twitch streams, trailers, game jam entries, apps, and personal projects. There is no copyright-claim risk, and no platform can flag it as AI-generated content because it isn't.</p>
+    <p>Yes. The music is built by code and not sampled from existing recordings, so it's <strong>yours, free and clear</strong>, for commercial games, monetized videos, streams, trailers, jams, and personal projects. No copyright-claim risk, and nothing for a platform to flag as AI content.</p>
 
     <h2>Does it need the internet?</h2>
-    <p>No. After download, Bloop Maker runs <strong>completely offline</strong>. No account, no subscription, no cloud, no waiting room. Your songs stay on your own computer.</p>
+    <p>No. After download it runs <strong>completely offline</strong>. No account, no subscription, no cloud. Your songs stay on your computer.</p>
 
     <h2>What can I export?</h2>
     <p>You can export <strong>standard MIDI files</strong> that open in any DAW (FL Studio, Ableton, LMMS, Reaper, and others), <strong>WAV audio</strong> rendered with your own soundfonts, <strong>individual channels</strong> on their own, and <strong>full project files</strong> you can reopen and keep editing later.</p>
@@ -85,14 +85,12 @@
     <p>You can also browse many more on <a href="https://musical-artifacts.com/" target="_blank" rel="noopener">Musical Artifacts</a> and <a href="https://sites.google.com/site/soundfonts4u/" target="_blank" rel="noopener">Soundfonts 4U</a>.</p>
 
     <h2>Do I need a license for the SoundFont I use?</h2>
-    <p>This is an important distinction, and worth understanding before you publish anything. The <strong>music itself</strong> that Bloop Maker generates, the actual composition, melody, harmony, and arrangement, is yours and is not under anyone else's copyright. But a <strong>SoundFont is a separate product made by someone else</strong>, and it comes with its own license that controls how its instrument sounds may be used. Bloop Maker does not give you any rights to the soundfonts you load into it; those rights come from whoever created the soundfont.</p>
-    <p>Here is what that means in practice:</p>
+    <p>Worth understanding before you publish. The <strong>music itself</strong> (the composition) is yours. But a <strong>SoundFont is a separate product made by someone else</strong>, with its own license, and Bloop Maker does not grant you rights to it. What that means:</p>
     <ul>
-      <li><strong>Exporting MIDI is always safe.</strong> A MIDI file contains only the notes you generated, not the soundfont's sounds. No instrument samples are included, so there is no soundfont license to worry about. You can use that MIDI however you like and play it back with any instruments you own.</li>
-      <li><strong>Exporting WAV (or any rendered audio) bakes the soundfont's sounds into the file.</strong> When you render to WAV, the instrument samples from the soundfont become part of the audio. From that point on, the soundfont's license applies to that audio file, because it now contains the soundfont author's work.</li>
+      <li><strong>Exporting MIDI is always safe.</strong> A MIDI file is just notes, no soundfont sounds, so there's no soundfont license to worry about.</li>
+      <li><strong>Exporting WAV bakes the soundfont's sounds into the file.</strong> The instrument samples become part of the audio, so the soundfont's license then applies to it.</li>
     </ul>
-    <p>So before you use rendered audio in a <strong>commercial</strong> project, a paid game, a monetized video, a product you sell, or anything where money is involved, <strong>check the license of the specific SoundFont you used and make sure you have the right to use it commercially</strong>. SoundFont licenses vary a lot: some are free for any use including commercial, some are free for personal use only, some require you to credit the author, and some forbid commercial use entirely. Most soundfonts include a license or readme file inside the download. Read it, follow its terms, and keep a copy for your records.</p>
-    <p>If you are ever unsure about a soundfont's terms, the safe path is to either choose a soundfont with a clearly permissive, commercial-friendly license, or simply export your music as <strong>MIDI</strong> and pair it with instruments or sample libraries you already own the rights to. In short: the song is yours, but the <em>sound</em> you play it through belongs to whoever made the soundfont, so make sure you are licensed to use that sound before you ship it.</p>
+    <p>So before using rendered audio in a <strong>commercial</strong> project, <strong>check the license of the SoundFont you used and make sure commercial use is allowed</strong>. Licenses vary: some allow any use, some are personal-only, some require credit. Most soundfonts include a license file, read it. If unsure, pick a clearly commercial-friendly soundfont, or export MIDI and use instruments you already have rights to. The song is yours; the <em>sound</em> belongs to whoever made the soundfont.</p>
 
     <h2>What's limited in the free demo?</h2>
     <p>The demo is a real taste of the full app. You can generate, edit, steer, and hear Bloop Maker, but it's limited to <strong>4 channels</strong>, a small set of presets, arpeggio styles, and archetypes, <strong>shorter songs</strong>, and <strong>no file export</strong>. The full version unlocks all six-plus channels, every option, longer songs, and MIDI + WAV export.</p>
@@ -116,13 +114,13 @@
     <p>Yes. The music you generate is yours to use in commercial projects, including paid games, apps, and videos. It is a one-time purchase with no per-use fees and no royalties.</p>
 
     <h2>How is this different from an AI music generator?</h2>
-    <p>AI music tools are trained on large collections of existing songs and predict what comes next, which raises copyright and "is this AI content?" questions, and they often need an account, the cloud, or a subscription. Bloop Maker is the opposite: it is rule-based and deterministic, runs fully offline, produces original music you own outright, and gives the same song every time from the same seed.</p>
+    <p>AI tools are trained on existing songs and predict what comes next, which raises copyright and "is this AI?" questions, and they usually need an account, the cloud, a subscription, or a wait in a queue. Bloop Maker is the opposite: rule-based and deterministic, fully offline, <strong>instant with no waiting</strong>, and the music is yours outright, the same song every time from the same seed.</p>
 
     <h2>Can I edit the songs after generating them?</h2>
     <p>Yes. Every song opens in a full piano-roll editor where you can add, remove, and resize individual notes. You can also reshape parts with one-click tools, regenerate any single channel while keeping the rest, and undo anything.</p>
 
     <h2>My songs don't sound that good. How do I make them better?</h2>
-    <p>First, a little honesty about what Bloop Maker is for. It is a tool to help you create bloops, spark ideas, and get unstuck, not a one-click machine that hands you a finished, Grammy-winning track. Think of it as a creative co-pilot: it is at its best when your brain isn't cooperating and you just need a starting point, a hook, a chord progression, or a vibe to push you in the right direction. Some generations will be gold, some will be junk, and that is completely normal. The goal is to find the spark and then build on it.</p>
+    <p>Honesty first: Bloop Maker is a tool to spark ideas and get unstuck, not a one-click machine for finished, Grammy-winning tracks. It's a creative co-pilot, best when your brain isn't cooperating and you just need a starting point: a hook, a chord progression, a vibe. Some rolls are gold, some are junk, that's normal. Find the spark, then build on it.</p>
     <p>With that said, here is how to get much better results out of it:</p>
     <ul>
       <li><strong>Generate a few times.</strong> It's instant and unlimited, so roll several songs and keep the ones with a hook you like. Copy the seed of a good one so you can always get it back.</li>
