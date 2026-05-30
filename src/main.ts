@@ -224,6 +224,7 @@ class App {
   private audioCtx: AudioContext | null = null;
   private sampler: SF2Sampler | null = null;
   private scheduler: Scheduler | null = null;
+  private metronomeOn = false;
   private currentTime = 0;
   private isDraggingSeek = false;
   private lastGenConfig: GenConfig | null = null;
@@ -789,6 +790,7 @@ class App {
                 <button class="btn-transport" id="play-btn" disabled>&gt;</button>
                 <button class="btn-transport" id="stop-btn" disabled>[]</button>
                 <button class="btn-transport" id="loop-btn" title="Loop: replay bars seamlessly (off = infinite mode)" style="font-size:13px">↻</button>
+                <button class="btn-transport" id="metro-btn" title="Metronome: click track on every beat" style="font-size:13px">&#9685;</button>
                 <button class="btn-transport" id="jam-btn" title="Jam: restart, loop, and record your MIDI playing until you pause or stop" style="font-size:11px">&#9679; Jam</button>
                 <div class="seek-wrap">
                   <input type="range" class="seek-slider" id="seek-slider" min="0" max="300" value="0" step="0.1">
@@ -1287,6 +1289,12 @@ class App {
     this.playBtn.addEventListener('click',    () => this.togglePlay());
     this.stopBtn.addEventListener('click',    () => this.stopPlayback());
     document.getElementById('jam-btn')?.addEventListener('click', () => void this.toggleJamLoop());
+    document.getElementById('metro-btn')?.addEventListener('click', () => {
+      this.metronomeOn = !this.metronomeOn;
+      document.getElementById('metro-btn')?.classList.toggle('active', this.metronomeOn);
+      if (this.scheduler) this.scheduler.metronome = this.metronomeOn;
+      this.setStatus('ok', this.metronomeOn ? 'Metronome on — click on every beat.' : 'Metronome off.');
+    });
     const loopBtn = document.getElementById('loop-btn') as HTMLButtonElement;
     loopBtn?.addEventListener('click', () => {
       this.loopEnabled = !this.loopEnabled;
@@ -3136,6 +3144,7 @@ class App {
 
     this.scheduler = new Scheduler(this.audioCtx, this.sampler);
     this.scheduler.swingAmount = parseFloat(this.swingSlider.value);
+    this.scheduler.metronome = this.metronomeOn;
 
     // Apply reverb if set
     const wet = parseFloat(this.reverbWetSlider.value);
@@ -4027,11 +4036,28 @@ class App {
       document.getElementById('loop-btn')?.classList.add('active');
       if (this.scheduler) this.scheduler.loop = true;
     }
-    if (!this.state.isPlaying) await this.startPlayback(true);
+    if (!this.state.isPlaying) {
+      await this.countIn();          // 1-bar count-in before recording
+      await this.startPlayback(true);
+    }
     if (!this.state.isPlaying) return; // couldn't start (no SF2 loaded)
     this.setMidiRecording(true);
     const labels = [...this.midiArmedChannels].map(c => CHANNEL_META[c].label).join(', ');
     this.setStatus('ok', `Recording into ${labels}. Play your keyboard now — press Record again to stop.`);
+  }
+
+  // Plays a one-bar (4-beat) metronome count-in and resolves when it finishes,
+  // so recording starts on the downbeat. Accents beat 1.
+  private async countIn(): Promise<void> {
+    this.ensureAudioContext();
+    const ctx = this.audioCtx;
+    if (!ctx) return;
+    await ctx.resume();
+    const beatDur = 60 / (this.state.bpm || 120);
+    const start = ctx.currentTime + 0.08;
+    for (let i = 0; i < 4; i++) Scheduler.click(ctx, start + i * beatDur, i === 0);
+    this.setStatus('busy', 'Count-in… get ready to play!');
+    await new Promise(res => setTimeout(res, beatDur * 4 * 1000));
   }
 
   // Jam mode: restart from the top, turn looping on, start playback, and record.
@@ -4047,7 +4073,10 @@ class App {
     }
     this.currentTime = 0;
     if (this.state.isPlaying) this.seekTo(0);
-    else await this.startPlayback(true); // allow recording into an empty track
+    else {
+      await this.countIn();          // 1-bar count-in before the loop rolls
+      await this.startPlayback(true); // allow recording into an empty track
+    }
     if (!this.state.isPlaying) return; // couldn't start (no SF2 loaded)
     this.setMidiRecording(true);
     const labels = [...this.midiArmedChannels].map(c => CHANNEL_META[c].label).join(', ');

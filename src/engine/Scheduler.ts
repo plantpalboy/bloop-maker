@@ -15,10 +15,13 @@ export class Scheduler {
   private noteScheduled: Set<string> = new Set();
   private channels: Record<ChannelId, ChannelState> = {} as Record<ChannelId, ChannelState>;
   private nearEndFired = false;
+  private beatScheduled: Set<number> = new Set();
   bpm = 130;
 
   // Set before start() to enable swing (0 = off, 0.33 = max triplet swing)
   swingAmount = 0;
+  // Metronome click track (synced to song beats)
+  metronome = false;
 
   duration = 0;
   loop = false;
@@ -40,6 +43,7 @@ export class Scheduler {
     this.startContextTime = this.ctx.currentTime;
     this.startSongTime = fromTime;
     this.noteScheduled.clear();
+    this.beatScheduled.clear();
     this.nearEndFired = false;
     this.timerID = window.setInterval(() => this.tick(), TICK_INTERVAL_MS);
     this.tick(); // schedule immediately so notes at time=0 aren't missed
@@ -60,6 +64,7 @@ export class Scheduler {
     this.startContextTime = this.ctx.currentTime;
     this.startSongTime = time;
     this.noteScheduled.clear();
+    this.beatScheduled.clear();
     if (this.duration - time > NEAR_END_THRESHOLD_S) this.nearEndFired = false;
   }
 
@@ -95,6 +100,7 @@ export class Scheduler {
       if (this.loop && this.duration > 0) {
         this.startContextTime += this.duration;
         this.noteScheduled.clear();
+        this.beatScheduled.clear();
         this.nearEndFired = false;
         this.onLoop?.();
         this.tick();
@@ -123,5 +129,38 @@ export class Scheduler {
         }
       }
     }
+
+    // Metronome: schedule a click on every beat in the lookahead window. The
+    // first beat of each 4/4 bar is accented.
+    if (this.metronome) {
+      const beatDur = 60 / this.bpm;
+      for (let b = Math.floor(songTime / beatDur); b * beatDur <= scheduleUntil; b++) {
+        const beatSong = b * beatDur;
+        if (beatSong < songTime - 0.05 || beatSong >= this.duration) continue;
+        if (this.beatScheduled.has(b)) continue;
+        const playAt = this.startContextTime + (beatSong - this.startSongTime);
+        if (playAt >= this.ctx.currentTime - 0.01) {
+          Scheduler.click(this.ctx, playAt, b % 4 === 0);
+          this.beatScheduled.add(b);
+        }
+      }
+    }
+  }
+
+  // Synthesize a short metronome click (a quick filtered blip). Static so the
+  // app can reuse it for the pre-record count-in.
+  static click(ctx: AudioContext, atTime: number, accent: boolean): void {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.value = accent ? 1760 : 1100;
+    const peak = accent ? 0.22 : 0.13;
+    gain.gain.setValueAtTime(0.0001, atTime);
+    gain.gain.exponentialRampToValueAtTime(peak, atTime + 0.001);
+    gain.gain.exponentialRampToValueAtTime(0.0001, atTime + 0.045);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(atTime);
+    osc.stop(atTime + 0.06);
   }
 }
