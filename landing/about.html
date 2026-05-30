@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>About SNCKPCK — the studio behind Bloop Maker</title>
+  <meta name="description" content="About SNCKPCK, the tiny independent studio that makes Bloop Maker and other playful tools. Get in touch at contact@snckpck.com." />
+  <meta name="theme-color" content="#fff8de" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="About SNCKPCK" />
+  <meta property="og:description" content="The tiny independent studio behind Bloop Maker. Say hi." />
+  <meta property="og:url" content="https://bloopmaker.net/about.html" />
+  <link rel="canonical" href="https://bloopmaker.net/about.html" />
+  <link rel="stylesheet" href="./site.css?v=2" />
+
+  <style>
+    .about-row { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; margin: 10px 0 26px; }
+    .dog {
+      font-family: "Courier New", monospace; font-size: 16px; line-height: 1.15; font-weight: 900;
+      white-space: pre; color: var(--bloop-ink); margin: 0; flex: 0 0 auto;
+      animation: dogwiggle 1.9s ease-in-out infinite;
+    }
+    @keyframes dogwiggle {
+      0%, 100% { transform: translateY(0) rotate(-3deg); }
+      50%      { transform: translateY(-8px) rotate(3deg); }
+    }
+    .about-blurb { flex: 1 1 280px; min-width: 240px; }
+    .snck-link {
+      display: inline-block; font-weight: 900; font-size: 20px; text-decoration: none;
+      color: var(--bloop-pink); animation: snckbounce 1.6s ease-in-out infinite;
+    }
+    .snck-link:hover { color: var(--bloop-purple); }
+    @keyframes snckbounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+    .contact-form { max-width: 520px; }
+    .contact-form label { display: block; font-weight: 900; margin: 14px 0 4px; }
+    .contact-form input, .contact-form textarea {
+      width: 100%; font-family: inherit; font-size: 16px; padding: 10px 12px;
+      border: 3px solid var(--bloop-ink); border-radius: 12px; background: #fff; color: var(--bloop-ink);
+    }
+    .contact-form textarea { min-height: 120px; resize: vertical; }
+    .form-result { margin-top: 14px; font-weight: 900; min-height: 22px; }
+    .form-result.ok  { color: #1f9c4a; }
+    .form-result.err { color: #e0344e; }
+    @media (prefers-reduced-motion: reduce) { .dog, .snck-link { animation: none; } }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <a class="home" href="./">b<b>loop</b>maker</a>
+    <a class="btn btn-nav" href="./">Home</a>
+    <a class="btn btn-info" href="./how-it-works.html">How It Works</a>
+    <a class="btn btn-info2" href="./faq.html">FAQ</a>
+    <a class="btn btn-buy" href="https://plantpalboy.itch.io/">Get it · $12.99</a>
+  </div>
+
+  <main class="wrap">
+    <h1><span class="a">about</span> <span class="b">SNCKPCK</span></h1>
+
+    <div class="about-row">
+      <pre class="dog" aria-hidden="true">  __
+ (___()'`;
+ /,    /`
+ \\"--\\</pre>
+      <div class="about-blurb">
+        <p>SNCKPCK is a tiny one-person studio making playful little tools and weird, friendly software. <strong>Bloop Maker</strong> is one of them: a desktop app that writes original game music with you, no AI, no fuss.</p>
+        <p>more bloops and experiments live over at <a class="snck-link" href="https://snckpck.com" target="_blank" rel="noopener">snckpck.com</a></p>
+      </div>
+    </div>
+
+    <p style="opacity:.75">(this little blurb is a placeholder, swap in your own story whenever you like.)</p>
+
+    <div class="divider">♫ 〰 ♫ 〰 ♫</div>
+
+    <h2>Say hi</h2>
+    <p>got a question, a bug, an idea, or just want to send a bloop? drop a note below and it lands straight in the inbox.</p>
+
+    <form class="contact-form" id="contact-form">
+      <!-- Web3Forms: get a free access key at web3forms.com for contact@snckpck.com, paste it below. -->
+      <input type="hidden" name="access_key" value="YOUR_WEB3FORMS_ACCESS_KEY">
+      <input type="hidden" name="subject" value="New message from bloopmaker.net">
+      <input type="hidden" name="from_name" value="Bloop Maker site">
+      <!-- honeypot (spam trap) -->
+      <input type="checkbox" name="botcheck" tabindex="-1" autocomplete="off" style="display:none">
+
+      <label for="cf-name">your name</label>
+      <input id="cf-name" type="text" name="name" placeholder="who's this?" required>
+
+      <label for="cf-email">your email</label>
+      <input id="cf-email" type="email" name="email" placeholder="so i can write back" required>
+
+      <label for="cf-message">your message</label>
+      <textarea id="cf-message" name="message" placeholder="say anything" required></textarea>
+
+      <div style="margin-top:16px">
+        <button type="submit" class="btn btn-big btn-buy">send it</button>
+        <a class="btn btn-big btn-demo" href="mailto:contact@snckpck.com" style="margin-left:8px">or just email</a>
+      </div>
+      <div class="form-result" id="form-result"></div>
+    </form>
+  </main>
+
+  <footer>
+    <p style="margin:0 0 10px"><a href="./">Home</a> · <a href="./how-it-works.html">How It Works</a> · <a href="./faq.html">FAQ</a> · <a href="./app/">Free Demo</a></p>
+    © <span id="year"></span> <a href="https://snckpck.com" target="_blank" rel="noopener">SNCKPCK</a> · <a href="mailto:contact@snckpck.com">contact@snckpck.com</a>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    const form = document.getElementById('contact-form');
+    const result = document.getElementById('form-result');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const key = form.access_key.value;
+      // If no Web3Forms key is set yet, fall back to opening the user's email client.
+      if (!key || key === 'YOUR_WEB3FORMS_ACCESS_KEY') {
+        const name = encodeURIComponent(form.name.value);
+        const msg = encodeURIComponent(form.message.value + '\n\n— ' + form.name.value + ' (' + form.email.value + ')');
+        window.location.href = 'mailto:contact@snckpck.com?subject=' + encodeURIComponent('Hi from ' + form.name.value) + '&body=' + msg;
+        return;
+      }
+      result.textContent = 'sending…';
+      result.className = 'form-result';
+      try {
+        const res = await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(Object.fromEntries(new FormData(form))),
+        });
+        const data = await res.json();
+        if (data.success) {
+          result.textContent = 'sent! thanks, i\'ll get back to you.';
+          result.className = 'form-result ok';
+          form.reset();
+        } else {
+          result.textContent = 'hmm, that didn\'t go through. try emailing contact@snckpck.com instead.';
+          result.className = 'form-result err';
+        }
+      } catch {
+        result.textContent = 'couldn\'t reach the server. try emailing contact@snckpck.com instead.';
+        result.className = 'form-result err';
+      }
+    });
+  </script>
+</body>
+</html>
