@@ -263,7 +263,6 @@ class App {
   // Per-channel sparseness (0 = always plays, 1 = very sparse)
   private channelSparseValues: Partial<Record<ChannelId, number>> = {};
   // Per-channel generation toggle (false = exclude from generation entirely)
-  private channelGenEnabled: Partial<Record<ChannelId, boolean>> = {};
   // Per-channel lock (true = Regen skips this channel)
   private channelLocked: Partial<Record<ChannelId, boolean>> = {};
   // Per-channel style preset for generation
@@ -906,9 +905,10 @@ class App {
             <span class="ch-grp-lbl">Edit</span>
             <button class="btn-edit-roll" id="edit-${id}" title="Open the piano roll to draw / erase notes">Piano Roll</button>
             <button class="btn-export-ch" id="export-ch-${id}" disabled title="Save this channel as a .mid (MIDI) file">💾 Save MIDI</button>
-            <div class="ch-sparse-wrap" title="Generation sparseness — how often this channel rests">
-              <button class="btn-gen-toggle ${this.channelGenEnabled[id] !== false ? 'active' : ''}" id="gen-toggle-${id}" title="Toggle channel in generation">GEN</button>
-              <input type="range" class="ch-sparse" id="sparse-${id}" min="0" max="1" value="${this.channelSparseValues[id] ?? 0}" step="0.05" ${this.channelGenEnabled[id] === false ? 'disabled' : ''}>
+            <span class="ch-grp-lbl">Generate</span>
+            <div class="ch-sparse-wrap" title="Sparseness: how often this channel rests when you Generate. 0% = busy/full, 100% = empty (skip this channel).">
+              <span class="ch-slider-lbl">Sparse</span>
+              <input type="range" class="ch-sparse" id="sparse-${id}" min="0" max="1" value="${this.channelSparseValues[id] ?? 0}" step="0.05">
               <span class="ch-sparse-val" id="sparse-val-${id}">${Math.round((this.channelSparseValues[id] ?? 0) * 100)}%</span>
             </div>
             <select class="ch-style-select" id="style-${id}" title="Generation style for this channel">
@@ -1673,18 +1673,10 @@ class App {
       }
       const sparseEl    = document.getElementById(`sparse-${id}`) as HTMLInputElement;
       const sparseValEl = document.getElementById(`sparse-val-${id}`);
-      const genToggleEl = document.getElementById(`gen-toggle-${id}`) as HTMLButtonElement;
       sparseEl?.addEventListener('input', () => {
         const v = parseFloat(sparseEl.value);
         this.channelSparseValues[id] = v;
         if (sparseValEl) sparseValEl.textContent = `${Math.round(v * 100)}%`;
-      });
-      genToggleEl?.addEventListener('click', () => {
-        const enabled = this.channelGenEnabled[id] !== false;
-        this.channelGenEnabled[id] = !enabled;
-        genToggleEl.classList.toggle('active', !enabled);
-        sparseEl.style.opacity = enabled ? '0.4' : '1';
-        genToggleEl.title = enabled ? 'Channel excluded from generation (click to enable)' : 'Toggle channel in generation';
       });
       const sf2SrcEl = document.getElementById(`sf2-src-${id}`) as HTMLSelectElement;
       sf2SrcEl?.addEventListener('change', () => {
@@ -2267,17 +2259,18 @@ class App {
     if (IS_DEMO && bars > DEMO_MAX_BARS) bars = DEMO_MAX_BARS;
 
     const sparseness = parseFloat((document.getElementById('gen-sparseness') as HTMLInputElement).value);
+    // Per-channel sparseness (0 = full/busy, 1 = empty/skip this channel).
     const channelSparseness = {
-      pulse1: this.channelGenEnabled['pulse1'] === false ? 1 : (this.channelSparseValues['pulse1'] ?? 0),
-      pulse2: this.channelGenEnabled['pulse2'] === false ? 1 : (this.channelSparseValues['pulse2'] ?? 0),
-      wave:   this.channelGenEnabled['wave']   === false ? 1 : (this.channelSparseValues['wave']   ?? 0),
-      noise:  this.channelGenEnabled['noise']  === false ? 1 : (this.channelSparseValues['noise']  ?? 0),
+      pulse1: this.channelSparseValues['pulse1'] ?? 0,
+      pulse2: this.channelSparseValues['pulse2'] ?? 0,
+      wave:   this.channelSparseValues['wave']   ?? 0,
+      noise:  this.channelSparseValues['noise']  ?? 0,
       // Demo: only 4 channels — pulse3 (arp) and pad never generate.
-      pulse3: IS_DEMO ? 1 : (this.channelGenEnabled['pulse3'] === false ? 1 : (this.channelSparseValues['pulse3'] ?? 0)),
-      pad:    IS_DEMO ? 1 : (this.channelGenEnabled['pad']    === false ? 1 : (this.channelSparseValues['pad']    ?? 0)),
-      extra1: this.channelGenEnabled['extra1'] === false ? 1 : (this.channelSparseValues['extra1'] ?? 0.3),
-      extra2: this.channelGenEnabled['extra2'] === false ? 1 : (this.channelSparseValues['extra2'] ?? 0.3),
-      extra3: this.channelGenEnabled['extra3'] === false ? 1 : (this.channelSparseValues['extra3'] ?? 0.3),
+      pulse3: IS_DEMO ? 1 : (this.channelSparseValues['pulse3'] ?? 0),
+      pad:    IS_DEMO ? 1 : (this.channelSparseValues['pad']    ?? 0),
+      extra1: this.channelSparseValues['extra1'] ?? 0.3,
+      extra2: this.channelSparseValues['extra2'] ?? 0.3,
+      extra3: this.channelSparseValues['extra3'] ?? 0.3,
     };
     const channelStyles = {
       pulse1: this.channelStyle['pulse1'] ?? 'auto',
