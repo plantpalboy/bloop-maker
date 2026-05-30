@@ -634,6 +634,12 @@ class App {
                 <button id="global-swell"    class="btn-sm" style="font-size:10px" title="Swell: quiet start, loud end — velocity crescendo across the whole song">Swell</button>
                 <button id="global-doubletime" class="btn-sm" style="font-size:10px" title="Double Time: halve all note timings so the song plays twice as busy at the same BPM">2x Time</button>
                 <button id="global-halftime"   class="btn-sm" style="font-size:10px" title="Half Time: double all note timings for a slow dramatic weight">0.5x Time</button>
+                <button id="global-quantize"   class="btn-sm" style="font-size:10px" title="Quantize: snap every note onset to the chosen grid — tightens recorded or loose timing">Quantize</button>
+                <select id="quantize-grid" class="gen-select" style="font-size:10px;padding:1px 2px;width:auto" title="Quantize grid">
+                  <option value="4">1/4</option>
+                  <option value="8" selected>1/8</option>
+                  <option value="16">1/16</option>
+                </select>
               </div>
               <button class="btn-generate" id="gen-btn">Generate!</button>
             </div>
@@ -1606,6 +1612,7 @@ class App {
     flashBtn('global-swell',      () => this.globalSwell());
     flashBtn('global-doubletime', () => this.globalTimeStretch(0.5, '2x Time'));
     flashBtn('global-halftime',   () => this.globalTimeStretch(2.0, 'Half Time'));
+    flashBtn('global-quantize',   () => this.globalQuantize());
     const updateSteerBtns = () => {
       for (const [id, mode] of Object.entries(steerButtons)) {
         const btn = document.getElementById(id) as HTMLButtonElement;
@@ -2679,6 +2686,25 @@ class App {
     this.scheduler?.extendDuration(this.state.duration);
     this.updateAllCanvases();
     this.setStatus('ok', `${label} — all timings ${factor < 1 ? 'halved' : 'doubled'}`);
+  }
+
+  // Snap every note's start time to the grid chosen in the Quantize dropdown
+  // (1/4, 1/8, or 1/16). Great for tightening MIDI you recorded by hand.
+  private globalQuantize() {
+    const hasNotes = CHANNELS.some(id => this.state.channels[id].notes.length > 0);
+    if (!hasNotes) { this.setStatus('err', 'Nothing to quantize yet — generate or record some notes first.'); return; }
+    const division = parseInt((document.getElementById('quantize-grid') as HTMLSelectElement)?.value ?? '8', 10);
+    const beatDur = 60 / (this.state.bpm || 120);
+    const grid = beatDur * (4 / division); // 1/4 = beatDur, 1/8 = beatDur/2, 1/16 = beatDur/4
+    this.pushHistory();
+    for (const id of CHANNELS) {
+      for (const n of this.state.channels[id].notes) {
+        n.time = Math.max(0, Math.round(n.time / grid) * grid);
+      }
+      this.state.channels[id].notes.sort((a, b) => a.time - b.time);
+    }
+    this.updateAllCanvases();
+    this.setStatus('ok', `Quantized all notes to 1/${division} grid.`);
   }
 
   // ── Channel transpose ─────────────────────────────────────────
