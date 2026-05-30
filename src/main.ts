@@ -611,6 +611,8 @@ class App {
                 <span class="gen-label">Inspector</span>
                 <span id="seed-display" style="font-size:10px;opacity:0.6;font-family:monospace">seed: —</span>
                 <span id="motif-inspector" style="font-size:10px;opacity:0.6;font-family:monospace">motif: —</span>
+                <input id="seed-input" type="text" inputmode="numeric" placeholder="seed" title="Type a seed number to regenerate the exact same song, or leave blank for random" style="width:80px;font-size:10px;font-family:monospace" />
+                <button id="use-seed-btn" class="btn-sm" style="font-size:10px" title="Generate using the seed typed on the left">Use seed</button>
                 <button id="copy-seed-btn" class="btn-sm" style="font-size:10px">copy seed</button>
                 <button id="export-json-btn" class="btn-sm" style="font-size:10px">JSON</button>
               </div>
@@ -1543,9 +1545,26 @@ class App {
     // Inspector + export buttons
     document.getElementById('copy-seed-btn')!.addEventListener('click', () => {
       navigator.clipboard.writeText(String(this.lastSeed)).catch(() => {});
+      (document.getElementById('seed-input') as HTMLInputElement).value = String(this.lastSeed);
       this.setStatus('ok', `Seed ${this.lastSeed} copied! Use it to reproduce this song.`);
     });
+    document.getElementById('use-seed-btn')!.addEventListener('click', () => this.runGenerator());
+    (document.getElementById('seed-input') as HTMLInputElement).addEventListener('keydown', (e) => {
+      if ((e as KeyboardEvent).key === 'Enter') this.runGenerator();
+    });
     document.getElementById('export-json-btn')!.addEventListener('click', () => this.exportJSON());
+  }
+
+  // Reads the seed input box. Returns a parsed seed number, or undefined for a
+  // fresh random seed (empty box). Non-numeric input is ignored (treated as random).
+  private readSeedInput(): number | undefined {
+    const el = document.getElementById('seed-input') as HTMLInputElement | null;
+    if (!el) return undefined;
+    const raw = el.value.trim();
+    if (raw === '') return undefined;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return undefined;
+    return n >>> 0;
   }
 
   private updateInspector() {
@@ -2310,7 +2329,7 @@ class App {
       (document.getElementById('gen-noise') as HTMLInputElement).checked = false;
     }
 
-    const config: GenConfig = { mode: this.genMode, key, octave: 4, bars, bpm: steeredBpm, scaleType: steeredScale, generateNoise: this.steeringMode === 'cinematic' ? false : generateNoise, sparseness: steeredSparseness, channelSparseness, channelStyles: steeredChannelStyles, motifSeed: this.lockedMotif.length > 0 ? [...this.lockedMotif] : undefined, arpStyle: this.arpStyleOverride,
+    const config: GenConfig = { mode: this.genMode, key, octave: 4, bars, bpm: steeredBpm, scaleType: steeredScale, generateNoise: this.steeringMode === 'cinematic' ? false : generateNoise, sparseness: steeredSparseness, channelSparseness, channelStyles: steeredChannelStyles, motifSeed: this.lockedMotif.length > 0 ? [...this.lockedMotif] : undefined, arpStyle: this.arpStyleOverride, seed: this.readSeedInput(),
       extraChannelRoles: Object.fromEntries(
         (['extra1','extra2','extra3'] as ChannelId[])
           .filter(id => this.activeExtraChannels.has(id))
