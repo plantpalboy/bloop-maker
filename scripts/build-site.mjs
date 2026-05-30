@@ -34,9 +34,9 @@ if (!existsSync('landing/index.html')) {
 }
 cpSync('landing/index.html', 'demo/index.html');
 
-// Optional screenshot for the landing hero
-if (existsSync('landing/app-screenshot.png')) {
-  cpSync('landing/app-screenshot.png', 'demo/app-screenshot.png');
+// Optional media folder (gallery video + screenshots) for the landing page
+if (existsSync('landing/media')) {
+  cpSync('landing/media', 'demo/media', { recursive: true });
 }
 
 // Playable demo build

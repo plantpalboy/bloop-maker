@@ -89,7 +89,7 @@
     .title span:nth-child(10){color:var(--bloop-yellow);animation-delay:1.08s}
     @keyframes float { 0%,100% { transform: translateY(0) rotate(-2deg) scale(1); } 50% { transform: translateY(-14px) rotate(3deg) scale(1.06); } }
 
-    .squiggles { text-align: center; font-size: 28px; letter-spacing: 8px; margin: 8px 0 26px; animation: wiggle 2.4s ease-in-out infinite; }
+    .squiggles { text-align: center; font-size: 28px; letter-spacing: 8px; text-indent: 8px; margin: 8px 0 26px; animation: wiggle 2.4s ease-in-out infinite; }
     @keyframes wiggle { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
 
     .subtitle {
@@ -117,9 +117,20 @@
     .platforms { text-align: center; font-weight: 900; font-size: 15px; opacity: .7; margin-bottom: 26px; letter-spacing: .5px; }
 
     /* Screenshot */
-    .shot { margin: 0 auto 40px; max-width: 760px; border: 5px solid var(--bloop-ink); border-radius: 20px; overflow: hidden; box-shadow: 0 10px 0 rgba(36,27,58,.15); background: #fff; }
-    .shot img { display: block; width: 100%; height: auto; }
-    .shot-ph { aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; font-weight: 900; color: var(--bloop-purple); background: repeating-linear-gradient(45deg,#fff,#fff 16px,#fff3c4 16px,#fff3c4 32px); }
+    /* Clickable media gallery (video first, then screenshots) */
+    .gallery { position: relative; max-width: 760px; margin: 0 auto 40px; }
+    .stage { border: 5px solid var(--bloop-ink); border-radius: 20px; overflow: hidden; background: #111; box-shadow: 0 10px 0 rgba(36,27,58,.15); aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center; }
+    .stage img, .stage video { width: 100%; height: 100%; object-fit: contain; display: block; background: #111; }
+    .gal-arrow { position: absolute; top: calc(50% - 35px); transform: translateY(-50%); background: var(--bloop-yellow); border: 4px solid var(--bloop-ink); border-radius: 50%; width: 48px; height: 48px; font-size: 24px; font-weight: 900; line-height: 1; cursor: pointer; box-shadow: 0 4px 0 var(--bloop-ink); color: var(--bloop-ink); z-index: 2; }
+    .gal-arrow:active { transform: translateY(-50%) translateY(3px); box-shadow: 0 1px 0 var(--bloop-ink); }
+    .gal-prev { left: -14px; }
+    .gal-next { right: -14px; }
+    .thumbs { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+    .thumb { width: 90px; height: 58px; border: 3px solid var(--bloop-ink); border-radius: 10px; overflow: hidden; cursor: pointer; background: #111; opacity: .55; transition: opacity .12s, transform .12s; position: relative; padding: 0; }
+    .thumb.active { opacity: 1; transform: translateY(-3px); box-shadow: 0 4px 0 rgba(36,27,58,.2); }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .thumb.video::after { content: ""; position: absolute; top: 50%; left: 50%; transform: translate(-40%,-50%); border-style: solid; border-width: 9px 0 9px 15px; border-color: transparent transparent transparent #fff; filter: drop-shadow(0 1px 2px rgba(0,0,0,.7)); }
+    .gal-empty { aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; font-weight: 900; color: var(--bloop-purple); border: 5px solid var(--bloop-ink); border-radius: 20px; background: repeating-linear-gradient(45deg,#fff,#fff 16px,#fff3c4 16px,#fff3c4 32px); }
 
     .page p { margin: 0 0 22px; }
     .page .lead { font-size: 1.12em; }
@@ -190,11 +201,12 @@
 
     <div class="platforms">Windows · macOS · Linux · runs offline · no account</div>
 
-    <div class="shot">
-      <!-- Drop a screenshot named app-screenshot.png into the landing/ folder and it shows here. -->
-      <img src="app-screenshot.png" alt="Bloop Maker app generating a song"
-           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-      <div class="shot-ph" style="display:none;">Add app-screenshot.png next to index.html to show the app here</div>
+    <div class="gallery" id="gallery">
+      <div class="stage" id="gal-stage"></div>
+      <button class="gal-arrow gal-prev" id="gal-prev" aria-label="Previous">‹</button>
+      <button class="gal-arrow gal-next" id="gal-next" aria-label="Next">›</button>
+      <div class="thumbs" id="gal-thumbs"></div>
+      <div class="gal-empty" id="gal-empty" style="display:none;">Add a video + screenshots to the landing/media/ folder to show them here</div>
     </div>
 
     <p class="lead"><strong>Bloop Maker is a desktop app that writes original video game music for you.</strong> Pick a vibe, press one button, and it composes a complete multi-track song in seconds. Shape it in the built-in editor, then export it as a MIDI file or finished audio, ready to drop straight into your project.</p>
@@ -271,5 +283,80 @@
   </footer>
 
   <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+
+  <script>
+  // ── Media gallery ──────────────────────────────────────────────
+  // Edit this list to match the files you drop into landing/media/.
+  // First item is the video; the rest are screenshots. Missing files are
+  // skipped automatically, so it's safe to add files over time.
+  const MEDIA = [
+    { type: 'video', src: 'media/demo.mp4', poster: 'media/demo-poster.png' },
+    { type: 'image', src: 'media/shot1.png' },
+    { type: 'image', src: 'media/shot2.png' },
+    { type: 'image', src: 'media/shot3.png' },
+    { type: 'image', src: 'media/shot4.png' },
+  ];
+
+  (function () {
+    const stage  = document.getElementById('gal-stage');
+    const thumbs = document.getElementById('gal-thumbs');
+    const empty  = document.getElementById('gal-empty');
+    const prev   = document.getElementById('gal-prev');
+    const next   = document.getElementById('gal-next');
+    let valid = [], idx = 0;
+
+    const exists = (item) => new Promise((res) => {
+      if (item.type === 'image') {
+        const im = new Image();
+        im.onload = () => res(true); im.onerror = () => res(false); im.src = item.src;
+      } else {
+        const v = document.createElement('video');
+        v.onloadeddata = () => res(true); v.onerror = () => res(false);
+        v.preload = 'metadata'; v.src = item.src;
+      }
+    });
+
+    Promise.all(MEDIA.map(exists)).then((ok) => {
+      valid = MEDIA.filter((_, i) => ok[i]);
+      if (valid.length === 0) {            // nothing added yet → show placeholder
+        stage.style.display = 'none'; prev.style.display = 'none'; next.style.display = 'none';
+        empty.style.display = 'flex'; return;
+      }
+      if (valid.length === 1) { prev.style.display = 'none'; next.style.display = 'none'; }
+      thumbs.innerHTML = '';
+      valid.forEach((item, i) => {
+        const t = document.createElement('button');
+        t.className = 'thumb' + (item.type === 'video' ? ' video' : '');
+        const im = document.createElement('img');
+        im.src = item.type === 'video' ? (item.poster || '') : item.src;
+        im.alt = 'Bloop Maker ' + (item.type === 'video' ? 'video' : 'screenshot');
+        t.appendChild(im);
+        t.addEventListener('click', () => show(i));
+        thumbs.appendChild(t);
+      });
+      show(0);
+    });
+
+    function show(i) {
+      idx = (i + valid.length) % valid.length;
+      const item = valid[idx];
+      stage.innerHTML = '';
+      if (item.type === 'video') {
+        const v = document.createElement('video');
+        v.src = item.src; v.controls = true; v.playsInline = true;
+        if (item.poster) v.poster = item.poster;
+        stage.appendChild(v);
+      } else {
+        const im = document.createElement('img');
+        im.src = item.src; im.alt = 'Bloop Maker screenshot';
+        stage.appendChild(im);
+      }
+      [...thumbs.children].forEach((t, j) => t.classList.toggle('active', j === idx));
+    }
+
+    prev.addEventListener('click', () => show(idx - 1));
+    next.addEventListener('click', () => show(idx + 1));
+  })();
+  </script>
 </body>
 </html>
