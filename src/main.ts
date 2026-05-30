@@ -1637,6 +1637,7 @@ class App {
       document.getElementById(`oct-dn-${id}`)?.addEventListener('click',     () => this.channelOctave(id, -12));
       this.exportChBtns[id]?.addEventListener('click', () => this.exportChannel(id));
       this.editBtns[id]?.addEventListener('click',     () => this.toggleChannelEdit(id));
+      this.attachScrubHandler(id);
       const lockBtn = document.getElementById(`lock-${id}`) as HTMLButtonElement;
       lockBtn?.addEventListener('click', () => {
         this.channelLocked[id] = !this.channelLocked[id];
@@ -2651,7 +2652,7 @@ class App {
       canvas.height = 52;
       canvas.classList.remove('editing');
       btn.classList.remove('active');
-      canvas.style.cursor = 'default';
+      canvas.style.cursor = 'ew-resize';
       canvas.removeEventListener('mousedown', (canvas as any)._editHandler);
       canvas.removeEventListener('wheel', (canvas as any)._wheelHandler);
       this.pianoRollZoom.delete(id);
@@ -3162,6 +3163,43 @@ class App {
   private restartPlayback() {
     if (this.state.isPlaying) { this.seekTo(0); }
     else { this.currentTime = 0; this.seekSlider.value = '0'; this.updateTimeDisplay(0); this.updateAllCanvases(); }
+  }
+
+  // Lets you drag a playhead across a channel's piano roll to scrub the song.
+  // Only active when the channel is NOT in edit mode (edit mode uses the canvas
+  // for placing/deleting notes instead).
+  private attachScrubHandler(id: ChannelId) {
+    const canvas = this.canvases[id];
+    if (!canvas) return;
+    // Avoid stacking duplicate listeners across re-renders.
+    if ((canvas as any)._scrubHandler) {
+      canvas.removeEventListener('mousedown', (canvas as any)._scrubHandler);
+    }
+    const xToTime = (clientX: number): number => {
+      const rect = canvas.getBoundingClientRect();
+      const duration = this.state.duration;
+      const zoom = this.pianoRollZoom.get(id);
+      const viewStart = zoom ? zoom.start : 0;
+      const viewEnd   = zoom ? zoom.end   : duration;
+      const xNorm = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      return Math.max(0, Math.min(duration, viewStart + xNorm * (viewEnd - viewStart)));
+    };
+    const onDown = (e: MouseEvent) => {
+      if (this.editingChannels.has(id)) return;      // edit mode owns the canvas
+      if (!this.state.duration) return;
+      e.preventDefault();
+      const move = (ev: MouseEvent) => this.seekTo(xToTime(ev.clientX));
+      const up = () => {
+        window.removeEventListener('mousemove', move);
+        window.removeEventListener('mouseup', up);
+      };
+      window.addEventListener('mousemove', move);
+      window.addEventListener('mouseup', up);
+      this.seekTo(xToTime(e.clientX));
+    };
+    (canvas as any)._scrubHandler = onDown;
+    canvas.addEventListener('mousedown', onDown);
+    if (!this.editingChannels.has(id)) canvas.style.cursor = 'ew-resize';
   }
 
   private seekTo(time: number) {
