@@ -4,288 +4,273 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Bloop Maker — Free-to-Own Game Music Generator | No AI, No Copyright Risk</title>
-  <meta name="description" content="Bloop Maker generates original chiptune and video game music using music-theory rules — no AI, no copyright risk. Full piano-roll editor, MIDI + WAV export, runs offline. Windows, Mac, Linux." />
-  <meta name="keywords" content="game music generator, MIDI generator, chiptune maker, no AI music, royalty free game music, procedural music, indie game music, music generator, 8-bit music" />
-  <meta name="theme-color" content="#15151f" />
+  <title>Bloop Maker — Game Music Generator with No AI, No Copyright Risk</title>
+  <meta name="description" content="Bloop Maker makes original chiptune and video game music from music-theory rules — no AI, no samples, no copyright risk. Piano-roll editor, MIDI + WAV export, runs offline. Windows, Mac, Linux." />
+  <meta name="keywords" content="game music generator, MIDI generator, chiptune maker, no AI music, royalty free game music, procedural music, indie game music, 8-bit music generator" />
+  <meta name="theme-color" content="#fff8de" />
 
-  <!-- Open Graph / social previews -->
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="Bloop Maker — Game Music Generator, No AI" />
+  <meta property="og:title" content="Bloop Maker — Game Music, No AI" />
   <meta property="og:description" content="Original chiptune & game music from music-theory rules, not AI. No copyright risk. MIDI + WAV export. Win/Mac/Linux." />
   <meta property="og:url" content="https://bloopmaker.net/" />
   <meta name="twitter:card" content="summary_large_image" />
-
   <link rel="canonical" href="https://bloopmaker.net/" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
 
   <style>
     :root {
-      --bg:        #15151f;
-      --bg-deep:   #0e0e16;
-      --panel:     #1c1c2b;
-      --text:      #e8e8f0;
-      --muted:     #a0a0b8;
-      --orange:    #ff8a3d;
-      --orange-dk: #e9742a;
-      --teal:      #4de1c1;
-      --border:    #2a2a3d;
+      --bloop-pink:   #ff4aa2;
+      --bloop-blue:   #26c6ff;
+      --bloop-yellow: #ffe14a;
+      --bloop-green:  #7cff6b;
+      --bloop-purple: #b96cff;
+      --bloop-orange: #ff7a3d;
+      --bloop-mint:   #36e0c4;
+      --bloop-ink:    #241b3a;
+      --bloop-soft:   #fff8de;
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
+
+    * { box-sizing: border-box; }
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Nunito', system-ui, sans-serif;
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
+      margin: 0;
+      background: var(--bloop-soft);
+      color: var(--bloop-ink);
+      font-family: "Trebuchet MS", Verdana, sans-serif;
+      line-height: 1.7;
+      font-size: 18px;
     }
-    h1, h2, h3, .logo { font-family: 'Fredoka', system-ui, sans-serif; font-weight: 600; }
-    a { color: var(--orange); text-decoration: none; }
-    .wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
 
-    /* Buttons */
-    .btn {
-      display: inline-block; font-family: 'Fredoka', sans-serif; font-weight: 600;
-      font-size: 1.05rem; padding: 14px 30px; border-radius: 12px;
-      background: var(--orange); color: #1a1a1a; border: none; cursor: pointer;
-      transition: transform .12s ease, background .12s ease; box-shadow: 0 6px 20px rgba(255,138,61,.28);
-    }
-    .btn:hover { background: var(--orange-dk); transform: translateY(-2px); }
-    .btn-ghost {
-      background: transparent; color: var(--text); border: 1px solid var(--border);
-      box-shadow: none;
-    }
-    .btn-ghost:hover { background: var(--panel); }
-
-    /* Nav */
-    nav {
+    /* Sticky buy button, top-right */
+    .buybar {
       position: sticky; top: 0; z-index: 50;
-      background: rgba(14,14,22,.82); backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: flex-end; align-items: center; gap: 10px;
+      padding: 10px 16px;
+      background: rgba(255, 248, 222, .85);
+      backdrop-filter: blur(6px);
+      border-bottom: 3px dashed rgba(36, 27, 58, .15);
     }
-    nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
-    .logo { font-size: 1.4rem; color: var(--text); letter-spacing: .5px; }
-    .logo b { color: var(--orange); }
-    .nav-cta { font-size: .95rem; padding: 9px 20px; }
+    .buybar .mini-logo { margin-right: auto; font-weight: 900; font-size: 20px; letter-spacing: -.04em; }
+    .buybar .mini-logo b { color: var(--bloop-pink); }
 
-    /* Hero */
-    .hero { padding: 80px 0 60px; text-align: center; }
-    .badge {
-      display: inline-block; font-weight: 800; font-size: .8rem; letter-spacing: 1px;
-      text-transform: uppercase; color: var(--teal);
-      border: 1px solid rgba(77,225,193,.35); border-radius: 999px;
-      padding: 6px 16px; margin-bottom: 24px;
+    .page {
+      position: relative;
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 30px 16px 64px;
+      isolation: isolate;
     }
-    .hero h1 { font-size: clamp(2.2rem, 6vw, 4rem); line-height: 1.08; margin-bottom: 20px; }
-    .hero h1 .hl { color: var(--orange); }
-    .hero p.sub { font-size: clamp(1.05rem, 2.4vw, 1.35rem); color: var(--muted); max-width: 680px; margin: 0 auto 34px; }
-    .cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 22px; }
-    .platforms { color: var(--muted); font-size: .9rem; font-weight: 700; letter-spacing: .5px; }
-    .platforms span { color: var(--text); }
+    .page::before, .page::after {
+      content: "♫";
+      position: absolute; z-index: -1;
+      font-size: 120px; font-weight: 900; opacity: .12;
+      animation: drift 7s ease-in-out infinite; pointer-events: none;
+    }
+    .page::before { top: 150px; left: -38px; color: var(--bloop-pink); transform: rotate(-14deg); }
+    .page::after  { right: -36px; bottom: 240px; color: var(--bloop-blue); animation-delay: 1.2s; transform: rotate(12deg); }
+    @keyframes drift { 0%,100% { translate: 0 0; } 50% { translate: 0 -24px; } }
 
-    /* Screenshot frame */
-    .shot {
-      margin: 50px auto 0; max-width: 900px; border-radius: 16px; overflow: hidden;
-      border: 1px solid var(--border); background: var(--bg-deep);
-      box-shadow: 0 30px 80px rgba(0,0,0,.5);
+    .title {
+      text-align: center; margin: 6px 0 16px;
+      font-size: clamp(52px, 12vw, 116px); line-height: .9;
+      font-weight: 900; letter-spacing: -.08em;
     }
+    .title span {
+      display: inline-block; animation: float 1.8s ease-in-out infinite;
+      text-shadow: 0 3px 0 #fff, 0 7px 0 rgba(36,27,58,.12);
+    }
+    .title span:nth-child(1){color:var(--bloop-pink);animation-delay:0s}
+    .title span:nth-child(2){color:var(--bloop-blue);animation-delay:.12s}
+    .title span:nth-child(3){color:var(--bloop-yellow);animation-delay:.24s}
+    .title span:nth-child(4){color:var(--bloop-green);animation-delay:.36s}
+    .title span:nth-child(5){color:var(--bloop-purple);animation-delay:.48s}
+    .title span:nth-child(6){color:var(--bloop-orange);animation-delay:.6s}
+    .title span:nth-child(7){color:var(--bloop-mint);animation-delay:.72s}
+    .title span:nth-child(8){color:var(--bloop-pink);animation-delay:.84s}
+    .title span:nth-child(9){color:var(--bloop-blue);animation-delay:.96s}
+    .title span:nth-child(10){color:var(--bloop-yellow);animation-delay:1.08s}
+    @keyframes float { 0%,100% { transform: translateY(0) rotate(-2deg) scale(1); } 50% { transform: translateY(-14px) rotate(3deg) scale(1.06); } }
+
+    .squiggles { text-align: center; font-size: 28px; letter-spacing: 8px; margin: 8px 0 26px; animation: wiggle 2.4s ease-in-out infinite; }
+    @keyframes wiggle { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+
+    .subtitle {
+      text-align: center; font-size: clamp(22px, 4vw, 36px); font-weight: 900;
+      line-height: 1.15; margin: 0 auto 26px; max-width: 760px;
+    }
+    .subtitle em { font-style: normal; color: var(--bloop-pink); text-decoration: underline wavy var(--bloop-blue) 3px; text-underline-offset: 6px; }
+
+    /* CTA buttons */
+    .cta-row { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin: 6px 0 30px; }
+    .btn {
+      font-family: inherit; font-weight: 900; font-size: 20px; cursor: pointer;
+      padding: 16px 30px; border-radius: 18px; border: 4px solid var(--bloop-ink);
+      text-decoration: none; display: inline-block; color: var(--bloop-ink);
+      box-shadow: 0 6px 0 var(--bloop-ink); transition: transform .1s, box-shadow .1s;
+    }
+    .btn:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--bloop-ink); }
+    .btn-buy  { background: var(--bloop-yellow); }
+    .btn-buy:hover  { background: #fff06e; }
+    .btn-demo { background: var(--bloop-mint); }
+    .btn-demo:hover { background: #5cf0d6; }
+    .btn-mini { font-size: 15px; padding: 8px 16px; border-width: 3px; box-shadow: 0 4px 0 var(--bloop-ink); border-radius: 12px; background: var(--bloop-yellow); }
+
+    .platforms { text-align: center; font-weight: 900; font-size: 15px; opacity: .7; margin-bottom: 26px; letter-spacing: .5px; }
+
+    /* Screenshot */
+    .shot { margin: 0 auto 40px; max-width: 760px; border: 5px solid var(--bloop-ink); border-radius: 20px; overflow: hidden; box-shadow: 0 10px 0 rgba(36,27,58,.15); background: #fff; }
     .shot img { display: block; width: 100%; height: auto; }
-    .shot-placeholder {
-      aspect-ratio: 16 / 10; display: flex; align-items: center; justify-content: center;
-      color: var(--muted); font-size: .95rem; text-align: center; padding: 30px;
-      background: repeating-linear-gradient(45deg, #16161f, #16161f 14px, #191926 14px, #191926 28px);
+    .shot-ph { aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; font-weight: 900; color: var(--bloop-purple); background: repeating-linear-gradient(45deg,#fff,#fff 16px,#fff3c4 16px,#fff3c4 32px); }
+
+    .page p { margin: 0 0 22px; }
+    .page strong { color: #111; font-weight: 900; }
+    .page em { color: var(--bloop-purple); font-style: normal; font-weight: 900; }
+
+    .section { margin: 36px 0; }
+    .section h2 { font-size: clamp(26px,5vw,42px); line-height: 1; margin: 0 0 14px; font-weight: 900; letter-spacing: -.04em; }
+    .section:nth-of-type(1) h2 { color: var(--bloop-pink); }
+    .section:nth-of-type(2) h2 { color: var(--bloop-blue); }
+    .section:nth-of-type(3) h2 { color: var(--bloop-purple); }
+    .section:nth-of-type(4) h2 { color: var(--bloop-orange); }
+    .section:nth-of-type(5) h2 { color: #00aa7a; }
+    .section h2::before { content: "✦ "; display: inline-block; animation: spin 3s linear infinite; }
+    @keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+
+    .divider { text-align: center; font-size: 30px; margin: 34px 0; color: var(--bloop-pink); letter-spacing: 10px; }
+
+    .list-title { font-size: clamp(30px,6vw,52px); font-weight: 900; letter-spacing: -.05em; margin: 44px 0 14px; }
+    .list-title span { display: inline-block; animation: tinybounce 1.5s ease-in-out infinite; }
+    .list-title span:nth-child(2) { animation-delay: .2s; color: var(--bloop-pink); }
+    @keyframes tinybounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+
+    .page ul, .page ol { padding-left: 1.4em; margin: 0 0 32px; }
+    .page li { margin: 10px 0; }
+    .page li::marker { color: var(--bloop-pink); font-weight: 900; }
+
+    .note { font-size: 16px; opacity: .92; margin-top: 36px; }
+
+    .ending { text-align: center; font-size: clamp(22px,4vw,34px); line-height: 1.2; font-weight: 900; margin: 42px 0 10px; color: var(--bloop-pink); animation: pulse 2s ease-in-out infinite; }
+    .ending em { color: var(--bloop-purple); font-style: normal; }
+    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.035); } }
+
+    footer { text-align: center; font-size: 14px; opacity: .7; padding: 30px 16px 50px; }
+    footer a { color: var(--bloop-pink); font-weight: 900; }
+
+    @media (max-width: 640px) {
+      body { font-size: 16px; }
+      .squiggles { letter-spacing: 3px; font-size: 24px; }
+      .buybar .mini-logo { font-size: 16px; }
     }
-
-    /* Trust strip */
-    .trust { background: var(--bg-deep); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 28px 0; }
-    .trust .wrap { display: flex; gap: 30px; justify-content: center; flex-wrap: wrap; text-align: center; }
-    .trust-item { font-weight: 700; }
-    .trust-item .big { display: block; color: var(--teal); font-family: 'Fredoka', sans-serif; font-size: 1.15rem; }
-    .trust-item .sm { color: var(--muted); font-size: .85rem; font-weight: 600; }
-
-    /* Sections */
-    section { padding: 76px 0; }
-    .section-head { text-align: center; max-width: 640px; margin: 0 auto 50px; }
-    .section-head h2 { font-size: clamp(1.7rem, 4vw, 2.4rem); margin-bottom: 14px; }
-    .section-head p { color: var(--muted); font-size: 1.08rem; }
-
-    /* Feature grid */
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-    .card {
-      background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 26px;
-    }
-    .card .ico { font-size: 1.6rem; margin-bottom: 12px; display: block; }
-    .card h3 { font-size: 1.2rem; margin-bottom: 8px; }
-    .card p { color: var(--muted); font-size: .98rem; }
-
-    /* How it works */
-    .how { background: var(--bg-deep); }
-    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 22px; }
-    .step { text-align: center; padding: 10px; }
-    .step .num {
-      width: 46px; height: 46px; border-radius: 50%; background: rgba(255,138,61,.14);
-      color: var(--orange); font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 1.2rem;
-      display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;
-      border: 1px solid rgba(255,138,61,.35);
-    }
-    .step h3 { font-size: 1.1rem; margin-bottom: 6px; }
-    .step p { color: var(--muted); font-size: .95rem; }
-
-    /* Final CTA */
-    .final { text-align: center; }
-    .final h2 { font-size: clamp(1.8rem, 4.5vw, 2.6rem); margin-bottom: 16px; }
-    .final p { color: var(--muted); font-size: 1.1rem; margin-bottom: 30px; }
-    .price-note { color: var(--muted); font-size: .92rem; margin-top: 16px; }
-    .price-note b { color: var(--text); }
-
-    /* Footer */
-    footer { border-top: 1px solid var(--border); padding: 40px 0; text-align: center; color: var(--muted); font-size: .9rem; }
-    footer .logo { font-size: 1.1rem; margin-bottom: 8px; }
-
-    @media (max-width: 600px) {
-      .hero { padding: 56px 0 40px; }
-      section { padding: 56px 0; }
+    @media (prefers-reduced-motion: reduce) {
+      .title span, .squiggles, .section h2::before, .list-title span, .ending, .page::before, .page::after { animation: none; }
     }
   </style>
 </head>
 <body>
 
-  <nav>
-    <div class="wrap">
-      <div class="logo">b<b>loop</b> maker</div>
-      <!-- TODO: replace with your itch.io URL -->
-      <a class="btn nav-cta" href="https://YOUR-USERNAME.itch.io/bloop-maker">Get it — $12.99</a>
-    </div>
-  </nav>
-
-  <header class="hero">
-    <div class="wrap">
-      <span class="badge">No AI · No Copyright Risk</span>
-      <h1>Original game music,<br>generated by <span class="hl">music theory</span> — not AI.</h1>
-      <p class="sub">
-        Bloop Maker builds chiptune and video-game music from scratch using coded
-        music-theory rules. The songs are yours — safe to use in games, streams, and
-        videos, with no AI and no copyright headaches.
-      </p>
-      <div class="cta-row">
-        <!-- TODO: replace with your itch.io URL -->
-        <a class="btn" href="https://YOUR-USERNAME.itch.io/bloop-maker">Get Bloop Maker — $12.99</a>
-        <a class="btn btn-ghost" href="./app/">▶ Try the free demo</a>
-      </div>
-      <div class="platforms">Desktop app for <span>Windows</span> · <span>macOS</span> · <span>Linux</span></div>
-
-      <div class="shot">
-        <!-- Drop a screenshot named app-screenshot.png next to this file and it appears here.
-             Recommended: the app mid-song with channels lit up. -->
-        <img src="app-screenshot.png" alt="Bloop Maker app interface generating a song"
-             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-        <div class="shot-placeholder" style="display:none;">
-          Add a screenshot here — save it as <strong style="color:var(--text);margin:0 6px">app-screenshot.png</strong> next to index.html
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <div class="trust">
-    <div class="wrap">
-      <div class="trust-item"><span class="big">No AI</span><span class="sm">Rule-based, not machine learning</span></div>
-      <div class="trust-item"><span class="big">No subscription</span><span class="sm">Pay once, own it forever</span></div>
-      <div class="trust-item"><span class="big">Runs offline</span><span class="sm">No account, no internet needed</span></div>
-      <div class="trust-item"><span class="big">MIDI + WAV</span><span class="sm">Opens in any DAW</span></div>
-    </div>
+  <div class="buybar">
+    <span class="mini-logo">b<b>loop</b> maker</span>
+    <!-- TODO: replace with your itch.io URL -->
+    <a class="btn btn-mini" href="https://YOUR-USERNAME.itch.io/bloop-maker">Get it — $12.99</a>
   </div>
 
-  <section>
-    <div class="wrap">
-      <div class="section-head">
-        <h2>A real composer, not a one-button toy</h2>
-        <p>Generate a full multi-track song in a click — then shape every detail.</p>
-      </div>
-      <div class="grid">
-        <div class="card">
-          <span class="ico">🎹</span>
-          <h3>6 channels + piano roll</h3>
-          <p>Lead, harmony, bass, drums, arp, and pad — each editable note by note in a full piano-roll editor.</p>
-        </div>
-        <div class="card">
-          <span class="ico">🎚️</span>
-          <h3>Steer the vibe</h3>
-          <p>One click pushes a song bright, dark, cozy, punchy, cinematic, or lo-fi. 50+ melodic shapes, 28 arp styles.</p>
-        </div>
-        <div class="card">
-          <span class="ico">🛡️</span>
-          <h3>Copyright-safe</h3>
-          <p>No AI, no samples from other music. Built by deterministic code, so every track is free and clear to use commercially.</p>
-        </div>
-        <div class="card">
-          <span class="ico">💾</span>
-          <h3>Real export</h3>
-          <p>Save standard MIDI for any DAW, or render straight to WAV with your own soundfonts.</p>
-        </div>
-        <div class="card">
-          <span class="ico">🌱</span>
-          <h3>Seed-based & repeatable</h3>
-          <p>Every song has a seed. Share it and get the exact same track back — perfect for collaboration and versioning.</p>
-        </div>
-        <div class="card">
-          <span class="ico">⚡</span>
-          <h3>Unlimited & offline</h3>
-          <p>No usage caps, no credits, no cloud. Generate as much as you want, fully offline, forever.</p>
-        </div>
-      </div>
-    </div>
-  </section>
+  <div class="page">
 
-  <section id="how" class="how">
-    <div class="wrap">
-      <div class="section-head">
-        <h2>How it works</h2>
-        <p>Music built the way a game builds a level — from rules, not a black box.</p>
-      </div>
-      <div class="steps">
-        <div class="step">
-          <div class="num">1</div>
-          <h3>Pick a feel</h3>
-          <p>Choose a mode and key, or hit a steering button for an instant vibe.</p>
-        </div>
-        <div class="step">
-          <div class="num">2</div>
-          <h3>Generate</h3>
-          <p>Chord progressions, melodies, motifs, bass, and drums are composed by music-theory rules in code.</p>
-        </div>
-        <div class="step">
-          <div class="num">3</div>
-          <h3>Shape it</h3>
-          <p>Edit notes, swing the groove, add harmony, regenerate any single part until it's right.</p>
-        </div>
-        <div class="step">
-          <div class="num">4</div>
-          <h3>Export & own it</h3>
-          <p>Save MIDI or WAV and drop it straight into your project — no strings attached.</p>
-        </div>
-      </div>
-    </div>
-  </section>
+    <h1 class="title" aria-label="Bloop Maker">
+      <span>B</span><span>l</span><span>o</span><span>o</span><span>p</span>
+      <span>M</span><span>a</span><span>k</span><span>e</span><span>r</span>
+    </h1>
 
-  <section class="final">
-    <div class="wrap">
-      <h2>Make music that's truly yours.</h2>
-      <p>One-time purchase. Windows, macOS &amp; Linux. Free updates.</p>
+    <div class="squiggles">♪ 〰 ✶ 〰 ♫ 〰 ✦</div>
+
+    <p class="subtitle">
+      A little Bloop machine for making game music without touching the forbidden <em>AI slop</em>.
+    </p>
+
+    <div class="cta-row">
       <!-- TODO: replace with your itch.io URL -->
-      <a class="btn" href="https://YOUR-USERNAME.itch.io/bloop-maker">Get Bloop Maker — $12.99</a>
-      <p class="price-note">Available on <b>itch.io</b> · No AI · No subscription · Yours forever</p>
+      <a class="btn btn-buy" href="https://YOUR-USERNAME.itch.io/bloop-maker">🎵 Get Bloop Maker — $12.99</a>
+      <a class="btn btn-demo" href="./app/">▶ Try the free demo</a>
     </div>
-  </section>
+    <div class="platforms">Windows · macOS · Linux · runs offline · no account</div>
+
+    <div class="shot">
+      <!-- Drop a screenshot named app-screenshot.png into the landing/ folder and it shows here. -->
+      <img src="app-screenshot.png" alt="Bloop Maker app generating a song"
+           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+      <div class="shot-ph" style="display:none;">Add app-screenshot.png next to index.html to show the app here ✨</div>
+    </div>
+
+    <p>Bloop Maker exists for creative people trying to finish cool things. Games, streams, videos, jams, tiny art projects, giant dream projects, all of it. Music should not be the scary part.</p>
+
+    <p>Bloop Maker creates original chiptune and video game music right on your computer. No AI. No samples. No mystery internet goo. Every song is built from scratch with music theory rules written in code: chords, melodies, rhythms, motifs, patterns, and little notes bouncing around until they become a song.</p>
+
+    <p>It feels kind of like a game generating a level, except instead of caves and treasure chests, you get music. The song is yours, free and clear, ready to put in your game, stream, video, menu screen, frog shop, wizard elevator, racing level, cozy town, or strange little planet earth project.</p>
+
+    <p>Made for <strong>indie game developers</strong>, <strong>streamers</strong>, <strong>YouTubers</strong>, <strong>artists</strong>, and <strong>game jam makers</strong> who need original background music <em>right now</em> and do not want to worry about copyright trouble or someone asking if the music came from AI.</p>
+
+    <div class="divider">✶ ✶ ✶</div>
+
+    <div class="section">
+      <h2>No AI. No copyright fog machine.</h2>
+      <p>Bloop Maker does not use machine learning, training data, scraped songs, sample packs, or black box music sludge. It writes music with deterministic code: chord progressions, melody logic, motif repetition, drum patterns, and simple rules stacked together with care. You can use the music in commercial games, monetized videos, live streams, trailers, jams, and personal projects.</p>
+    </div>
+
+    <div class="section">
+      <h2>Not a toy. A tiny studio with buttons.</h2>
+      <p>This is not just a press button and hope machine. Bloop Maker has six independent channels, a full piano roll editor, 50 plus melodic archetypes, 28 arpeggio styles, and six steering modes that push a song bright, dark, cozy, punchy, cinematic, or lo fi. It is a colorful composer tool made for people building useful, strange, and beautiful things.</p>
+    </div>
+
+    <div class="section">
+      <h2>Generate it. Poke it. Make it yours.</h2>
+      <p>Roll a song, then shape it by hand. Simplify a part. Swing the groove. Add harmony. Reverse a phrase. Swell the dynamics. Lock the parts you love and regenerate the part that feels wrong. Keep nudging until the music sounds like it belongs in your world.</p>
+    </div>
+
+    <div class="section">
+      <h2>Real files. Real useful.</h2>
+      <p>Export standard <strong>MIDI</strong> files that open in FL Studio, Ableton, LMMS, Reaper, and other DAWs. Or render straight to <strong>WAV</strong> using your own SoundFonts. Make a song, take it with you, dress it up, remix it, loop it, ship it.</p>
+    </div>
+
+    <div class="section">
+      <h2>Offline forever Bloop mode.</h2>
+      <p>No account. No subscription. No internet after download. No cloud. No credits. No server waiting room. Your songs stay on your computer, where they belong, safe in your own little folder.</p>
+    </div>
+
+    <div class="divider">♫ 〰 ♫ 〰 ♫</div>
+
+    <div class="list-title"><span>What</span> <span>you get</span></div>
+    <ul>
+      <li>Desktop app for <strong>Windows, macOS, and Linux</strong></li>
+      <li>Unlimited song generation with no usage caps, no credits, no coin slot</li>
+      <li>Full piano roll note editing for poking individual Bloops</li>
+      <li>MIDI and WAV export</li>
+      <li>SoundFont support so you can bring your own bleeps, bells, basses, frogs, synths, and fake orchestras</li>
+      <li>Deterministic seeds: share a seed, get the exact same song</li>
+      <li>Free updates</li>
+    </ul>
+
+    <div class="list-title"><span>Quick</span> <span>start</span></div>
+    <ol>
+      <li>Open Bloop Maker</li>
+      <li>Drag in a free SoundFont to hear audio or skip it and export MIDI silently</li>
+      <li>Pick a mode, hit <strong>Generate</strong></li>
+      <li>Shape it, then <strong>Save MIDI</strong> or <strong>Save WAV</strong></li>
+    </ol>
+
+    <p class="note"><strong>Note on installation:</strong> Builds are not code signed because signing certificates are expensive for solo developers, artists, and tiny software shops. On macOS, right click the app and choose <strong>Open</strong>. On Windows, click <strong>More info</strong> then <strong>Run anyway</strong>. This is normal for indie tools. The app is safe, offline, and does not send your work anywhere.</p>
+
+    <div class="cta-row">
+      <!-- TODO: replace with your itch.io URL -->
+      <a class="btn btn-buy" href="https://YOUR-USERNAME.itch.io/bloop-maker">🎵 Get Bloop Maker — $12.99</a>
+      <a class="btn btn-demo" href="./app/">▶ Try the free demo</a>
+    </div>
+
+    <div class="ending">
+      <em>One time purchase. Yours forever. No AI, no subscriptions, no nonsense. Just Bloops made for people making cool things.</em>
+    </div>
+
+  </div>
 
   <footer>
-    <div class="wrap">
-      <div class="logo">b<b>loop</b> maker</div>
-      <p>Procedural game music composer · No AI · Runs offline</p>
-      <p style="margin-top:10px">© <span id="year"></span> SNCKPCK · <a href="mailto:contact@snckpck.com">contact@snckpck.com</a></p>
-    </div>
+    © <span id="year"></span> SNCKPCK · <a href="mailto:contact@snckpck.com">contact@snckpck.com</a>
   </footer>
 
   <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
