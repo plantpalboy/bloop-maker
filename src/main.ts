@@ -772,6 +772,7 @@ class App {
                 <button class="btn-transport" id="play-btn" disabled>&gt;</button>
                 <button class="btn-transport" id="stop-btn" disabled>[]</button>
                 <button class="btn-transport" id="loop-btn" title="Loop: replay bars seamlessly (off = infinite mode)" style="font-size:13px">↻</button>
+                <button class="btn-transport" id="jam-btn" title="Jam: restart, loop, and record your MIDI playing until you pause or stop" style="font-size:11px">&#9679; Jam</button>
                 <div class="seek-wrap">
                   <input type="range" class="seek-slider" id="seek-slider" min="0" max="300" value="0" step="0.1">
                 </div>
@@ -1214,6 +1215,7 @@ class App {
     this.restartBtn.addEventListener('click', () => this.restartPlayback());
     this.playBtn.addEventListener('click',    () => this.togglePlay());
     this.stopBtn.addEventListener('click',    () => this.stopPlayback());
+    document.getElementById('jam-btn')?.addEventListener('click', () => void this.toggleJamLoop());
     const loopBtn = document.getElementById('loop-btn') as HTMLButtonElement;
     loopBtn?.addEventListener('click', () => {
       this.loopEnabled = !this.loopEnabled;
@@ -3118,6 +3120,7 @@ class App {
   }
 
   private pausePlayback() {
+    if (this.midiRecording) this.setMidiRecording(false); // pause also stops jam recording
     if (this.scheduler) this.currentTime = this.scheduler.currentSongTime;
     this.scheduler?.stop();
     this.state.isPlaying = false;
@@ -3126,6 +3129,7 @@ class App {
   }
 
   private stopPlayback() {
+    if (this.midiRecording) this.setMidiRecording(false);
     this.scheduler?.stop();
     this.state.isPlaying = false;
     this.currentTime = 0;
@@ -3890,20 +3894,43 @@ class App {
     }
   }
 
+  // Single source of truth for recording state; keeps both record buttons (the
+  // MIDI bar 'Record' on top and the transport 'Jam' on the bottom) in sync.
+  private setMidiRecording(on: boolean) {
+    if (on === this.midiRecording) return;
+    this.midiRecording = on;
+    this.midiActiveNotes.clear();
+    if (on) this.pushHistory();
+    document.getElementById('midi-record')?.classList.toggle('active', on);
+    document.getElementById('jam-btn')?.classList.toggle('active', on);
+  }
+
   private toggleMidiRecord() {
     if (this.midiArmedChannels.size === 0) { this.setStatus('err', 'Arm at least one channel for MIDI first (its MIDI button).'); return; }
-    this.midiRecording = !this.midiRecording;
-    const recBtn = document.getElementById('midi-record') as HTMLButtonElement | null;
-    if (recBtn) recBtn.classList.toggle('active', this.midiRecording);
+    if (this.midiRecording) { this.setMidiRecording(false); this.setStatus('ok', 'Recording stopped.'); return; }
+    this.setMidiRecording(true);
     const labels = [...this.midiArmedChannels].map(c => CHANNEL_META[c].label).join(', ');
-    if (this.midiRecording) {
-      this.pushHistory();
-      this.midiActiveNotes.clear();
-      this.setStatus('ok', `Recording into ${labels}. Press play and perform; notes are captured at the playhead.`);
-    } else {
-      this.midiActiveNotes.clear();
-      this.setStatus('ok', 'Recording stopped.');
+    this.setStatus('ok', `Recording into ${labels}. Press play and perform; notes are captured at the playhead.`);
+  }
+
+  // Jam mode: restart from the top, turn looping on, start playback, and record.
+  // The song loops forever while your MIDI playing is captured, until you pause
+  // or hit the record/jam button again.
+  private async toggleJamLoop() {
+    if (this.midiRecording) { this.setMidiRecording(false); this.setStatus('ok', 'Recording stopped.'); return; }
+    if (this.midiArmedChannels.size === 0) { this.setStatus('err', 'Arm a channel for MIDI first (its MIDI button).'); return; }
+    if (!this.loopEnabled) {
+      this.loopEnabled = true;
+      document.getElementById('loop-btn')?.classList.add('active');
+      if (this.scheduler) this.scheduler.loop = true;
     }
+    this.currentTime = 0;
+    if (this.state.isPlaying) this.seekTo(0);
+    else await this.startPlayback();
+    if (!this.state.isPlaying) return; // couldn't start (no SF2 or no notes yet)
+    this.setMidiRecording(true);
+    const labels = [...this.midiArmedChannels].map(c => CHANNEL_META[c].label).join(', ');
+    this.setStatus('ok', `Jam mode: looping and recording into ${labels}. Hit pause or the record/jam button to stop.`);
   }
 
   private setStatus(type: 'ok' | 'busy' | 'err', text: string) {
