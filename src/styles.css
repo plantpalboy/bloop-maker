@@ -566,11 +566,40 @@ input[type="checkbox"]:checked::after {
   padding: 3px 10px;
   min-height: 24px;
 }
+/* Little ASCII dog that "speaks" the status text in a speech bubble. */
+.status-dog {
+  flex: 0 0 auto;
+  margin: 0 6px 0 0;
+  font-family: "Courier New", monospace;
+  font-size: 9px;
+  line-height: 1.05;
+  font-weight: 700;
+  white-space: pre;
+  color: var(--b-ink, #333);
+  align-self: center;
+}
+.status-bubble {
+  flex: 1;
+  display: flex;
+  position: relative;
+  min-width: 0;
+}
+/* speech-bubble tail pointing left toward the dog */
+.status-bubble::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 5px solid transparent;
+  border-right-color: var(--b-card);
+}
 .win-status-panel {
   border: 1px solid var(--b-card);
-  border-radius: 4px;
+  border-radius: 9px;
   padding: 1px 8px;
   flex: 1;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -806,7 +806,11 @@ class App {
       </div><!-- end win-body -->
 
       <div class="win-status" id="status-bar">
-        <div class="win-status-panel" id="status-text">Ready — generate a song or drop a MIDI file.</div>
+        <pre class="status-dog" aria-hidden="true">|\\_/|
+(o.o)</pre>
+        <div class="status-bubble">
+          <div class="win-status-panel" id="status-text">Ready — generate a song or drop a MIDI file.</div>
+        </div>
       </div>
     `;
 
