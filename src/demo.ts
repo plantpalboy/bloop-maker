@@ -35,8 +35,8 @@ export const DEMO_STEER_MODES = new Set(['bright', 'focused', 'cinematic']);
 // Maximum song length in the demo (full version goes much longer).
 export const DEMO_MAX_BARS = 16;
 
-// Where the "Get the full version" links point. Update once the itch page is live.
-export const FULL_VERSION_URL = 'https://YOUR-USERNAME.itch.io/bloop-maker';
+// Where the "Get the full version" links point.
+export const FULL_VERSION_URL = 'https://plantpalboy.itch.io/';
 
 // The set of actions blocked in the demo — used for consistent upgrade messaging.
 // Exporting/saving files is the paid deliverable: the demo lets you fully experience

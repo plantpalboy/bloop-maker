@@ -93,8 +93,8 @@
     @keyframes wiggle { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
 
     .subtitle {
-      text-align: center; font-size: clamp(22px, 4vw, 36px); font-weight: 900;
-      line-height: 1.15; margin: 0 auto 26px; max-width: 760px;
+      text-align: center; font-size: clamp(17px, 2.6vw, 25px); font-weight: 900;
+      line-height: 1.2; margin: 0 auto 26px; max-width: 680px;
     }
     .subtitle em { font-style: normal; color: var(--bloop-pink); text-decoration: underline wavy var(--bloop-blue) 3px; text-underline-offset: 6px; }
 
@@ -112,6 +112,7 @@
     .btn-demo { background: var(--bloop-mint); }
     .btn-demo:hover { background: #5cf0d6; }
     .btn-mini { font-size: 15px; padding: 8px 16px; border-width: 3px; box-shadow: 0 4px 0 var(--bloop-ink); border-radius: 12px; background: var(--bloop-yellow); }
+    .buybar .btn-demo { background: var(--bloop-mint); }
 
     .platforms { text-align: center; font-weight: 900; font-size: 15px; opacity: .7; margin-bottom: 26px; letter-spacing: .5px; }
 
@@ -121,6 +122,8 @@
     .shot-ph { aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; font-weight: 900; color: var(--bloop-purple); background: repeating-linear-gradient(45deg,#fff,#fff 16px,#fff3c4 16px,#fff3c4 32px); }
 
     .page p { margin: 0 0 22px; }
+    .page .lead { font-size: 1.12em; }
+    .page .lead strong { color: var(--bloop-purple); }
     .page strong { color: #111; font-weight: 900; }
     .page em { color: var(--bloop-purple); font-style: normal; font-weight: 900; }
 
@@ -167,9 +170,9 @@
 <body>
 
   <div class="buybar">
-    <span class="mini-logo">b<b>loop</b> maker</span>
-    <!-- TODO: replace with your itch.io URL -->
-    <a class="btn btn-mini" href="https://YOUR-USERNAME.itch.io/bloop-maker">Get it — $12.99</a>
+    <span class="mini-logo">b<b>loop</b>maker</span>
+    <a class="btn btn-mini btn-demo" href="./app/">Try Demo</a>
+    <a class="btn btn-mini" href="https://plantpalboy.itch.io/">Get it — $12.99</a>
   </div>
 
   <div class="page">
@@ -185,25 +188,20 @@
       A little Bloop machine for making game music without touching the forbidden <em>AI slop</em>.
     </p>
 
-    <div class="cta-row">
-      <!-- TODO: replace with your itch.io URL -->
-      <a class="btn btn-buy" href="https://YOUR-USERNAME.itch.io/bloop-maker">🎵 Get Bloop Maker — $12.99</a>
-      <a class="btn btn-demo" href="./app/">▶ Try the free demo</a>
-    </div>
     <div class="platforms">Windows · macOS · Linux · runs offline · no account</div>
 
     <div class="shot">
       <!-- Drop a screenshot named app-screenshot.png into the landing/ folder and it shows here. -->
       <img src="app-screenshot.png" alt="Bloop Maker app generating a song"
            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-      <div class="shot-ph" style="display:none;">Add app-screenshot.png next to index.html to show the app here ✨</div>
+      <div class="shot-ph" style="display:none;">Add app-screenshot.png next to index.html to show the app here</div>
     </div>
 
-    <p>Bloop Maker exists for creative people trying to finish cool things. Games, streams, videos, jams, tiny art projects, giant dream projects, all of it. Music should not be the scary part.</p>
+    <p class="lead"><strong>Bloop Maker is a desktop app that writes original video game music for you.</strong> Pick a vibe, press one button, and it composes a complete multi-track song in seconds. Shape it in the built-in editor, then export it as a MIDI file or finished audio, ready to drop straight into your project.</p>
 
-    <p>Bloop Maker creates original chiptune and video game music right on your computer. No AI. No samples. No mystery internet goo. Every song is built from scratch with music theory rules written in code: chords, melodies, rhythms, motifs, patterns, and little notes bouncing around until they become a song.</p>
+    <p>Every song is built from scratch by music theory rules written in code: chords, melodies, rhythms, motifs, drum patterns, and little notes bouncing around until they turn into a song. No AI. No samples. No mystery internet goo. It works a bit like a game generating a level, except instead of caves and treasure chests you get music.</p>
 
-    <p>It feels kind of like a game generating a level, except instead of caves and treasure chests, you get music. The song is yours, free and clear, ready to put in your game, stream, video, menu screen, frog shop, wizard elevator, racing level, cozy town, or strange little planet earth project.</p>
+    <p>The song is yours, free and clear, ready for your game, stream, video, menu screen, frog shop, wizard elevator, racing level, cozy town, or strange little planet earth project. Music should not be the scary part of finishing your cool thing.</p>
 
     <p>Made for <strong>indie game developers</strong>, <strong>streamers</strong>, <strong>YouTubers</strong>, <strong>artists</strong>, and <strong>game jam makers</strong> who need original background music <em>right now</em> and do not want to worry about copyright trouble or someone asking if the music came from AI.</p>
 
@@ -216,7 +214,7 @@
 
     <div class="section">
       <h2>Not a toy. A tiny studio with buttons.</h2>
-      <p>This is not just a press button and hope machine. Bloop Maker has six independent channels, a full piano roll editor, 50 plus melodic archetypes, 28 arpeggio styles, and six steering modes that push a song bright, dark, cozy, punchy, cinematic, or lo fi. It is a colorful composer tool made for people building useful, strange, and beautiful things.</p>
+      <p>This is not just a press button and hope machine. Bloop Maker has six independent channels, a full piano roll editor, 50 plus melodic archetypes, 28 arpeggio styles, and six steering modes that push a song bright, dark, cozy, punchy, cinematic, or lo-fi. It is a colorful composer tool made for people building useful, strange, and beautiful things.</p>
     </div>
 
     <div class="section">
@@ -258,9 +256,8 @@
     <p class="note"><strong>Note on installation:</strong> Builds are not code signed because signing certificates are expensive for solo developers, artists, and tiny software shops. On macOS, right click the app and choose <strong>Open</strong>. On Windows, click <strong>More info</strong> then <strong>Run anyway</strong>. This is normal for indie tools. The app is safe, offline, and does not send your work anywhere.</p>
 
     <div class="cta-row">
-      <!-- TODO: replace with your itch.io URL -->
-      <a class="btn btn-buy" href="https://YOUR-USERNAME.itch.io/bloop-maker">🎵 Get Bloop Maker — $12.99</a>
-      <a class="btn btn-demo" href="./app/">▶ Try the free demo</a>
+      <a class="btn btn-buy" href="https://plantpalboy.itch.io/">Get Bloop Maker — $12.99</a>
+      <a class="btn btn-demo" href="./app/">Try the free demo</a>
     </div>
 
     <div class="ending">
