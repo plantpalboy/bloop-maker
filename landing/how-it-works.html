@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>How Bloop Maker Works — Procedural Game Music Generation Without AI</title>
+  <meta name="description" content="A full, plain-English explanation of how Bloop Maker generates original video game music using music-theory rules instead of AI: seeds, chord progressions, motifs, phrase repetition, song structure, and the polish passes that make it sound like a real song." />
+  <meta name="keywords" content="how does a music generator work, procedural music generation, algorithmic music, no AI music generator, rule based music, game music generation, chiptune generation, MIDI generation explained" />
+  <meta name="theme-color" content="#fff8de" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="How Bloop Maker Works — Procedural Game Music, No AI" />
+  <meta property="og:description" content="How Bloop Maker writes original game music from music-theory rules instead of AI — explained step by step." />
+  <meta property="og:url" content="https://bloopmaker.net/how-it-works.html" />
+  <link rel="canonical" href="https://bloopmaker.net/how-it-works.html" />
+  <link rel="stylesheet" href="./site.css" />
+</head>
+<body>
+
+  <div class="topbar">
+    <a class="home" href="./">b<b>loop</b>maker</a>
+    <a class="btn btn-demo" href="./app/">Try Demo</a>
+    <a class="btn btn-buy" href="https://plantpalboy.itch.io/">Get it — $12.99</a>
+  </div>
+
+  <main class="wrap">
+    <h1>How <span class="a">Bloop</span> <span class="b">Maker</span> works</h1>
+    <p class="lede">Bloop Maker writes original video game music using music-theory rules written in code — not artificial intelligence. Here is exactly what happens, in plain English, every time you press Generate.</p>
+
+    <p>Most "music generators" you see today are AI models: they're trained on huge piles of existing songs and try to predict what note comes next. Bloop Maker works in a completely different way. It is a <strong>procedural music generator</strong> — it builds a song from a set of deterministic rules about how music is put together, the same way a video game procedurally builds a dungeon from rules about rooms and corridors. There is no neural network, no training data, and no internet involved. The result is music that is genuinely yours, with no copyright or "is this AI?" cloud hanging over it.</p>
+
+    <p>Below is the whole pipeline, step by step. None of this requires you to understand music theory to use the app — but if you're curious what's happening under the hood, here it is.</p>
+
+    <div class="divider">✦ ✦ ✦</div>
+
+    <h2>1. It starts with a seed</h2>
+    <p>Every song begins with a single number called a <strong>seed</strong>. The seed feeds a pseudo-random number generator, which means the whole song is <em>deterministic</em>: the same seed and the same settings will always produce the exact same song, note for note. That's why you can copy a seed, send it to a friend, and they hear precisely what you heard. It also means nothing is ever truly "random chaos" — it's reproducible, controllable randomness.</p>
+
+    <h2>2. It picks a key, a scale, and chords</h2>
+    <p>Next, Bloop Maker chooses a musical <strong>key</strong> (the home note) and a <strong>scale</strong> — the family of notes the song is allowed to use, like major (bright and happy), minor (darker and sadder), dorian, mixolydian, lydian, harmonic minor, pentatonic, or whole-tone. Each scale has its own emotional flavor.</p>
+    <p>From there it builds a <strong>chord progression</strong> — the sequence of chords the song moves through — by pulling from tables of progressions that are known to sound good in that scale. To keep things from getting repetitive, it actually prepares two progressions and alternates between them across the song. It also varies the <em>harmonic rhythm</em>: sometimes a chord holds for two bars to feel calm, sometimes chords change every bar to feel busy.</p>
+
+    <h2>3. It writes a motif — the hook</h2>
+    <p>A <strong>motif</strong> is a short, memorable melodic idea — the few notes you'd hum after hearing a song once. Bloop Maker generates a small motif of a handful of notes, then <strong>scores it for quality</strong> using rules about good melodic shape (does it have a nice contour? does it avoid awkward leaps?). If the motif scores poorly, it throws it away and tries again. This quality-gate is a big part of why the output sounds intentional rather than random.</p>
+
+    <h2>3.5. It commits to a signature rhythm</h2>
+    <p>One thing that separates a real song from random notes is a consistent <strong>rhythmic identity</strong> — think of the short-short-long pattern in many famous themes. Bloop Maker locks in one signature rhythm at the start and reuses it throughout the melody. So even as the notes change, the <em>feel</em> stays recognizable.</p>
+
+    <h2>4. It remembers and repeats phrases</h2>
+    <p>This is the secret ingredient. A melody that wanders forever without repeating doesn't feel like a song — it feels lost. Bloop Maker <strong>caches the first four-bar phrase</strong> it writes and then <strong>replays it</strong> in later matching sections, transposed to fit whatever chord is playing. Each repeat gets small, deliberate variations — a slightly different ending, a layer of harmony, a shift up an octave — so it stays interesting without losing the hook. This "phrase memory" is what makes a generated song actually catchy.</p>
+
+    <h2>5. It plans a song structure</h2>
+    <p>Real songs have an arc. Bloop Maker lays out sections — <strong>intro, build, verse, chorus, break, and outro</strong> — and treats each one differently. The chorus opens up into a higher pitch range and gets louder; the intro and outro pull back; the bass switches from a calm held note in the intro to a walking, moving line in the chorus. There's a planned high point (a "money note") and a transition fill on the drums right before a new section kicks in. All of this gives the song a sense of going somewhere.</p>
+
+    <h2>6. It fills in every instrument, bar by bar</h2>
+    <p>With the chords, motif, rhythm, and structure decided, Bloop Maker writes the actual notes for each of its channels — lead melody, harmony, bass, drums, arpeggio, and pad — one bar at a time. Along the way it applies a stack of music-theory rules so the parts sound good together:</p>
+    <ul>
+      <li><span class="step">Chord-tone snapping:</span> important notes on strong beats are pulled onto notes that belong to the current chord, so nothing clashes.</li>
+      <li><span class="step">Leap recovery:</span> after a big jump in pitch, the melody steps back the other way, the way singers naturally do.</li>
+      <li><span class="step">Ornaments and suspensions:</span> little grace notes and "lean-and-resolve" moments add expression.</li>
+      <li><span class="step">Call and response:</span> when the lead pauses, the harmony answers in the gap, like two voices talking.</li>
+      <li><span class="step">Countermelody:</span> in the chorus a second line moves opposite to the lead, making it feel full.</li>
+    </ul>
+
+    <h2>7. It polishes the whole thing</h2>
+    <p>Finally, a set of finishing passes run over the entire song:</p>
+    <ul>
+      <li><span class="step">Chromatic approach notes</span> — tiny "blue notes" that slide into a chord tone for flavor.</li>
+      <li><span class="step">Modal interchange</span> — an occasional "borrowed" chord that adds emotional color without leaving the key.</li>
+      <li><span class="step">Drum fills</span> right before section changes, so transitions feel intentional.</li>
+      <li><span class="step">A dynamics curve</span> across the whole song so it swells and breathes instead of staying flat.</li>
+    </ul>
+
+    <div class="divider">♫ 〰 ♫ 〰 ♫</div>
+
+    <h2>Why rules instead of AI?</h2>
+    <p>Three reasons. First, <strong>ownership</strong>: because the music comes from code and not from a model trained on other people's songs, the output is unambiguously yours to use commercially. Second, <strong>control</strong>: rules are transparent and steerable — you can push a song bright, dark, cozy, punchy, cinematic, or lo-fi with a single button, and you always get the same result from the same seed. Third, <strong>independence</strong>: there's no server, no subscription, and no internet required. It all runs on your own computer, forever.</p>
+
+    <h2>What you do with the result</h2>
+    <p>Once a song is generated you can edit it note by note in the built-in piano roll, reshape parts with one-click tools (simplify, swing, harmonize, reverse, and more), regenerate any single channel while keeping the rest, and then export the whole thing as a standard <strong>MIDI</strong> file for any DAW or render it straight to <strong>WAV</strong> audio using your own soundfonts.</p>
+
+    <div class="cta-block">
+      <a class="btn btn-big btn-buy" href="https://plantpalboy.itch.io/">Get Bloop Maker — $12.99</a>
+      <a class="btn btn-big btn-demo" href="./app/">Try the free demo</a>
+    </div>
+  </main>
+
+  <footer>
+    <p style="margin:0 0 10px"><a href="./">Home</a> · <a href="./faq.html">FAQ</a> · <a href="./app/">Free Demo</a></p>
+    © <span id="year"></span> SNCKPCK · <a href="mailto:contact@snckpck.com">contact@snckpck.com</a>
+  </footer>
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
