@@ -43,68 +43,38 @@
 
   --font:       12px/1.4 'Segoe UI', Tahoma, Arial, sans-serif;
   --font-title: 'Fredoka One', 'Comic Sans MS', cursive;
-  --radius:     8px;
+  --radius:     12px;
 }
 
 /* ── Theme: Neon / Synthwave ─────────────────────────────── */
 body.theme-neon {
-  background: linear-gradient(160deg, #0d0015 0%, #18003a 50%, #0a001e 100%);
+  background: linear-gradient(160deg, #1a0a2e 0%, #2a1248 50%, #160826 100%);
   background-attachment: fixed;
-  --win:      rgba(22,0,48,0.95);
-  --card:     rgba(30,0,60,0.92);
-  --btn-hi1:  rgba(80,0,140,0.88);
-  --btn-hi2:  rgba(50,0,100,0.82);
-  --btn-lo1:  rgba(30,0,70,0.78);
-  --btn-lo2:  rgba(40,0,90,0.86);
-  --tb-hi:    rgba(140,0,200,0.96);
-  --tb-lo:    rgba(40,0,80,0.99);
-  --b-win:    rgba(200,0,255,0.35);
-  --b-btn:    rgba(180,0,240,0.50);
-  --b-card:   rgba(160,0,220,0.28);
-  --txt:      #ff88ff;
-  --txt-dis:  #660066;
-  --txt-dim:  #cc44cc;
-  --acc:      #00ffcc;
-  --acc2:     #ff00aa;
-  --sel-bg:   #aa00ff;
+  --win:      rgba(36,18,64,0.97);
+  --card:     rgba(46,26,80,0.95);
+  --btn-hi1:  rgba(80,52,130,0.90);
+  --btn-hi2:  rgba(64,40,108,0.86);
+  --btn-lo1:  rgba(48,28,84,0.82);
+  --btn-lo2:  rgba(58,36,98,0.88);
+  --tb-hi:    rgba(150,90,230,0.96);
+  --tb-lo:    rgba(70,36,130,0.99);
+  --b-win:    rgba(170,120,255,0.35);
+  --b-btn:    rgba(150,100,240,0.45);
+  --b-card:   rgba(150,110,230,0.28);
+  --txt:      #ffffff;
+  --txt-dis:  #a890d0;
+  --txt-dim:  #dcc8ff;
+  --acc:      #c79bff;
+  --acc2:     #4dd0ff;
+  --sel-bg:   #7a3fd0;
   --sel-txt:  #ffffff;
-  --ok:       #00ffaa;
-  --busy:     #aa00ff;
-  --err:      #ff3366;
-  --c1: #ff00cc; --c2: #00ffee; --c3: #aa00ff; --c4: #ffcc00;
+  --ok:       #5cffb0;
+  --busy:     #b48cff;
+  --err:      #ff6a8a;
+  --c1: #ff7ac8; --c2: #5cd6ff; --c3: #9b6cff; --c4: #ffd166;
 }
-body.theme-neon::before { background: radial-gradient(circle, rgba(200,0,255,0.18) 0%, transparent 70%); }
-body.theme-neon::after  { background: radial-gradient(circle, rgba(0,255,200,0.15) 0%, transparent 70%); }
-
-/* ── Theme: Amber / Warm Ambient ─────────────────────────── */
-body.theme-amber {
-  background: linear-gradient(160deg, #fdf4e0 0%, #f5e6c0 50%, #faebd4 100%);
-  background-attachment: fixed;
-  --win:      rgba(255,248,225,0.96);
-  --card:     rgba(255,252,235,0.94);
-  --btn-hi1:  rgba(255,235,170,0.90);
-  --btn-hi2:  rgba(250,220,140,0.84);
-  --btn-lo1:  rgba(240,200,110,0.80);
-  --btn-lo2:  rgba(248,215,135,0.88);
-  --tb-hi:    rgba(210,130,20,0.95);
-  --tb-lo:    rgba(150,80,0,0.98);
-  --b-win:    rgba(180,120,40,0.30);
-  --b-btn:    rgba(160,100,20,0.40);
-  --b-card:   rgba(180,130,50,0.28);
-  --txt:      #3a1a00;
-  --txt-dis:  #b08040;
-  --txt-dim:  #7a4010;
-  --acc:      #c86400;
-  --acc2:     #e09020;
-  --sel-bg:   #8b4800;
-  --sel-txt:  #ffffff;
-  --ok:       #2a6000;
-  --busy:     #7a3a00;
-  --err:      #aa1000;
-  --c1: #c84000; --c2: #0060a0; --c3: #408020; --c4: #9040c0;
-}
-body.theme-amber::before { background: radial-gradient(circle, rgba(255,200,80,0.25) 0%, transparent 70%); }
-body.theme-amber::after  { background: radial-gradient(circle, rgba(200,140,40,0.18) 0%, transparent 70%); }
+body.theme-neon::before { background: radial-gradient(circle, rgba(150,90,230,0.20) 0%, transparent 70%); }
+body.theme-neon::after  { background: radial-gradient(circle, rgba(80,80,200,0.16) 0%, transparent 70%); }
 
 /* ── Theme: Forest Green ─────────────────────────────────── */
 body.theme-green {

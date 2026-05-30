@@ -756,8 +756,7 @@ class App {
             <span style="font:11px Tahoma;opacity:0.7;flex-shrink:0">Theme:</span>
             <button class="btn-theme active" id="theme-bloop" data-theme="bloop">Bloop</button>
             <button class="btn-theme"        id="theme-aero"  data-theme="aero">Aero</button>
-            <button class="btn-theme"        id="theme-neon"  data-theme="neon">Neon</button>
-            <button class="btn-theme"        id="theme-amber" data-theme="amber">Amber</button>
+            <button class="btn-theme"        id="theme-neon"  data-theme="neon">Dark</button>
             <button class="btn-theme"        id="theme-green" data-theme="green">Forest</button>
           </div>
         </div>
@@ -798,8 +797,7 @@ class App {
         </div>
 
         <div style="position:relative;width:100%;margin-top:4px">
-          <canvas id="matrix-canvas" style="width:100%;height:80px;display:block;background:transparent;border-top:1px solid rgba(0,0,0,0.12)" width="1200" height="80"></canvas>
-          <button id="ascii-rand-btn" title="Randomize creatures and colors" style="position:absolute;top:4px;right:6px;font:10px Tahoma;padding:2px 7px;cursor:pointer;z-index:2;background:rgba(0,0,0,0.35);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.2);border-radius:4px">🎲 New!</button>
+          <canvas id="matrix-canvas" title="Click to change colors" style="width:100%;height:80px;display:block;background:transparent;border-top:1px solid rgba(0,0,0,0.12);cursor:pointer" width="1200" height="80"></canvas>
         </div>
 
       </div><!-- end win-body -->
@@ -868,6 +866,7 @@ class App {
             <button class="btn-mute"      id="mute-${id}">MUTE</button>
             <button class="btn-midi-arm"  id="midi-arm-${id}" title="Arm this channel for live MIDI keyboard input (play along / record)">MIDI</button>
             <button class="btn-regen"     id="regen-${id}"     disabled>Regen</button>
+            <button class="btn-sm"        id="clear-${id}"     title="Clear all notes from this channel" style="font-size:10px">Clear</button>
             <button class="btn-simplify"  id="simplify-${id}"    disabled title="Simplify: thin fast runs, add breathing room">Simplify</button>
             <button class="btn-sm"        id="ghost-${id}"      disabled title="Ghost: drop all velocities by 25 — sits back in the mix" style="font-size:10px">Ghost</button>
             <button class="btn-sm"        id="boost-${id}"      disabled title="Boost: raise all velocities by 20 — pushes channel forward" style="font-size:10px">Boost</button>
@@ -1072,11 +1071,8 @@ class App {
       btn.addEventListener('click', () => this.applyTheme((btn as HTMLElement).dataset.theme ?? 'aero', true));
     });
 
-    // ASCII randomizer
-    document.getElementById('ascii-rand-btn')?.addEventListener('click', () => {
-      const poolA = ASCII_POOLS[Math.floor(Math.random() * ASCII_POOLS.length)];
-      const poolB = ASCII_POOLS[Math.floor(Math.random() * ASCII_POOLS.length)];
-      this.vizCharPool = [...new Set([...poolA, ...poolB])];
+    // Click the visualizer to change its colors
+    document.getElementById('matrix-canvas')?.addEventListener('click', () => {
       this.vizColorIdx = (this.vizColorIdx + 1) % VIZ_SCHEMES.length;
       this.updateSidePanelColors();
       if (this.oscAnalyser) { this.startMatrixOsc(); } else { this.startMatrixIdle(); }
@@ -1607,6 +1603,7 @@ class App {
       this.muteBtns[id]?.addEventListener('click',     () => this.toggleMute(id));
       this.soloBtns[id]?.addEventListener('click',     () => this.toggleSolo(id));
       document.getElementById(`midi-arm-${id}`)?.addEventListener('click', () => this.armMidiChannel(id));
+      document.getElementById(`clear-${id}`)?.addEventListener('click', () => this.clearChannel(id));
       this.regenBtns[id]?.addEventListener('click',    () => this.regenChannel(id));
       document.getElementById(`simplify-${id}`)?.addEventListener('click',   () => this.simplifyChannel(id));
       document.getElementById(`ghost-${id}`)?.addEventListener('click',      () => this.channelVelocityShift(id, -25, 'Ghosted'));
@@ -1739,6 +1736,15 @@ class App {
     this.bindChannelRowEvents();
     this.populateInstrumentSelectors();
     this.updateSF2List();
+    // The rebuilt HTML starts blank — redraw the existing notes and restore toggle
+    // states so adding a channel never appears to wipe the song.
+    this.updateAllCanvases();
+    this.updateNoteCountBadges();
+    for (const id of CHANNELS) {
+      this.muteBtns[id]?.classList.toggle('active', !!this.state.channels[id].muted);
+      document.getElementById(`lock-${id}`)?.classList.toggle('active', !!this.channelLocked[id]);
+      document.getElementById(`midi-arm-${id}`)?.classList.toggle('active', this.midiArmedChannel === id);
+    }
     document.getElementById('add-channel-btn')?.addEventListener('click', () => {
       const extras: ChannelId[] = ['extra1', 'extra2', 'extra3'];
       const next = extras.find(e => !this.activeExtraChannels.has(e));
@@ -2989,7 +2995,11 @@ class App {
     this.state.duration = duration;
     this.state.bpm      = bpm;
     this.bpmInput.value = String(Math.round(bpm));
-    for (const id of CHANNELS) this.state.channels[id].notes = channels[id];
+    // Locked channels keep their current notes (even if empty) — generation skips them.
+    for (const id of CHANNELS) {
+      if (this.channelLocked[id]) continue;
+      this.state.channels[id].notes = channels[id];
+    }
     this.seekSlider.max   = String(duration);
     this.seekSlider.value = '0';
     this.updateAllCanvases();
@@ -3792,6 +3802,15 @@ class App {
       const el = this.noteCountEls[id];
       if (el) el.textContent = `${c} note${c !== 1 ? 's' : ''}`;
     }
+  }
+
+  private clearChannel(id: ChannelId) {
+    if (this.state.channels[id].notes.length === 0) { this.setStatus('ok', `${CHANNEL_META[id].label} is already empty.`); return; }
+    this.pushHistory();
+    this.state.channels[id].notes = [];
+    this.drawPianoRoll(id, this.currentTime);
+    this.updateNoteCountBadges();
+    this.setStatus('ok', `Cleared ${CHANNEL_META[id].label}.`);
   }
 
   // ── Live MIDI keyboard input ──────────────────────────────────
