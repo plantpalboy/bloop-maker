@@ -72,7 +72,13 @@ li::marker { color: var(--bloop-pink); font-weight: 900; }
 footer { text-align: center; font-size: 14px; opacity: .75; padding: 30px 16px 50px; }
 footer a { color: var(--bloop-pink); font-weight: 900; }
 
-@media (max-width: 600px) { body { font-size: 16px; } }
+@media (max-width: 600px) {
+  body { font-size: 16px; }
+  /* shrink the nav buttons so the topbar fits without doubling up */
+  .topbar { gap: 6px; padding: 8px 10px; }
+  .topbar .home { font-size: 15px; }
+  .topbar .btn { font-size: 12px; padding: 5px 9px; border-width: 2px; border-radius: 9px; box-shadow: 0 3px 0 var(--bloop-ink); }
+}
 @media (prefers-reduced-motion: reduce) {
   h1 .a, h1 .b, h2::before, .divider { animation: none; }
 }

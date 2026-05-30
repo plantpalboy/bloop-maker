@@ -260,6 +260,9 @@
       body { font-size: 16px; }
       .squiggles { letter-spacing: 3px; font-size: 24px; }
       .buybar .mini-logo { font-size: 16px; }
+      /* shrink the nav buttons so the bar fits without doubling up */
+      .buybar { gap: 6px; }
+      .buybar .btn-mini { font-size: 12px; padding: 5px 9px; border-width: 2px; border-radius: 9px; box-shadow: 0 3px 0 var(--bloop-ink); }
     }
     @media (prefers-reduced-motion: reduce) {
       .title span, .squiggles, .section h2::before, .list-title span, .ending, .page::before, .page::after,
