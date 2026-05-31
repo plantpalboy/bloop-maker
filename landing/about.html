@@ -62,17 +62,29 @@
     .contact-form input, .contact-form textarea {
       width: 100%; font-family: inherit; font-size: 16px; padding: 10px 12px;
       border: 3px solid var(--bloop-ink); border-radius: 12px; background: #fff; color: var(--bloop-ink);
+      transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+    }
+    .contact-form input:focus, .contact-form textarea:focus {
+      outline: none;
+      border-color: var(--bloop-mint);
+      box-shadow: 0 0 0 3px rgba(54,224,196,.28);
     }
     .contact-form textarea { min-height: 120px; resize: vertical; }
     .form-result { margin-top: 14px; font-weight: 900; min-height: 22px; }
     .form-result.ok  { color: #1f9c4a; }
     .form-result.err { color: #e0344e; }
-    @media (prefers-reduced-motion: reduce) { .dog, .snck-link, .d-note, .d-squig, .spin-star { animation: none; } }
+    @media (prefers-reduced-motion: reduce) {
+      .dog, .snck-link, .d-note, .d-squig, .spin-star { animation: none; }
+      .contact-form input, .contact-form textarea { transition: none; }
+      .contact-form input:focus, .contact-form textarea:focus { box-shadow: 0 0 0 3px rgba(54,224,196,.28); }
+    }
   </style>
 </head>
 <body>
 
-  <div class="topbar">
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <nav class="topbar" aria-label="Primary">
     <a class="home" href="./">b<b>loop</b>maker</a>
     <a class="btn btn-nav" href="./">Home</a>
     <a class="btn btn-info" href="./how-it-works.html">How It Works</a>
@@ -80,9 +92,9 @@
     <a class="btn btn-ex" href="./examples.html">Examples</a>
     <a class="btn btn-demo" href="./app/">Try Demo</a>
     <a class="btn btn-buy" href="https://plantpalboy.itch.io/">Get it · $12.99</a>
-  </div>
+  </nav>
 
-  <main class="wrap">
+  <main class="wrap" id="main-content">
     <h1><span class="a">about</span> <span class="b">SNCKPCK</span></h1>
 
     <div class="about-row">
@@ -107,33 +119,35 @@
       <input type="hidden" name="access_key" value="4e4ff6d5-71f4-4e17-8a81-56c31d58b0ca">
       <input type="hidden" name="subject" value="New message from bloopmaker.net">
       <input type="hidden" name="from_name" value="Bloop Maker site">
-      <!-- honeypot (spam trap) -->
-      <input type="checkbox" name="botcheck" tabindex="-1" autocomplete="off" style="display:none">
+      <!-- honeypot (spam trap) — hidden from all users including AT -->
+      <input type="checkbox" name="botcheck" tabindex="-1" autocomplete="off" aria-hidden="true" style="display:none">
 
       <label for="cf-name">your name</label>
-      <input id="cf-name" type="text" name="name" placeholder="who's this?" required>
+      <input id="cf-name" type="text" name="name" placeholder="who's this?" required aria-required="true">
 
       <label for="cf-email">your email</label>
-      <input id="cf-email" type="email" name="email" placeholder="so i can write back" required>
+      <input id="cf-email" type="email" name="email" placeholder="so i can write back" required aria-required="true">
 
       <label for="cf-message">your message</label>
-      <textarea id="cf-message" name="message" placeholder="say anything" required></textarea>
+      <textarea id="cf-message" name="message" placeholder="say anything" required aria-required="true"></textarea>
 
       <div style="margin-top:16px">
         <button type="submit" class="btn btn-big btn-buy">send it</button>
         <a class="btn btn-big btn-demo" href="mailto:contact@snckpck.com" style="margin-left:8px">or just email</a>
       </div>
-      <div class="form-result" id="form-result"></div>
+      <div class="form-result" id="form-result" role="status" aria-live="polite" aria-atomic="true"></div>
     </form>
   </main>
 
-  <footer>
+  <footer aria-label="Site footer">
     <div class="subscribe">
-      <p>✦ get bloop news &amp; updates by email ✦</p>
+      <p id="subscribe-heading-about">✦ get bloop news &amp; updates by email ✦</p>
       <form action="https://buttondown.com/api/emails/embed-subscribe/SNCKPCK"
             method="post" target="popupwindow"
+            aria-labelledby="subscribe-heading-about"
             onsubmit="window.open('https://buttondown.com/SNCKPCK', 'popupwindow')">
-        <input type="email" name="email" placeholder="you@email.com" aria-label="Email address" required>
+        <label for="subscribe-email-about" class="sr-only">Email address</label>
+        <input id="subscribe-email-about" type="email" name="email" placeholder="you@email.com" required>
         <button type="submit" class="btn btn-buy">Subscribe</button>
       </form>
     </div>

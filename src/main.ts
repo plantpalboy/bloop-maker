@@ -347,10 +347,10 @@ class App {
     this.drawOscIdle();
     this.startMatrixIdle();
     this.startBgGrid();
-    // Restore dark mode and theme preference
-    if (localStorage.getItem('bloopDark') === '1') document.body.classList.add('dark');
+    // Restore theme preference ('dark' is a theme now; migrate the legacy bloopDark flag)
     this.vizCharPool = ASCII_POOLS[0].concat(ASCII_POOLS[4]);
-    const savedTheme = localStorage.getItem('bloopTheme') ?? 'bloop';
+    const savedTheme = localStorage.getItem('bloopTheme')
+      ?? (localStorage.getItem('bloopDark') === '1' ? 'dark' : 'bloop');
     this.applyTheme(savedTheme, false);
     this.injectSidePanels();
     this.applyDemoLimits();
@@ -391,8 +391,8 @@ class App {
             <a class="win-title-text" href="https://bloopmaker.net" target="_blank" rel="noopener" title="Visit bloopmaker.net" style="text-decoration:none">${this.colorTitle('Bloop Maker')}</a>
           </div>
 
-      <div class="win-menubar">
-        <div class="win-menu-item" id="menu-file">File
+      <nav class="win-menubar" aria-label="Application menu">
+        <div class="win-menu-item" id="menu-file" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0">File
           <div class="win-dropdown">
             <div class="win-dropdown-item" data-action="new-project">New Project</div>
             <div class="win-dropdown-item" data-action="load-project">Load Project...</div>
@@ -400,7 +400,7 @@ class App {
             <div class="win-dropdown-item" data-action="save-project">Save Project As...</div>
           </div>
         </div>
-        <div class="win-menu-item" id="menu-generate">Generate
+        <div class="win-menu-item" id="menu-generate" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0">Generate
           <div class="win-dropdown">
             <div class="win-dropdown-item" data-action="quick-ambient">Quick Ambient</div>
             <div class="win-dropdown-item" data-action="quick-battle">Quick Battle</div>
@@ -412,7 +412,7 @@ class App {
             <div class="win-dropdown-item" data-action="random-preset">Randomize Everything</div>
           </div>
         </div>
-        <div class="win-menu-item" id="menu-presets">Presets
+        <div class="win-menu-item" id="menu-presets" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0">Presets
           <div class="win-dropdown" id="presets-dropdown">
             ${(IS_DEMO
                 ? (DEMO_MODES as GenMode[])
@@ -421,11 +421,30 @@ class App {
               const modeLabel = mode.charAt(0).toUpperCase() + mode.slice(1);
               let presets = GEN_PRESETS.map((p, i) => ({ p, i })).filter(x => x.p.mode === mode);
               if (IS_DEMO) presets = presets.slice(0, DEMO_PRESETS_PER_MODE);
-              return `<div class="win-dropdown-submenu" data-mode="${mode}">${modeLabel} &#9658;<div class="win-submenu">${presets.map(({ p, i }) => `<div class="win-dropdown-item" data-preset-idx="${i}">${p.label}</div>`).join('')}</div></div>`;
+              // Flat list: every preset shown directly, tagged with its category (mode) — no submenus.
+              return presets.map(({ p, i }) => `<div class="win-dropdown-item" data-preset-idx="${i}"><span class="preset-cat">${modeLabel}</span> ${p.label}</div>`).join('');
             }).join('')}
           </div>
         </div>
-        <div class="win-menu-item" id="menu-help">Help
+        <div class="win-menu-item" id="menu-themes" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0">Themes
+          <div class="win-dropdown">
+            <div class="win-dropdown-item" data-theme="bloop">Bloop</div>
+            <div class="win-dropdown-item" data-theme="aero">Aero</div>
+            <div class="win-dropdown-item" data-theme="green">Forest</div>
+            <div class="win-dropdown-item" data-theme="dark">Dark</div>
+            <div class="win-dropdown-item" data-theme="campfire">Smores</div>
+            <div class="win-dropdown-item" data-theme="matrix">Slime</div>
+            <div class="win-dropdown-item" data-theme="twilight">Grape</div>
+            <div class="win-dropdown-item" data-theme="arctic">Brrr</div>
+            <div class="win-dropdown-item" data-theme="sunset">Peachy</div>
+            <div class="win-dropdown-item" data-theme="ocean">Splash</div>
+            <div class="win-dropdown-item" data-theme="cyber">Zap</div>
+            <div class="win-dropdown-item" data-theme="paper">Doodle</div>
+            <div class="win-dropdown-item" data-theme="sakura">Bubblegum</div>
+            <div class="win-dropdown-item" data-theme="mint">Sprout</div>
+          </div>
+        </div>
+        <div class="win-menu-item" id="menu-help" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0">Help
           <div class="win-dropdown">
             <div class="win-dropdown-item" data-action="show-faq">FAQ / How to Use</div>
             <div class="win-dropdown-item" data-action="show-tour">Show Welcome Tour</div>
@@ -434,20 +453,18 @@ class App {
             <div class="win-dropdown-item" data-action="visit-site">bloopmaker.net &#8599;</div>
           </div>
         </div>
+      </nav>
+
+      <div class="win-toolbar" role="toolbar" aria-label="Edit toolbar">
+        <button class="toolbar-btn" id="undo-btn" disabled aria-label="Undo">Undo</button>
+        <button class="toolbar-btn" id="redo-btn" disabled aria-label="Redo">Redo</button>
       </div>
 
-      <div class="win-toolbar">
-        <button class="toolbar-btn" id="undo-btn" disabled>Undo</button>
-        <button class="toolbar-btn" id="redo-btn" disabled>Redo</button>
-        <div class="toolbar-sep"></div>
-        <button class="toolbar-btn dark-toggle" id="dark-btn" title="Toggle dark mode">Dark</button>
-      </div>
-
-      <div class="win-body">
+      <main class="win-body" aria-label="Bloop Maker workspace">
 
         <!-- Create -->
-        <div class="card">
-          <div class="card-title ct-create">Create Music</div>
+        <section class="card" aria-labelledby="ct-create-lbl">
+          <div class="card-title ct-create" id="ct-create-lbl">Create Music</div>
           <div class="create-grid">
             <div>
               <div class="gen-noise-row">
@@ -455,14 +472,14 @@ class App {
                 <label for="gen-noise" style="cursor:pointer;font:12px Tahoma">Generate drums</label>
               </div>
               <div class="gen-row">
-                <span class="gen-label">Key</span>
-                <select class="gen-select" id="gen-key">
+                <span class="gen-label" id="lbl-gen-key">Key</span>
+                <select class="gen-select" id="gen-key" aria-labelledby="lbl-gen-key">
                   ${NOTE_NAMES.map((n, i) => `<option value="${i}"${i===0?' selected':''}>${n}</option>`).join('')}
                 </select>
               </div>
               <div class="gen-row">
-                <span class="gen-label">Scale</span>
-                <select class="gen-select" id="gen-scale">
+                <span class="gen-label" id="lbl-gen-scale">Scale</span>
+                <select class="gen-select" id="gen-scale" aria-labelledby="lbl-gen-scale">
                   <option value="">Auto</option>
                   <option value="lydian">Lydian (bright / floating)</option>
                   <option value="major">Major (bright, resolved)</option>
@@ -476,28 +493,27 @@ class App {
                 </select>
               </div>
               <div class="gen-row">
-                <span class="gen-label">BPM</span>
-                <input type="number" class="gen-input" id="gen-bpm" value="130" min="40" max="220">
-                <button class="toolbar-btn" id="tap-tempo-btn" title="Tap to set BPM" style="margin-left:4px;padding:3px 7px;font-size:10px">Tap</button>
-                <button class="toolbar-btn" id="gen-bpm-lock" title="Lock BPM — presets won't change it" style="margin-left:2px;padding:3px 7px;font-size:10px">LOCK</button>
+                <span class="gen-label" id="lbl-gen-bpm">BPM</span>
+                <input type="number" class="gen-input" id="gen-bpm" value="130" min="40" max="220" aria-labelledby="lbl-gen-bpm">
+                <button class="toolbar-btn" id="tap-tempo-btn" title="Tap to set BPM" aria-label="Tap tempo — tap repeatedly to set BPM" style="margin-left:4px;padding:3px 7px;font-size:10px">Tap</button>
+                <button class="toolbar-btn" id="gen-bpm-lock" title="Lock BPM — presets won't change it" aria-label="Lock BPM — presets won't change it" aria-pressed="false" style="margin-left:2px;padding:3px 7px;font-size:10px">LOCK</button>
               </div>
               <div class="gen-row">
-                <span class="gen-label">Bars</span>
-                <input type="number" class="gen-input" id="gen-bars" value="32" min="4" max="128">
+                <span class="gen-label" id="lbl-gen-bars">Bars</span>
+                <input type="number" class="gen-input" id="gen-bars" value="32" min="4" max="128" aria-labelledby="lbl-gen-bars">
               </div>
               <div class="gen-row">
-                <span class="gen-label">Sparse</span>
-                <input type="range" class="gen-input" id="gen-sparseness" min="0" max="1" value="0.4" step="0.05" style="flex:1">
-                <span class="scramble-val" id="gen-sparseness-val" style="min-width:42px">40%</span>
+                <span class="gen-label" id="lbl-gen-sparseness">Sparse</span>
+                <input type="range" class="gen-input" id="gen-sparseness" min="0" max="1" value="0.4" step="0.05" style="flex:1" aria-labelledby="lbl-gen-sparseness" aria-valuetext="40%">
               </div>
               <div class="gen-row" style="align-items:center">
                 <span class="gen-label">Energy</span>
-                <canvas id="energy-canvas" width="200" height="40" style="cursor:crosshair;border:1px solid #555;background:#1a1a1a"></canvas>
-                <button id="energy-reset" class="btn-sm" style="margin-left:4px">&#8635;</button>
+                <canvas id="energy-canvas" width="200" height="40" style="cursor:crosshair;border:1px solid #555;background:#1a1a1a" role="img" aria-label="Energy curve editor — click and drag to draw energy over time"></canvas>
+                <button id="energy-reset" class="btn-sm" aria-label="Reset energy curve" style="margin-left:4px">&#8635;</button>
               </div>
               <div class="gen-row" style="align-items:center;gap:6px">
-                <span class="gen-label">Arp Style</span>
-                <select id="arp-style-sel" class="gen-input" style="font-size:11px;flex:1">
+                <span class="gen-label" id="lbl-arp-style">Arp Style</span>
+                <select id="arp-style-sel" class="gen-input" style="font-size:11px;flex:1" aria-labelledby="lbl-arp-style">
                   <option value="auto">Auto (random per song)</option>
                   <optgroup label="Classic">
                     <option value="up">Up</option>
@@ -541,12 +557,12 @@ class App {
               <div class="gen-row" style="align-items:center">
                 <span class="gen-label">Motif Lock</span>
                 <div id="motif-btns" style="display:inline-flex;gap:2px"></div>
-                <button id="motif-clear" class="btn-sm" style="margin-left:4px">&#10005;</button>
+                <button id="motif-clear" class="btn-sm" aria-label="Clear motif lock" style="margin-left:4px">&#10005;</button>
                 <canvas id="motif-canvas" width="120" height="22" style="margin-left:6px;border:1px solid #444;background:#111;vertical-align:middle"></canvas>
               </div>
               <div class="gen-row" style="align-items:center;gap:6px">
-                <span class="gen-label">Archetype</span>
-                <select id="archetype-sel" class="gen-input" style="font-size:11px;flex:1" title="Select a motif archetype — sets the repeating melodic shape for the whole song">
+                <span class="gen-label" id="lbl-archetype">Archetype</span>
+                <select id="archetype-sel" class="gen-input" style="font-size:11px;flex:1" title="Select a motif archetype — sets the repeating melodic shape for the whole song" aria-labelledby="lbl-archetype">
                   <option value="">None (free generation)</option>
                   <optgroup label="3-note (Short &amp; punchy)">
                     <option value="motif-preset-jab">Jab — root, 5th, back</option>
@@ -610,18 +626,19 @@ class App {
                     <option value="motif-preset-groove">Groove — funky repeats with movement</option>
                   </optgroup>
                 </select>
-                <button id="arch-rand-toggle" class="btn-sm" style="font-size:10px;opacity:0.5;white-space:nowrap" title="When lit, Randomize Everything also picks a random archetype and arp style">Rnd</button>
-                <button id="arch-clear" class="btn-sm" style="font-size:10px" title="Clear archetype and motif lock">X</button>
+                <button id="arch-rand-toggle" class="btn-sm" aria-label="Randomize archetype — when active, Randomize Everything also picks a random archetype and arp style" aria-pressed="false" style="font-size:10px;opacity:0.5;white-space:nowrap" title="When lit, Randomize Everything also picks a random archetype and arp style">Rnd</button>
+                <button id="arch-clear" class="btn-sm" aria-label="Clear archetype and motif lock" style="font-size:10px" title="Clear archetype and motif lock">X</button>
                 <canvas id="motif-canvas" width="80" height="22" style="border:1px solid #444;background:#111;vertical-align:middle"></canvas>
               </div>
-              <div class="gen-row" style="align-items:center;gap:6px">
+              <div class="gen-row" style="align-items:center;gap:6px;flex-wrap:wrap">
                 <span class="gen-label">Inspector</span>
-                <span id="seed-display" style="font-size:10px;opacity:0.6;font-family:monospace">seed: —</span>
-                <span id="motif-inspector" style="font-size:10px;opacity:0.6;font-family:monospace">motif: —</span>
-                <input id="seed-input" type="text" inputmode="numeric" placeholder="seed" title="Type a seed number to regenerate the exact same song, or leave blank for random" style="width:80px;font-size:10px;font-family:monospace" />
-                <button id="use-seed-btn" class="btn-sm" style="font-size:10px" title="Generate using the seed typed on the left">Use seed</button>
-                <button id="copy-seed-btn" class="btn-sm" style="font-size:10px">copy seed</button>
-                <button id="export-json-btn" class="btn-sm" style="font-size:10px">JSON</button>
+                <span id="seed-display" style="font-size:10px;opacity:0.6;font-family:monospace;white-space:nowrap">seed: —</span>
+                <span id="motif-inspector" style="font-size:10px;opacity:0.6;font-family:monospace;white-space:nowrap">motif: —</span>
+                <span style="display:inline-flex;align-items:center;gap:4px;white-space:nowrap">
+                  <input id="seed-input" type="text" inputmode="numeric" placeholder="seed" title="Type a seed number to regenerate the exact same song, or leave blank for random" aria-label="Seed number — type to reproduce a specific song" style="width:70px;font-size:10px;font-family:monospace" />
+                  <button id="use-seed-btn" class="btn-sm" style="font-size:10px" title="Generate using the seed typed on the left">Use seed</button>
+                  <button id="copy-seed-btn" class="btn-sm" style="font-size:10px">Copy seed</button>
+                </span>
               </div>
               <div class="gen-row" style="align-items:center;gap:4px;flex-wrap:wrap">
                 <span class="gen-label">Steer</span>
@@ -634,13 +651,13 @@ class App {
               </div>
               <div class="gen-row" style="align-items:center;gap:4px;flex-wrap:wrap">
                 <span class="gen-label">Post-gen</span>
-                <button id="global-swing"    class="btn-sm" style="font-size:10px" title="Toggle swing: delay all off-beat notes by 15ms across every channel">Swing</button>
+                <button id="global-swing"    class="btn-sm" aria-pressed="false" style="font-size:10px" title="Toggle swing: delay all off-beat notes by 15ms across every channel">Swing</button>
                 <button id="global-compress" class="btn-sm" style="font-size:10px" title="Compress velocities: bring loud notes down and quiet notes up toward the middle">Compress</button>
                 <button id="global-swell"    class="btn-sm" style="font-size:10px" title="Swell: quiet start, loud end — velocity crescendo across the whole song">Swell</button>
                 <button id="global-doubletime" class="btn-sm" style="font-size:10px" title="Double Time: halve all note timings so the song plays twice as busy at the same BPM">2x Time</button>
                 <button id="global-halftime"   class="btn-sm" style="font-size:10px" title="Half Time: double all note timings for a slow dramatic weight">0.5x Time</button>
                 <button id="global-quantize"   class="btn-sm" style="font-size:10px" title="Quantize: snap every note onset to the chosen grid — tightens recorded or loose timing">Quantize</button>
-                <select id="quantize-grid" class="gen-select" style="font-size:10px;padding:1px 2px;width:auto" title="Quantize grid">
+                <select id="quantize-grid" class="gen-select" style="font-size:10px;padding:1px 2px;width:auto" title="Quantize grid" aria-label="Quantize grid division">
                   <option value="4">1/4</option>
                   <option value="8" selected>1/8</option>
                   <option value="16">1/16</option>
@@ -695,19 +712,30 @@ class App {
                   <span><kbd>G</kbd> Random presets</span>
                   <span><kbd>Ctrl</kbd>+<kbd>Z</kbd> Undo</span>
                   <span><kbd>Ctrl</kbd>+<kbd>Y</kbd> Redo</span>
-                  <span><kbd>&uarr;</kbd>/<kbd>&darr;</kbd> BPM &plusmn;1 (Shift &plusmn;5)</span>
+                  <span><kbd>Ctrl</kbd>+<kbd>&uarr;</kbd>/<kbd>&darr;</kbd> BPM &plusmn;1 (Shift &plusmn;5)</span>
                 </div>
               </div>
+
+              <footer class="win-status" id="status-bar" aria-label="Status bar">
+                <pre class="status-dog" aria-hidden="true">  / \\__
+ (    @\\___
+ /         O
+/   (_____/
+/_____/   U</pre>
+                <div class="status-bubble">
+                  <div class="win-status-panel" id="status-text" role="status" aria-live="polite" aria-atomic="true">Ready — generate a song or drop a MIDI file.</div>
+                </div>
+              </footer>
             </div>
           </div>
           <div class="progress-wrap" id="progress-wrap">
             <div class="progress-fill" id="progress-fill" style="width:0%"></div>
           </div>
-        </div>
+        </section>
 
         <!-- Channels -->
-        <div class="card">
-          <div class="card-title ct-channels">Channels</div>
+        <section class="card" aria-labelledby="ct-channels-lbl">
+          <div class="card-title ct-channels" id="ct-channels-lbl">Channels</div>
           <div class="midi-bar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;font:11px Tahoma;padding:6px 8px;border:1px solid var(--b-card);border-radius:var(--radius);background:var(--btn-hi2)">
             <button class="btn-sm" id="midi-connect">Connect MIDI Keyboard</button>
             <span id="midi-status" style="opacity:.75">No device connected</span>
@@ -726,11 +754,11 @@ class App {
             </div>
             `}
           </div>
-        </div>
+        </section>
 
         <!-- SF2 -->
-        <div class="card">
-          <div class="card-title ct-sf2">Soundfont (SF2)</div>
+        <section class="card" aria-labelledby="ct-sf2-lbl">
+          <div class="card-title ct-sf2" id="ct-sf2-lbl">Soundfont (SF2)</div>
           <div class="sf2-drop-zone" id="sf2-drop">
             <input type="file" id="sf2-input" accept=".sf2" multiple>
             <div class="sf2-status" id="sf2-status">Drop .sf2 soundfonts here (supports multiple fonts)</div>
@@ -742,81 +770,71 @@ class App {
           <div class="sf2-actions">
             <button class="btn-random-sf2" id="sf2-random-btn" disabled>Random Presets</button>
           </div>
-        </div>
+        </section>
 
         <!-- Post-processing -->
-        <div class="card">
-          <div class="card-title ct-pp">Post-Processing</div>
+        <section class="card" aria-labelledby="ct-pp-lbl">
+          <div class="card-title ct-pp" id="ct-pp-lbl">Post-Processing</div>
           <div class="pp-grid">
             <div>
               <div class="pp-row">
-                <span class="pp-label">Swing</span>
-                <input type="range" class="range-input" id="swing-slider" min="0" max="0.33" value="0" step="0.01">
-                <span class="pp-val" id="swing-val">0%</span>
+                <span class="pp-label" id="lbl-swing">Swing</span>
+                <input type="range" class="range-input" id="swing-slider" min="0" max="0.33" value="0" step="0.01" aria-labelledby="lbl-swing" aria-valuetext="0%">
+                <span class="pp-val" id="swing-val" aria-hidden="true">0%</span>
               </div>
               <div class="pp-note">Playback only, non-destructive</div>
             </div>
             <div>
               <div class="pp-row">
-                <span class="pp-label">Humanize</span>
-                <input type="range" class="range-input" id="humanize-amount" min="0" max="1" value="0.35" step="0.05">
-                <span class="pp-val" id="humanize-val">35%</span>
+                <span class="pp-label" id="lbl-humanize">Humanize</span>
+                <input type="range" class="range-input" id="humanize-amount" min="0" max="1" value="0.35" step="0.05" aria-labelledby="lbl-humanize" aria-valuetext="35%">
+                <span class="pp-val" id="humanize-val" aria-hidden="true">35%</span>
               </div>
               <button class="btn-humanize" id="humanize-btn" disabled>Apply Humanize</button>
               <label style="display:inline-flex;align-items:center;gap:4px;font:11px Tahoma;margin-left:6px;cursor:pointer"><input type="checkbox" id="auto-humanize"> Auto</label>
             </div>
             <div>
               <div class="pp-row">
-                <span class="pp-label">Reverb</span>
-                <input type="range" class="range-input" id="reverb-wet" min="0" max="1" value="0" step="0.05">
-                <span class="pp-val" id="reverb-val">0%</span>
+                <span class="pp-label" id="lbl-reverb">Reverb</span>
+                <input type="range" class="range-input" id="reverb-wet" min="0" max="1" value="0" step="0.05" aria-labelledby="lbl-reverb" aria-valuetext="0%">
+                <span class="pp-val" id="reverb-val" aria-hidden="true">0%</span>
               </div>
               <div class="pp-row">
-                <span class="pp-label">Decay</span>
-                <input type="range" class="range-input" id="reverb-decay" min="0.3" max="5" value="1.5" step="0.1">
-                <span class="pp-val" id="reverb-decay-val">1.5s</span>
+                <span class="pp-label" id="lbl-reverb-decay">Decay</span>
+                <input type="range" class="range-input" id="reverb-decay" min="0.3" max="5" value="1.5" step="0.1" aria-labelledby="lbl-reverb-decay" aria-valuetext="1.5s">
+                <span class="pp-val" id="reverb-decay-val" aria-hidden="true">1.5s</span>
               </div>
             </div>
           </div>
 
-        <!-- Theme selector -->
-        <div class="card" style="padding:6px 10px">
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <span style="font:11px Tahoma;opacity:0.7;flex-shrink:0">Theme:</span>
-            <button class="btn-theme active" id="theme-bloop" data-theme="bloop">Bloop</button>
-            <button class="btn-theme"        id="theme-aero"  data-theme="aero">Aero</button>
-            <button class="btn-theme"        id="theme-neon"  data-theme="neon">Dark</button>
-            <button class="btn-theme"        id="theme-green" data-theme="green">Forest</button>
-          </div>
-        </div>
-        </div>
+        </section>
 
         <!-- Transport -->
-        <div class="card">
-          <div class="card-title ct-transport">Transport</div>
+        <section class="card" aria-labelledby="ct-transport-lbl">
+          <div class="card-title ct-transport" id="ct-transport-lbl">Transport</div>
           <div class="transport-main">
             <div class="transport-controls">
               <div class="transport-row">
-                <button class="btn-transport" id="restart-btn" disabled title="Back to start (R)">|&lt;</button>
-                <button class="btn-transport" id="play-btn" disabled>&gt;</button>
-                <button class="btn-transport" id="stop-btn" disabled>[]</button>
-                <button class="btn-transport" id="loop-btn" title="Loop: replay bars seamlessly (off = infinite mode)" style="font-size:13px">↻</button>
-                <button class="btn-transport" id="metro-btn" title="Metronome: click track on every beat" style="font-size:13px">&#9685;</button>
-                <button class="btn-transport" id="jam-btn" title="Jam: restart, loop, and record your MIDI playing until you pause or stop" style="font-size:11px">&#9679; Jam</button>
+                <button class="btn-transport" id="restart-btn" disabled title="Back to start (R)" aria-label="Restart — back to start">|&lt;</button>
+                <button class="btn-transport" id="play-btn" disabled aria-label="Play" aria-pressed="false">&gt;</button>
+                <button class="btn-transport" id="stop-btn" disabled aria-label="Stop">[]</button>
+                <button class="btn-transport" id="loop-btn" title="Loop: replay bars seamlessly (off = infinite mode)" aria-label="Loop — replay bars seamlessly" aria-pressed="false" style="font-size:13px">↻</button>
+                <button class="btn-transport" id="metro-btn" title="Metronome: click track on every beat" aria-label="Metronome — click track on every beat" aria-pressed="false" style="font-size:13px">&#9685;</button>
+                <button class="btn-transport" id="jam-btn" title="Jam: restart, loop, and record your MIDI playing until you pause or stop" aria-label="Jam mode — restart, loop and record MIDI" style="font-size:11px">&#9679; Jam</button>
                 <div class="seek-wrap">
-                  <input type="range" class="seek-slider" id="seek-slider" min="0" max="300" value="0" step="0.1">
+                  <input type="range" class="seek-slider" id="seek-slider" min="0" max="300" value="0" step="0.1" aria-label="Playback position">
                 </div>
                 <div class="seek-time" id="time-display">00:00 / 00:00</div>
               </div>
               <div class="volume-row">
-                <span class="gen-label">Volume</span>
-                <input type="range" class="range-input" id="vol-slider" min="0" max="1" value="0.75" step="0.01">
-                <span class="scramble-val" id="vol-val">75%</span>
+                <span class="gen-label" id="lbl-vol">Volume</span>
+                <input type="range" class="range-input" id="vol-slider" min="0" max="1" value="0.75" step="0.01" aria-labelledby="lbl-vol" aria-valuetext="75%">
+                <span class="scramble-val" id="vol-val" aria-hidden="true">75%</span>
               </div>
               <div class="transport-meta">
                 <div class="bpm-control">
-                  <span class="bpm-label">BPM</span>
-                  <input type="number" class="bpm-input" id="bpm-input" value="--" min="20" max="300" title="Change BPM (rescales notes)">
+                  <label class="bpm-label" for="bpm-input">BPM</label>
+                  <input type="number" class="bpm-input" id="bpm-input" value="--" min="20" max="300" title="Change BPM (rescales notes)" aria-label="BPM — beats per minute (rescales notes)">
                 </div>
                 <input type="text" id="export-name" placeholder="file name (auto)" title="Custom export file name — leave blank for auto" style="font:10px Tahoma;padding:2px 4px;width:100px;background:#222;color:#ccc;border:1px solid #444;border-radius:2px">
                 <button class="btn-download" id="download-btn" disabled>Save MIDI</button>
@@ -825,24 +843,13 @@ class App {
             </div>
             <canvas id="osc-canvas" class="osc-canvas" width="220" height="108"></canvas>
           </div>
-        </div>
+        </section>
 
         <div style="position:relative;width:100%;margin-top:4px">
           <canvas id="matrix-canvas" title="Click to change colors" style="width:100%;height:80px;display:block;background:transparent;border-top:1px solid rgba(0,0,0,0.12);cursor:pointer" width="1200" height="80"></canvas>
         </div>
 
-      </div><!-- end win-body -->
-
-      <div class="win-status" id="status-bar">
-        <pre class="status-dog" aria-hidden="true">  / \\__
- (    @\\___
- /         O
-/   (_____/
-/_____/   U</pre>
-        <div class="status-bubble">
-          <div class="win-status-panel" id="status-text">Ready — generate a song or drop a MIDI file.</div>
-        </div>
-      </div>
+      </main><!-- end win-body -->
     `;
 
     // DOM refs
@@ -937,8 +944,7 @@ class App {
             <button class="btn-export-ch" id="export-ch-${id}" disabled title="Save this channel as a .mid (MIDI) file">Save MIDI</button>
             <div class="ch-sparse-wrap" title="Sparseness: how often this channel rests when you Generate. 0% = busy/full, 100% = empty (skip this channel).">
               <span class="ch-slider-lbl">Sparse</span>
-              <input type="range" class="ch-sparse" id="sparse-${id}" min="0" max="1" value="${this.channelSparseValues[id] ?? 0}" step="0.05">
-              <span class="ch-sparse-val" id="sparse-val-${id}">${Math.round((this.channelSparseValues[id] ?? 0) * 100)}%</span>
+              <input type="range" class="ch-sparse" id="sparse-${id}" min="0" max="1" value="${this.channelSparseValues[id] ?? 0}" step="0.05" aria-valuetext="${Math.round((this.channelSparseValues[id] ?? 0) * 100)}%">
             </div>
             <select class="ch-style-select" id="style-${id}" title="Generation style for this channel">
               <option value="auto">Auto</option>
@@ -1027,7 +1033,7 @@ class App {
               <strong>G</strong> Randomize instrument presets &nbsp;·&nbsp;
               <strong>Ctrl+Z</strong> Undo &nbsp;·&nbsp;
               <strong>Ctrl+Y</strong> Redo &nbsp;·&nbsp;
-              <strong>↑ / ↓</strong> BPM ±1 (Shift = ±5)
+              <strong>Ctrl/⌘ + ↑ / ↓</strong> BPM ±1 (Shift = ±5)
             </div>
 
             <h3>FAQ</h3>
@@ -1104,7 +1110,8 @@ class App {
       if (e.key === 'f' || e.key === 'F') { e.preventDefault(); this.runGenerator(); }
       if (e.key === 'g' || e.key === 'G') { e.preventDefault(); this.randomizeSF2Presets(); }
       if (e.key === 'x' || e.key === 'X') { e.preventDefault(); this.randomAndGenerate(); }
-      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      // Ctrl/Cmd + Arrow adjusts BPM (plain arrows are left free for keyboard/AT navigation)
+      if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         const bpmEl = document.getElementById('gen-bpm') as HTMLInputElement;
         const step = e.shiftKey ? 5 : 1;
@@ -1121,27 +1128,55 @@ class App {
     // Close dropdowns on outside click
     document.addEventListener('click', e => {
       if (!(e.target as HTMLElement).closest('.win-menu-item')) {
-        document.querySelectorAll('.win-menu-item.open').forEach(el => el.classList.remove('open'));
+        document.querySelectorAll('.win-menu-item.open').forEach(el => {
+          el.classList.remove('open');
+          (el as HTMLElement).setAttribute('aria-expanded', 'false');
+        });
       }
     });
 
-    // Menu items
+    // Menu items — open/close on click, also handle Enter/Space for keyboard users
     document.querySelectorAll('.win-menu-item').forEach(item => {
-      item.addEventListener('click', e => {
+      const toggle = (e: Event) => {
         e.stopPropagation();
         const wasOpen = item.classList.contains('open');
-        document.querySelectorAll('.win-menu-item.open').forEach(el => el.classList.remove('open'));
-        if (!wasOpen) item.classList.add('open');
+        document.querySelectorAll('.win-menu-item.open').forEach(el => {
+          el.classList.remove('open');
+          (el as HTMLElement).setAttribute('aria-expanded', 'false');
+        });
+        if (!wasOpen) {
+          item.classList.add('open');
+          (item as HTMLElement).setAttribute('aria-expanded', 'true');
+        }
+      };
+      item.addEventListener('click', toggle);
+      item.addEventListener('keydown', (e: Event) => {
+        const ke = e as KeyboardEvent;
+        if (ke.key === 'Enter' || ke.key === ' ') { ke.preventDefault(); toggle(ke); }
+        if (ke.key === 'Escape') {
+          item.classList.remove('open');
+          (item as HTMLElement).setAttribute('aria-expanded', 'false');
+          (item as HTMLElement).focus();
+        }
       });
     });
 
-    // Dropdown actions
+    // Dropdown actions — support both click and keyboard activation
     document.querySelectorAll('.win-dropdown-item').forEach(item => {
-      item.addEventListener('click', e => {
+      (item as HTMLElement).setAttribute('tabindex', '0');
+      const activate = (e: Event) => {
         e.stopPropagation();
-        document.querySelectorAll('.win-menu-item.open').forEach(el => el.classList.remove('open'));
+        document.querySelectorAll('.win-menu-item.open').forEach(el => {
+          el.classList.remove('open');
+          (el as HTMLElement).setAttribute('aria-expanded', 'false');
+        });
         const action = (item as HTMLElement).dataset.action;
         if (action) this.handleMenuAction(action);
+      };
+      item.addEventListener('click', activate);
+      item.addEventListener('keydown', (e: Event) => {
+        const ke = e as KeyboardEvent;
+        if (ke.key === 'Enter' || ke.key === ' ') { ke.preventDefault(); activate(ke); }
       });
     });
 
@@ -1149,12 +1184,22 @@ class App {
     this.undoBtn.addEventListener('click', () => this.undo());
     this.redoBtn.addEventListener('click', () => this.redo());
 
-    // Dark mode
-    document.getElementById('dark-btn')!.addEventListener('click', () => this.toggleDarkMode());
-
-    // Theme buttons
-    document.querySelectorAll('.btn-theme').forEach(btn => {
-      btn.addEventListener('click', () => this.applyTheme((btn as HTMLElement).dataset.theme ?? 'aero', true));
+    // Theme menu items — click + keyboard, and close the menu after choosing
+    document.querySelectorAll('[data-theme]').forEach(item => {
+      (item as HTMLElement).setAttribute('tabindex', '0');
+      const activateTheme = (e: Event) => {
+        e.stopPropagation();
+        document.querySelectorAll('.win-menu-item.open').forEach(el => {
+          el.classList.remove('open');
+          (el as HTMLElement).setAttribute('aria-expanded', 'false');
+        });
+        this.applyTheme((item as HTMLElement).dataset.theme ?? 'aero', true);
+      };
+      item.addEventListener('click', activateTheme);
+      item.addEventListener('keydown', (e: Event) => {
+        const ke = e as KeyboardEvent;
+        if (ke.key === 'Enter' || ke.key === ' ') { ke.preventDefault(); activateTheme(ke); }
+      });
     });
 
     // Click the visualizer to change its colors
@@ -1172,14 +1217,23 @@ class App {
       this.rerenderChannelsList();
     });
 
-    // Presets submenu items
+    // Presets submenu items — support both click and keyboard activation
     document.querySelectorAll('[data-preset-idx]').forEach(item => {
-      item.addEventListener('click', e => {
+      (item as HTMLElement).setAttribute('tabindex', '0');
+      const activatePreset = (e: Event) => {
         e.stopPropagation();
-        document.querySelectorAll('.win-menu-item.open').forEach(el => el.classList.remove('open'));
+        document.querySelectorAll('.win-menu-item.open').forEach(el => {
+          el.classList.remove('open');
+          (el as HTMLElement).setAttribute('aria-expanded', 'false');
+        });
         const idx = parseInt((item as HTMLElement).dataset.presetIdx!, 10);
         const p = GEN_PRESETS[idx];
         if (p) this.applyPreset(p);
+      };
+      item.addEventListener('click', activatePreset);
+      item.addEventListener('keydown', (e: Event) => {
+        const ke = e as KeyboardEvent;
+        if (ke.key === 'Enter' || ke.key === ' ') { ke.preventDefault(); activatePreset(ke); }
       });
     });
 
@@ -1205,7 +1259,8 @@ class App {
     const sparseSlider = document.getElementById('gen-sparseness') as HTMLInputElement;
     sparseSlider.addEventListener('input', () => {
       const v = parseFloat(sparseSlider.value);
-      document.getElementById('gen-sparseness-val')!.textContent = `${Math.round(v * 100)}%`;
+      const pctText = `${Math.round(v * 100)}%`;
+      sparseSlider.setAttribute('aria-valuetext', pctText);
     });
 
     // MIDI drop zone
@@ -1293,6 +1348,7 @@ class App {
       genBpmLockBtn.classList.toggle('active', this.bpmLocked);
       genBpmLockBtn.style.background = this.bpmLocked ? '#c8a020' : '';
       genBpmLockBtn.style.color = this.bpmLocked ? '#000' : '';
+      genBpmLockBtn.setAttribute('aria-pressed', String(this.bpmLocked));
     });
 
     // Transport
@@ -1300,9 +1356,11 @@ class App {
     this.playBtn.addEventListener('click',    () => this.togglePlay());
     this.stopBtn.addEventListener('click',    () => this.stopPlayback());
     document.getElementById('jam-btn')?.addEventListener('click', () => void this.toggleJamLoop());
-    document.getElementById('metro-btn')?.addEventListener('click', () => {
+    const metroBtn = document.getElementById('metro-btn') as HTMLButtonElement;
+    metroBtn?.addEventListener('click', () => {
       this.metronomeOn = !this.metronomeOn;
-      document.getElementById('metro-btn')?.classList.toggle('active', this.metronomeOn);
+      metroBtn.classList.toggle('active', this.metronomeOn);
+      metroBtn.setAttribute('aria-pressed', String(this.metronomeOn));
       if (this.scheduler) this.scheduler.metronome = this.metronomeOn;
       this.setStatus('ok', this.metronomeOn ? 'Metronome on — click on every beat.' : 'Metronome off.');
     });
@@ -1310,6 +1368,7 @@ class App {
     loopBtn?.addEventListener('click', () => {
       this.loopEnabled = !this.loopEnabled;
       loopBtn.classList.toggle('active', this.loopEnabled);
+      loopBtn.setAttribute('aria-pressed', String(this.loopEnabled));
       if (this.scheduler) this.scheduler.loop = this.loopEnabled;
       this.setStatus('ok', this.loopEnabled ? 'Loop ON — replays bars seamlessly.' : 'Loop OFF — infinite mode, generates new bars.');
     });
@@ -1327,7 +1386,9 @@ class App {
     const volSlider = document.getElementById('vol-slider') as HTMLInputElement;
     volSlider.addEventListener('input', () => {
       const v = parseFloat(volSlider.value);
-      document.getElementById('vol-val')!.textContent = `${Math.round(v * 100)}%`;
+      const pct = `${Math.round(v * 100)}%`;
+      document.getElementById('vol-val')!.textContent = pct;
+      volSlider.setAttribute('aria-valuetext', pct);
       this.sampler?.setVolume(v);
     });
 
@@ -1563,6 +1624,7 @@ class App {
     const updateArchRandBtn = () => {
       archRandBtn.style.opacity = this.randomizeArchAndArp ? '1' : '0.45';
       archRandBtn.style.outline = this.randomizeArchAndArp ? '1px solid #aaa' : 'none';
+      archRandBtn.setAttribute('aria-pressed', String(this.randomizeArchAndArp));
     };
     archRandBtn.addEventListener('click', () => {
       this.randomizeArchAndArp = !this.randomizeArchAndArp;
@@ -1596,6 +1658,7 @@ class App {
       swingBtn.style.opacity  = this.swingActive ? '1'   : '0.55';
       swingBtn.style.outline  = this.swingActive ? '1px solid #aaa' : 'none';
       swingBtn.style.background = this.swingActive ? 'rgba(255,255,255,0.15)' : '';
+      swingBtn.setAttribute('aria-pressed', String(this.swingActive));
     };
     swingBtn.addEventListener('click', () => { this.globalSwing(); updateSwingBtn(); });
 
@@ -1647,7 +1710,6 @@ class App {
     (document.getElementById('seed-input') as HTMLInputElement).addEventListener('keydown', (e) => {
       if ((e as KeyboardEvent).key === 'Enter') this.runGenerator();
     });
-    document.getElementById('export-json-btn')!.addEventListener('click', () => this.exportJSON());
   }
 
   // Reads the seed input box. Returns a parsed seed number, or undefined for a
@@ -1668,30 +1730,6 @@ class App {
     const motifStr = this.lastMotifIntervals.map(arrow).join(' ');
     (document.getElementById('seed-display') as HTMLElement).textContent = `seed: ${this.lastSeed}`;
     (document.getElementById('motif-inspector') as HTMLElement).textContent = `motif: ${motifStr || '—'}`;
-  }
-
-  private exportJSON() {
-    if (this.demoGate('JSON export')) return;
-    const NOTE_NAMES_FULL = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-    if (!this.lastGenConfig) { this.setStatus('err', 'Generate something first!'); return; }
-    const meta = {
-      seed: this.lastSeed,
-      bpm: this.state.bpm,
-      key: NOTE_NAMES_FULL[this.lastGenConfig.key],
-      mode: this.lastGenConfig.mode,
-      scale: this.lastGenConfig.scaleType ?? 'default',
-      bars: this.lastGenConfig.bars,
-      motifIntervals: this.lastMotifIntervals,
-      motifSeed: this.lastGenConfig.motifSeed ?? null,
-      sparseness: this.lastGenConfig.sparseness ?? 0,
-      generatedAt: new Date().toISOString(),
-    };
-    const blob = new Blob([JSON.stringify(meta, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `bloop_${meta.bpm}bpm_${meta.key}_seed${meta.seed}.json`;
-    a.click();
-    this.setStatus('ok', 'Metadata JSON exported!');
   }
 
   // ── Menu action dispatch ───────────────────────────────────────
@@ -1751,11 +1789,10 @@ class App {
         document.getElementById(`chvol-up-${id}`)?.addEventListener('click', () => adjVol(0.05));
       }
       const sparseEl    = document.getElementById(`sparse-${id}`) as HTMLInputElement;
-      const sparseValEl = document.getElementById(`sparse-val-${id}`);
       sparseEl?.addEventListener('input', () => {
         const v = parseFloat(sparseEl.value);
         this.channelSparseValues[id] = v;
-        if (sparseValEl) sparseValEl.textContent = `${Math.round(v * 100)}%`;
+        sparseEl.setAttribute('aria-valuetext', `${Math.round(v * 100)}%`);
       });
       const sf2SrcEl = document.getElementById(`sf2-src-${id}`) as HTMLSelectElement;
       sf2SrcEl?.addEventListener('change', () => {
@@ -1868,20 +1905,24 @@ class App {
 
   // ── Dark mode ────────────────────────────────────────────────
 
-  private toggleDarkMode() {
-    document.body.classList.toggle('dark');
-    localStorage.setItem('bloopDark', document.body.classList.contains('dark') ? '1' : '0');
-  }
-
   private applyTheme(theme: string, save: boolean) {
     this.currentTheme = theme;
-    document.body.classList.remove('theme-bloop', 'theme-neon', 'theme-amber', 'theme-green');
-    if (theme !== 'aero') document.body.classList.add(`theme-${theme}`);
-    document.querySelectorAll('.btn-theme').forEach(btn => {
-      btn.classList.toggle('active', (btn as HTMLElement).dataset.theme === theme);
+    const isDark = theme === 'dark';
+    document.body.classList.remove('theme-bloop', 'theme-neon', 'theme-amber', 'theme-green', 'theme-campfire', 'theme-matrix', 'theme-twilight', 'theme-arctic', 'theme-sunset', 'theme-ocean', 'theme-cyber', 'theme-paper', 'theme-sakura', 'theme-mint');
+    // 'dark' is the body.dark overlay (the look the toolbar Dark button gives); other
+    // themes are palette classes and turn the overlay off.
+    document.body.classList.toggle('dark', isDark);
+    if (!isDark && theme !== 'aero') document.body.classList.add(`theme-${theme}`);
+    document.querySelectorAll('[data-theme]').forEach(btn => {
+      const isActive = (btn as HTMLElement).dataset.theme === theme;
+      btn.classList.toggle('active', isActive);
+      (btn as HTMLElement).setAttribute('aria-pressed', String(isActive));
     });
     this.updateSidePanelColors();
-    if (save) localStorage.setItem('bloopTheme', theme);
+    if (save) {
+      localStorage.setItem('bloopTheme', theme);
+      localStorage.setItem('bloopDark', isDark ? '1' : '0');
+    }
   }
 
   private injectSidePanels() {
@@ -2050,7 +2091,7 @@ class App {
     if (p.sparseness != null) {
       const sparEl = document.getElementById('gen-sparseness') as HTMLInputElement;
       sparEl.value = String(p.sparseness);
-      document.getElementById('gen-sparseness-val')!.textContent = `${Math.round(p.sparseness * 100)}%`;
+      sparEl.setAttribute('aria-valuetext', `${Math.round(p.sparseness * 100)}%`);
     }
   }
 
@@ -2063,7 +2104,7 @@ class App {
     const sparDefault = opts.sparseness ?? (opts.mode === 'ambient' ? 0.5 : opts.mode === 'battle' ? 0.1 : opts.mode === 'jazzy' ? 0.35 : opts.mode === 'funky' ? 0.25 : opts.mode === 'silly' ? 0.15 : opts.mode === 'weird' ? 0.40 : 0.4);
     const sparEl = document.getElementById('gen-sparseness') as HTMLInputElement;
     sparEl.value = String(sparDefault);
-    document.getElementById('gen-sparseness-val')!.textContent = `${Math.round(sparDefault * 100)}%`;
+    sparEl.setAttribute('aria-valuetext', `${Math.round(sparDefault * 100)}%`);
     this.runGenerator();
   }
 
@@ -4273,6 +4314,8 @@ class App {
     this.wavBtn.disabled     = !hasNotes || !hasSF2;
     this.humanizeBtn.disabled= !hasNotes;
     this.playBtn.textContent = this.state.isPlaying ? '||' : '>';
+    this.playBtn.setAttribute('aria-label', this.state.isPlaying ? 'Pause' : 'Play');
+    this.playBtn.setAttribute('aria-pressed', String(this.state.isPlaying));
     this.playBtn.classList.toggle('playing', this.state.isPlaying);
     for (const id of CHANNELS) {
       if (this.regenBtns[id])    this.regenBtns[id].disabled    = !canRegen;

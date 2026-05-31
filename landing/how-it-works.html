@@ -24,7 +24,9 @@
 </head>
 <body>
 
-  <div class="topbar">
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <nav class="topbar" aria-label="Primary">
     <a class="home" href="./">b<b>loop</b>maker</a>
     <a class="btn btn-nav" href="./">Home</a>
     <a class="btn btn-info2" href="./faq.html">FAQ</a>
@@ -32,17 +34,17 @@
     <a class="btn btn-ex" href="./examples.html">Examples</a>
     <a class="btn btn-demo" href="./app/">Try Demo</a>
     <a class="btn btn-buy" href="https://plantpalboy.itch.io/">Get it · $12.99</a>
-  </div>
+  </nav>
 
-  <main class="wrap">
+  <main class="wrap" id="main-content">
     <h1>How <span class="a">Bloop</span> <span class="b">Maker</span> works</h1>
     <p class="lede">Bloop Maker writes original video game music by following music-theory rules, not by running a trained AI model. here's exactly what happens, in plain english, every time you press Generate.</p>
 
-    <p>most "music generators" right now are AI models trained on huge piles of existing songs, guessing what note comes next. Bloop Maker isn't that. it's a <strong>procedural music generator</strong>: it builds a song from fixed rules about how music works, the same way a game builds a dungeon from rules about rooms and corridors. no neural network, no training data, no internet. what comes out is genuinely yours, with no copyright cloud and no "is this AI?" question hanging over it.</p>
+    <p>most "music generators" right now are AI models trained on huge piles of existing songs, guessing what note comes next. Bloop Maker isn't that. it's a <strong>procedural music generator</strong>: it builds a song from fixed rules about how music works, the same way a game builds a dungeon from rules about rooms and corridors. no neural network, no training data, no internet. what comes out is genuinely yours, with no copyright cloud and no doubt about where it came from.</p>
 
     <p>here's the whole pipeline, step by step. you don't need to know any of this to use the app. but if you're curious, come look.</p>
 
-    <div class="divider">✦ ✦ ✦</div>
+    <div class="divider" aria-hidden="true">✦ ✦ ✦</div>
 
     <h2>1. It starts with a seed</h2>
     <p>every song begins with a single number called a <strong>seed</strong>, and that's what makes the whole thing repeatable: the same seed and the same settings always give you the exact same song, note for note. that's why you can copy a seed, send it to a friend, and they hear precisely what you heard.</p>
@@ -81,7 +83,7 @@
       <li><span class="step">A dynamics curve</span> across the whole song, so it swells and breathes instead of sitting flat.</li>
     </ul>
 
-    <div class="divider">♫ 〰 ♫ 〰 ♫</div>
+    <div class="divider" aria-hidden="true">♫ 〰 ♫ 〰 ♫</div>
 
     <h2>What the rules are based on</h2>
     <p>Bloop Maker is a rule-based generator, not an AI model. its rules come from well-established music theory, the kind you'll find in open, publicly available academic and educational sources, never from training on a library of songs. every rule is a concrete piece of logic you could read and follow yourself, not a hidden weight in a black box. it's grounded in two things:</p>
@@ -98,7 +100,7 @@
     <p>a pretty wide range of moods: calm ambient, town and exploration themes, fast battle music, plus jazzy, funky, silly, and downright weird flavors, across nine scales and six steering modes. it's built for chiptune and video game music, but the same engine will happily make menu themes, boss fights, cutscene music, and cozy little shop loops. and since it exports standard MIDI, you can carry any idea into your own software and turn it into any style you want.</p>
 
     <h2>Bloop Maker vs AI music generators</h2>
-    <p>AI generators are trained on huge libraries of songs and predict the next note, so what comes out can echo what it was trained on (which raises the copyright and "is this AI?" questions), usually needs an account or subscription, and is hard to steer. Bloop Maker is the opposite: rule-based and repeatable, so the music is original and yours; fully offline as a one-time purchase; and steerable and editable instead of reroll-and-hope. for creators who need music that's safe to ship, that's really the whole point.</p>
+    <p>AI generators are trained on huge libraries of songs and predict the next note, so what comes out can echo what it was trained on (which raises questions about copyright and originality), usually needs an account or subscription, and is hard to steer. Bloop Maker is the opposite: rule-based and repeatable, so the music is original and yours; fully offline as a one-time purchase; and steerable and editable instead of reroll-and-hope. for creators who need music that's safe to ship, that's really the whole point.</p>
 
     <h2>What you do with the result</h2>
     <p>edit it note by note in the piano roll, reshape parts with one-click tools (simplify, swing, harmonize, reverse, and more), regenerate any single channel, then export as a standard <strong>MIDI</strong> file for any DAW, or render to <strong>WAV</strong> with your own soundfonts.</p>
@@ -120,13 +122,15 @@
     </div>
   </main>
 
-  <footer>
+  <footer aria-label="Site footer">
     <div class="subscribe">
-      <p>✦ get bloop news &amp; updates by email ✦</p>
+      <p id="subscribe-heading-hiw">✦ get bloop news &amp; updates by email ✦</p>
       <form action="https://buttondown.com/api/emails/embed-subscribe/SNCKPCK"
             method="post" target="popupwindow"
+            aria-labelledby="subscribe-heading-hiw"
             onsubmit="window.open('https://buttondown.com/SNCKPCK', 'popupwindow')">
-        <input type="email" name="email" placeholder="you@email.com" aria-label="Email address" required>
+        <label for="subscribe-email-hiw" class="sr-only">Email address</label>
+        <input id="subscribe-email-hiw" type="email" name="email" placeholder="you@email.com" required>
         <button type="submit" class="btn btn-buy">Subscribe</button>
       </form>
     </div>

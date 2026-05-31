@@ -30,7 +30,9 @@
     .ex-card {
       border: 3px solid var(--bloop-ink); border-radius: 18px; background: #fff;
       box-shadow: 0 6px 0 var(--bloop-ink); padding: 18px 18px 20px;
+      transition: transform 180ms ease-out, box-shadow 180ms ease-out;
     }
+    .ex-card:hover { transform: translateY(-4px); box-shadow: 0 10px 0 var(--bloop-ink); }
     .ex-card h2 { margin: 0 0 4px; font-size: clamp(20px, 3.5vw, 28px); }
     .ex-card h2::before { content: none; }
     .ex-num { color: var(--bloop-pink); }
@@ -60,11 +62,16 @@
       text-align: center; font-weight: 900; color: var(--bloop-purple);
     }
     .ex-note { font-size: 15px; color: var(--bloop-purple); font-weight: 900; margin: 0 0 22px; }
+    @media (prefers-reduced-motion: reduce) {
+      .ex-card, .ex-card:hover { transition: none; transform: none; box-shadow: 0 6px 0 var(--bloop-ink); }
+    }
   </style>
 </head>
 <body>
 
-  <div class="topbar">
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <nav class="topbar" aria-label="Primary">
     <a class="home" href="./">b<b>loop</b>maker</a>
     <a class="btn btn-nav" href="./">Home</a>
     <a class="btn btn-info" href="./how-it-works.html">How It Works</a>
@@ -72,14 +79,14 @@
     <a class="btn btn-nav" href="./about.html">About</a>
     <a class="btn btn-demo" href="./app/">Try Demo</a>
     <a class="btn btn-buy" href="https://plantpalboy.itch.io/">Get it · $12.99</a>
-  </div>
+  </nav>
 
-  <main class="wrap">
-    <h1><span class="a">ex</span><span class="b">amples</span> <span class="note">♫</span></h1>
+  <main class="wrap" id="main-content">
+    <h1><span class="a">ex</span><span class="b">amples</span> <span class="note" aria-hidden="true">♫</span></h1>
     <p class="lede">real songs, straight out of Bloop Maker</p>
     <p class="ex-note">every track below is <strong>unedited MIDI</strong> that Bloop Maker generated, played through a soundfont. nothing tweaked by hand — this is the actual sound output. press play, and grab the WAV, the MIDI notes, or the song info.</p>
 
-    <div class="ex-list" id="ex-list">
+    <div class="ex-list" id="ex-list" role="status" aria-live="polite" aria-label="Example songs">
       <div class="ex-empty">loading examples…</div>
     </div>
 
@@ -89,13 +96,15 @@
     </div>
   </main>
 
-  <footer>
+  <footer aria-label="Site footer">
     <div class="subscribe">
-      <p>✦ get bloop news &amp; updates by email ✦</p>
+      <p id="subscribe-heading-ex">✦ get bloop news &amp; updates by email ✦</p>
       <form action="https://buttondown.com/api/emails/embed-subscribe/SNCKPCK"
             method="post" target="popupwindow"
+            aria-labelledby="subscribe-heading-ex"
             onsubmit="window.open('https://buttondown.com/SNCKPCK', 'popupwindow')">
-        <input type="email" name="email" placeholder="you@email.com" aria-label="Email address" required>
+        <label for="subscribe-email-ex" class="sr-only">Email address</label>
+        <input id="subscribe-email-ex" type="email" name="email" placeholder="you@email.com" required>
         <button type="submit" class="btn btn-buy">Subscribe</button>
       </form>
     </div>
@@ -117,24 +126,32 @@
     }
 
     function card(song, i) {
-      const el = document.createElement('div');
+      const el = document.createElement('article');
       el.className = 'ex-card';
+      // Each card's accessible name comes from its heading (aria-labelledby wired below)
+      const headingId = `ex-title-${i}`;
+      el.setAttribute('aria-labelledby', headingId);
       const color = PALETTE[i % PALETTE.length];
-      const dl = (file, label, cls) => file
-        ? `<a class="btn ${cls}" href="${BASE}${encodeURIComponent(file)}" download>${label}</a>` : '';
+      // Download links include the song title for a meaningful accessible name.
+      // The aria-label strips the ⬇ arrow so screen readers get clean text.
+      const dlLabels = { 'btn-wav': 'Download WAV', 'btn-midi': 'Download MIDI notes', 'btn-nfo': 'Download MIDI info' };
+      const dl = (file, label, cls, title) => file
+        ? `<a class="btn ${cls}" href="${BASE}${encodeURIComponent(file)}" download aria-label="${dlLabels[cls] || 'Download'} — ${esc(title)}">${label}</a>` : '';
       el.innerHTML = `
-        <h2><span class="ex-num">${String(i + 1).padStart(2, '0')}.</span> ${esc(song.title)}</h2>
+        <h2 id="${headingId}"><span class="ex-num">${String(i + 1).padStart(2, '0')}.</span> ${esc(song.title)}</h2>
         ${song.description ? `<p class="ex-desc">${esc(song.description)}</p>` : ''}
         ${song.soundfont ? `<p class="ex-font">soundfont: <code>${esc(song.soundfont)}</code></p>` : ''}
-        <div class="ex-wave" style="--wv:${color}" data-wav="${esc(song.wav)}">
+        <div class="ex-wave" style="--wv:${color}" data-wav="${esc(song.wav)}"
+             aria-hidden="true">
           <canvas></canvas>
           <div class="wave-msg">waveform loads when visible…</div>
         </div>
-        <audio controls preload="none" src="${BASE}${encodeURIComponent(song.wav)}"></audio>
+        <audio controls preload="none" src="${BASE}${encodeURIComponent(song.wav)}"
+               aria-label="${esc(song.title)}"></audio>
         <div class="ex-dl">
-          ${dl(song.wav, '⬇ WAV', 'btn-wav')}
-          ${dl(song.mid, '⬇ MIDI notes', 'btn-midi')}
-          ${dl(song.info, '⬇ MIDI info', 'btn-nfo')}
+          ${dl(song.wav, '⬇ WAV', 'btn-wav', song.title)}
+          ${dl(song.mid, '⬇ MIDI notes', 'btn-midi', song.title)}
+          ${dl(song.info, '⬇ MIDI info', 'btn-nfo', song.title)}
         </div>`;
       wireWave(el, color);
       return el;
@@ -220,6 +237,10 @@
           return;
         }
         songs.forEach((s, i) => list.appendChild(card(s, i)));
+        // Cards are now in the DOM. Remove the live region role so subsequent
+        // DOM mutations (audio timeupdate repaints etc.) are not announced.
+        list.removeAttribute('role');
+        list.removeAttribute('aria-live');
       })
       .catch(() => {
         list.innerHTML = '<div class="ex-empty">no examples yet — check back soon! ♫</div>';

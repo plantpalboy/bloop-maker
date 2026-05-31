@@ -53,7 +53,9 @@
 </head>
 <body>
 
-  <div class="topbar">
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <nav class="topbar" aria-label="Primary">
     <a class="home" href="./">b<b>loop</b>maker</a>
     <a class="btn btn-nav" href="./">Home</a>
     <a class="btn btn-info" href="./how-it-works.html">How It Works</a>
@@ -61,9 +63,9 @@
     <a class="btn btn-ex" href="./examples.html">Examples</a>
     <a class="btn btn-demo" href="./app/">Try Demo</a>
     <a class="btn btn-buy" href="https://plantpalboy.itch.io/">Get it · $12.99</a>
-  </div>
+  </nav>
 
-  <main class="wrap">
+  <main class="wrap" id="main-content">
     <h1><span class="a">Frequently</span> asked <span class="b">questions</span></h1>
     <p class="lede">everything people usually want to know about Bloop Maker, the game music generator that runs on music theory instead of AI.</p>
 
@@ -125,7 +127,7 @@
     <p>yes. the music you make is yours to use in commercial projects, including paid games, apps, and videos. one-time purchase, no per-use fees, no royalties.</p>
 
     <h2>How is this different from an AI music generator?</h2>
-    <p>AI tools are trained on existing songs and predict what comes next, which raises the copyright and "is this AI?" questions, and they usually need an account, the cloud, a subscription, or a wait in a queue. Bloop Maker is the opposite: <strong>rule-based and repeatable</strong>, fully offline, instant with no waiting, and the music is yours outright, the same song every time from the same seed.</p>
+    <p>AI tools are trained on existing songs and predict what comes next, which raises questions about copyright and where the music really came from, and they usually need an account, the cloud, a subscription, or a wait in a queue. Bloop Maker is the opposite: <strong>rule-based and repeatable</strong>, fully offline, instant with no waiting, and the music is yours outright, the same song every time from the same seed.</p>
 
     <h2>Can I edit the songs after generating them?</h2>
     <p>yes. every song opens in a full piano-roll editor where you can add, remove, and resize individual notes. you can also reshape parts with one-click tools, regenerate any single channel while keeping the rest, and undo anything.</p>
@@ -157,13 +159,15 @@
     </div>
   </main>
 
-  <footer>
+  <footer aria-label="Site footer">
     <div class="subscribe">
-      <p>✦ get bloop news &amp; updates by email ✦</p>
+      <p id="subscribe-heading-faq">✦ get bloop news &amp; updates by email ✦</p>
       <form action="https://buttondown.com/api/emails/embed-subscribe/SNCKPCK"
             method="post" target="popupwindow"
+            aria-labelledby="subscribe-heading-faq"
             onsubmit="window.open('https://buttondown.com/SNCKPCK', 'popupwindow')">
-        <input type="email" name="email" placeholder="you@email.com" aria-label="Email address" required>
+        <label for="subscribe-email-faq" class="sr-only">Email address</label>
+        <input id="subscribe-email-faq" type="email" name="email" placeholder="you@email.com" required>
         <button type="submit" class="btn btn-buy">Subscribe</button>
       </form>
     </div>

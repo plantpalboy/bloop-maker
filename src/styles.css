@@ -137,6 +137,306 @@ body.theme-bloop {
 body.theme-bloop::before { background: radial-gradient(circle, rgba(255,74,162,0.16) 0%, transparent 70%); }
 body.theme-bloop::after  { background: radial-gradient(circle, rgba(38,198,255,0.14) 0%, transparent 70%); }
 
+/* ── Theme: Campfire (warm retro brown) ──────────────────── */
+body.theme-campfire {
+  background: linear-gradient(160deg, #2b2018 0%, #3a2b1e 50%, #241a12 100%);
+  background-attachment: fixed;
+  --win:      rgba(50,38,28,0.97);
+  --card:     rgba(62,48,34,0.95);
+  --btn-hi1:  rgba(96,74,50,0.92);
+  --btn-hi2:  rgba(80,60,40,0.86);
+  --btn-lo1:  rgba(64,48,32,0.82);
+  --btn-lo2:  rgba(78,58,38,0.88);
+  --tb-hi:    rgba(204,128,50,0.96);
+  --tb-lo:    rgba(122,66,24,0.99);
+  --b-win:    rgba(214,150,80,0.32);
+  --b-btn:    rgba(204,128,50,0.42);
+  --b-card:   rgba(180,130,80,0.26);
+  --txt:      #f4e4c8;
+  --txt-dis:  #b09878;
+  --txt-dim:  #e0c89a;
+  --acc:      #e8a838;
+  --acc2:     #d65a2a;
+  --sel-bg:   #a85820;
+  --sel-txt:  #fff6e2;
+  --ok:       #8aab30;
+  --busy:     #d6943c;
+  --err:      #e0563c;
+  --c1: #e07a3c; --c2: #d6a83c; --c3: #98b03c; --c4: #c8543c;
+}
+body.theme-campfire::before { background: radial-gradient(circle, rgba(232,168,56,0.18) 0%, transparent 70%); }
+body.theme-campfire::after  { background: radial-gradient(circle, rgba(214,90,42,0.16) 0%, transparent 70%); }
+
+/* ── Theme: Matrix (phosphor green on near-black) ────────── */
+body.theme-matrix {
+  background: linear-gradient(160deg, #020803 0%, #041006 50%, #010602 100%);
+  background-attachment: fixed;
+  --win:      rgba(6,18,8,0.96);
+  --card:     rgba(8,24,10,0.94);
+  --btn-hi1:  rgba(16,46,20,0.90);
+  --btn-hi2:  rgba(12,36,16,0.84);
+  --btn-lo1:  rgba(8,26,12,0.80);
+  --btn-lo2:  rgba(14,40,18,0.88);
+  --tb-hi:    rgba(20,90,30,0.96);
+  --tb-lo:    rgba(4,30,8,0.99);
+  --b-win:    rgba(40,220,80,0.32);
+  --b-btn:    rgba(40,220,80,0.42);
+  --b-card:   rgba(40,200,80,0.26);
+  --txt:      #6dff7a;
+  --txt-dis:  #2f8a3c;
+  --txt-dim:  #46d058;
+  --acc:      #00ff66;
+  --acc2:     #a8ff5c;
+  --sel-bg:   #0c7a2c;
+  --sel-txt:  #d8ffd8;
+  --ok:       #3cff80;
+  --busy:     #8aff4c;
+  --err:      #ff5c5c;
+  --c1: #00ff66; --c2: #4cff9c; --c3: #a8ff3c; --c4: #50d0ff;
+}
+body.theme-matrix::before { background: radial-gradient(circle, rgba(0,255,102,0.16) 0%, transparent 70%); }
+body.theme-matrix::after  { background: radial-gradient(circle, rgba(0,200,80,0.12) 0%, transparent 70%); }
+
+/* ── Theme: Twilight (Dracula-ish purple) ────────────────── */
+body.theme-twilight {
+  background: linear-gradient(160deg, #1e1b2e 0%, #282440 50%, #1a1726 100%);
+  background-attachment: fixed;
+  --win:      rgba(40,36,64,0.97);
+  --card:     rgba(52,46,80,0.95);
+  --btn-hi1:  rgba(78,68,118,0.90);
+  --btn-hi2:  rgba(64,56,98,0.86);
+  --btn-lo1:  rgba(50,44,78,0.82);
+  --btn-lo2:  rgba(60,52,92,0.88);
+  --tb-hi:    rgba(189,147,249,0.96);
+  --tb-lo:    rgba(98,70,160,0.99);
+  --b-win:    rgba(189,147,249,0.32);
+  --b-btn:    rgba(189,147,249,0.42);
+  --b-card:   rgba(170,140,230,0.26);
+  --txt:      #f8f8f2;
+  --txt-dis:  #9a92c0;
+  --txt-dim:  #d4cdf2;
+  --acc:      #bd93f9;
+  --acc2:     #8be9fd;
+  --sel-bg:   #6a4fb8;
+  --sel-txt:  #ffffff;
+  --ok:       #50fa7b;
+  --busy:     #bd93f9;
+  --err:      #ff5555;
+  --c1: #ff79c6; --c2: #8be9fd; --c3: #50fa7b; --c4: #ffb86c;
+}
+body.theme-twilight::before { background: radial-gradient(circle, rgba(189,147,249,0.18) 0%, transparent 70%); }
+body.theme-twilight::after  { background: radial-gradient(circle, rgba(139,233,253,0.14) 0%, transparent 70%); }
+
+/* ── Theme: Arctic (Nord-ish cool blue-gray) ─────────────── */
+body.theme-arctic {
+  background: linear-gradient(160deg, #2e3440 0%, #3b4252 50%, #2a2f3a 100%);
+  background-attachment: fixed;
+  --win:      rgba(46,52,64,0.97);
+  --card:     rgba(59,66,82,0.95);
+  --btn-hi1:  rgba(76,86,106,0.92);
+  --btn-hi2:  rgba(67,76,94,0.86);
+  --btn-lo1:  rgba(54,62,78,0.82);
+  --btn-lo2:  rgba(63,72,90,0.88);
+  --tb-hi:    rgba(136,192,208,0.96);
+  --tb-lo:    rgba(59,76,94,0.99);
+  --b-win:    rgba(136,192,208,0.32);
+  --b-btn:    rgba(129,161,193,0.44);
+  --b-card:   rgba(120,160,190,0.26);
+  --txt:      #eceff4;
+  --txt-dis:  #8a93a6;
+  --txt-dim:  #d0d6e0;
+  --acc:      #88c0d0;
+  --acc2:     #81a1c1;
+  --sel-bg:   #5e81ac;
+  --sel-txt:  #ffffff;
+  --ok:       #a3be8c;
+  --busy:     #81a1c1;
+  --err:      #bf616a;
+  --c1: #bf616a; --c2: #88c0d0; --c3: #a3be8c; --c4: #ebcb8b;
+}
+body.theme-arctic::before { background: radial-gradient(circle, rgba(136,192,208,0.16) 0%, transparent 70%); }
+body.theme-arctic::after  { background: radial-gradient(circle, rgba(94,129,172,0.16) 0%, transparent 70%); }
+
+/* ── Theme: Sunset (warm peach gradient, light) ──────────── */
+body.theme-sunset {
+  background: linear-gradient(160deg, #ffe3d3 0%, #ffd0c0 45%, #ffe9d6 100%);
+  background-attachment: fixed;
+  --win:      rgba(255,235,222,0.96);
+  --card:     rgba(255,247,240,0.95);
+  --btn-hi1:  rgba(255,222,200,0.92);
+  --btn-hi2:  rgba(255,208,182,0.86);
+  --btn-lo1:  rgba(255,192,162,0.82);
+  --btn-lo2:  rgba(255,204,178,0.88);
+  --tb-hi:    rgba(255,138,92,0.96);
+  --tb-lo:    rgba(204,68,80,0.99);
+  --b-win:    rgba(214,108,90,0.30);
+  --b-btn:    rgba(214,108,90,0.42);
+  --b-card:   rgba(220,140,110,0.26);
+  --txt:      #5a2230;
+  --txt-dis:  #b07868;
+  --txt-dim:  #8a3a44;
+  --acc:      #e0563c;
+  --acc2:     #f08a3c;
+  --sel-bg:   #c8404e;
+  --sel-txt:  #fff4ee;
+  --ok:       #2f9c6a;
+  --busy:     #e07a3c;
+  --err:      #c01c2c;
+  --c1: #d6344e; --c2: #1a9aa8; --c3: #2f9c5a; --c4: #e07020;
+}
+body.theme-sunset::before { background: radial-gradient(circle, rgba(255,138,92,0.20) 0%, transparent 70%); }
+body.theme-sunset::after  { background: radial-gradient(circle, rgba(204,68,80,0.14) 0%, transparent 70%); }
+
+/* ── Theme: Ocean (deep teal) ────────────────────────────── */
+body.theme-ocean {
+  background: linear-gradient(160deg, #042b33 0%, #073e48 50%, #03242b 100%);
+  background-attachment: fixed;
+  --win:      rgba(10,46,54,0.97);
+  --card:     rgba(14,60,70,0.95);
+  --btn-hi1:  rgba(24,86,98,0.92);
+  --btn-hi2:  rgba(20,72,84,0.86);
+  --btn-lo1:  rgba(14,56,66,0.82);
+  --btn-lo2:  rgba(18,66,78,0.88);
+  --tb-hi:    rgba(38,176,184,0.96);
+  --tb-lo:    rgba(8,68,80,0.99);
+  --b-win:    rgba(56,200,200,0.32);
+  --b-btn:    rgba(46,180,184,0.44);
+  --b-card:   rgba(56,170,180,0.26);
+  --txt:      #d8f6f4;
+  --txt-dis:  #6aa6a8;
+  --txt-dim:  #a8e0de;
+  --acc:      #26c4c4;
+  --acc2:     #5ce0b0;
+  --sel-bg:   #0e7c84;
+  --sel-txt:  #f0ffff;
+  --ok:       #4cd99a;
+  --busy:     #38b6d6;
+  --err:      #ff6a6a;
+  --c1: #ff7a9c; --c2: #38c8e0; --c3: #4cd99a; --c4: #f5c84c;
+}
+body.theme-ocean::before { background: radial-gradient(circle, rgba(38,196,196,0.18) 0%, transparent 70%); }
+body.theme-ocean::after  { background: radial-gradient(circle, rgba(92,224,176,0.14) 0%, transparent 70%); }
+
+/* ── Theme: Cyberpunk (magenta + cyan on black) ──────────── */
+body.theme-cyber {
+  background: linear-gradient(160deg, #0a0414 0%, #160826 50%, #06030f 100%);
+  background-attachment: fixed;
+  --win:      rgba(18,8,32,0.97);
+  --card:     rgba(26,12,44,0.95);
+  --btn-hi1:  rgba(52,20,80,0.90);
+  --btn-hi2:  rgba(42,16,66,0.86);
+  --btn-lo1:  rgba(30,12,52,0.82);
+  --btn-lo2:  rgba(40,16,64,0.88);
+  --tb-hi:    rgba(255,46,180,0.96);
+  --tb-lo:    rgba(20,180,210,0.99);
+  --b-win:    rgba(255,46,180,0.34);
+  --b-btn:    rgba(38,224,255,0.44);
+  --b-card:   rgba(180,60,200,0.28);
+  --txt:      #f4eaff;
+  --txt-dis:  #a070c0;
+  --txt-dim:  #36e6ff;
+  --acc:      #ff2eb4;
+  --acc2:     #26e6ff;
+  --sel-bg:   #b81c9c;
+  --sel-txt:  #ffffff;
+  --ok:       #2effc4;
+  --busy:     #ff2eb4;
+  --err:      #ff4060;
+  --c1: #ff2eb4; --c2: #26e6ff; --c3: #c46bff; --c4: #ffe24c;
+}
+body.theme-cyber::before { background: radial-gradient(circle, rgba(255,46,180,0.18) 0%, transparent 70%); }
+body.theme-cyber::after  { background: radial-gradient(circle, rgba(38,230,255,0.16) 0%, transparent 70%); }
+
+/* ── Theme: Paper (mono grayscale, light) ────────────────── */
+body.theme-paper {
+  background: linear-gradient(160deg, #f4f2ec 0%, #e8e5dc 50%, #f0ede5 100%);
+  background-attachment: fixed;
+  --win:      rgba(244,242,236,0.97);
+  --card:     rgba(252,251,247,0.96);
+  --btn-hi1:  rgba(236,233,224,0.94);
+  --btn-hi2:  rgba(224,220,210,0.88);
+  --btn-lo1:  rgba(208,204,194,0.84);
+  --btn-lo2:  rgba(220,216,206,0.90);
+  --tb-hi:    rgba(90,86,78,0.96);
+  --tb-lo:    rgba(40,38,34,0.99);
+  --b-win:    rgba(60,56,48,0.28);
+  --b-btn:    rgba(60,56,48,0.42);
+  --b-card:   rgba(80,76,68,0.24);
+  --txt:      #1f1d18;
+  --txt-dis:  #8a857a;
+  --txt-dim:  #4a463e;
+  --acc:      #3a3630;
+  --acc2:     #6a655a;
+  --sel-bg:   #2a2722;
+  --sel-txt:  #f4f2ec;
+  --ok:       #4a6a30;
+  --busy:     #5a564c;
+  --err:      #a83228;
+  --c1: #9c3a30; --c2: #3a5a78; --c3: #4a6a3a; --c4: #9c6a28;
+}
+body.theme-paper::before { background: radial-gradient(circle, rgba(120,114,100,0.14) 0%, transparent 70%); }
+body.theme-paper::after  { background: radial-gradient(circle, rgba(90,86,78,0.10) 0%, transparent 70%); }
+
+/* ── Theme: Sakura (soft pink, light) ────────────────────── */
+body.theme-sakura {
+  background: linear-gradient(160deg, #ffe6f0 0%, #ffd4e6 50%, #fff0f6 100%);
+  background-attachment: fixed;
+  --win:      rgba(255,235,244,0.96);
+  --card:     rgba(255,248,251,0.96);
+  --btn-hi1:  rgba(255,222,236,0.92);
+  --btn-hi2:  rgba(255,208,226,0.86);
+  --btn-lo1:  rgba(255,190,214,0.82);
+  --btn-lo2:  rgba(255,202,222,0.88);
+  --tb-hi:    rgba(255,124,176,0.96);
+  --tb-lo:    rgba(190,72,140,0.99);
+  --b-win:    rgba(220,110,160,0.30);
+  --b-btn:    rgba(220,110,160,0.42);
+  --b-card:   rgba(230,140,180,0.26);
+  --txt:      #5a1f3a;
+  --txt-dis:  #b07a92;
+  --txt-dim:  #8a3a5e;
+  --acc:      #e85a96;
+  --acc2:     #9a6cd6;
+  --sel-bg:   #c83c7c;
+  --sel-txt:  #fff2f7;
+  --ok:       #3c9c6a;
+  --busy:     #b46cd6;
+  --err:      #d02050;
+  --c1: #e85a96; --c2: #5a9cd6; --c3: #4cb07a; --c4: #f0943c;
+}
+body.theme-sakura::before { background: radial-gradient(circle, rgba(255,124,176,0.18) 0%, transparent 70%); }
+body.theme-sakura::after  { background: radial-gradient(circle, rgba(154,108,214,0.12) 0%, transparent 70%); }
+
+/* ── Theme: Mint (fresh light green-cyan) ────────────────── */
+body.theme-mint {
+  background: linear-gradient(160deg, #e0f7f0 0%, #c8f0e6 50%, #e8faf3 100%);
+  background-attachment: fixed;
+  --win:      rgba(224,247,240,0.96);
+  --card:     rgba(244,255,250,0.96);
+  --btn-hi1:  rgba(200,240,228,0.92);
+  --btn-hi2:  rgba(178,228,214,0.86);
+  --btn-lo1:  rgba(150,214,196,0.82);
+  --btn-lo2:  rgba(166,224,206,0.88);
+  --tb-hi:    rgba(38,184,150,0.96);
+  --tb-lo:    rgba(14,100,86,0.99);
+  --b-win:    rgba(40,170,140,0.30);
+  --b-btn:    rgba(40,170,140,0.42);
+  --b-card:   rgba(70,180,150,0.26);
+  --txt:      #0a3a30;
+  --txt-dis:  #5a9080;
+  --txt-dim:  #1a6a56;
+  --acc:      #12a884;
+  --acc2:     #1aa0c0;
+  --sel-bg:   #0c7a62;
+  --sel-txt:  #f0fffa;
+  --ok:       #0e9c5a;
+  --busy:     #18a0a8;
+  --err:      #c8344a;
+  --c1: #d6346a; --c2: #1aa0c0; --c3: #12a060; --c4: #e0883c;
+}
+body.theme-mint::before { background: radial-gradient(circle, rgba(38,184,150,0.18) 0%, transparent 70%); }
+body.theme-mint::after  { background: radial-gradient(circle, rgba(26,160,192,0.14) 0%, transparent 70%); }
+
 /* ── Dark Aero ───────────────────────────────────────────── */
 body.dark {
   background:
@@ -157,8 +457,8 @@ body.dark {
   --b-btn:     rgba(38,88,200,0.40);
   --b-card:    rgba(22,58,148,0.30);
   --txt:       #88b8e4;
-  --txt-dis:   #1c4266;
-  --txt-dim:   #4272aa;
+  --txt-dis:   #5d83ad;
+  --txt-dim:   #6a9ad0;
   --acc:       #2882de;
   --acc2:      #00b8e0;
   --sel-bg:    #003688;
@@ -233,6 +533,97 @@ body.dark select option {
   border-color: var(--acc) !important;
 }
 
+/* ── Dark-mode surface fixes ──────────────────────────────────
+   Surfaces below use hardcoded light backgrounds in the base CSS
+   (e.g. #fff, #f0f9ff, rgba(255,255,255,...)). These overrides flip
+   them to the existing dark palette so dark mode looks intentional.
+   Light mode is unaffected — every rule here is scoped to body.dark. */
+
+/* Cards & channel rows — hardcoded white→f0f9ff gradient */
+body.dark .card {
+  background: linear-gradient(180deg,
+    rgba(14,30,72,0.92) 0%,
+    rgba(12,26,66,0.92) 5%,
+    rgba(8,18,48,0.92) 100%);
+  border-top: 1px solid rgba(70,120,200,0.22);
+  box-shadow:
+    0 4px 18px rgba(0,10,40,0.45),
+    0 1px 4px rgba(0,5,30,0.40),
+    inset 0 1px 0 rgba(70,120,200,0.16);
+}
+body.dark .card:hover {
+  box-shadow:
+    0 8px 28px rgba(0,20,60,0.55),
+    0 2px 8px rgba(0,10,40,0.40),
+    inset 0 1px 0 rgba(70,120,200,0.16);
+}
+body.dark .channel-row {
+  background: linear-gradient(180deg, rgba(14,30,72,0.90) 0%, rgba(8,18,48,0.90) 100%);
+  border-top: 1px solid rgba(70,120,200,0.22);
+  box-shadow: 0 2px 10px rgba(0,10,40,0.40), inset 0 1px 0 rgba(70,120,200,0.16);
+}
+
+/* Per-channel waveform canvas backdrop */
+body.dark .channel-canvas { background: rgba(4,12,34,0.70); }
+
+/* Menu dropdowns — hardcoded #fff */
+body.dark .win-dropdown,
+body.dark .win-submenu {
+  background: #0a1834;
+  box-shadow: 0 4px 18px rgba(0,10,40,0.55), 0 1px 4px rgba(0,0,0,0.40);
+}
+
+/* Status bar (now relocated inside the Create card) */
+body.dark .win-status { background: rgba(8,18,48,0.45); }
+body.dark .win-status-panel { background: rgba(4,12,34,0.55); }
+body.dark .status-dog { color: var(--txt-dim); }
+
+/* Drop zones */
+body.dark .drop-zone { background: rgba(8,18,48,0.55); }
+body.dark .sf2-drop-zone { background: rgba(8,18,48,0.55); }
+body.dark .drop-zone:hover,
+body.dark .drop-zone.drag-over,
+body.dark .sf2-drop-zone:hover,
+body.dark .sf2-drop-zone.drag-over { background: rgba(20,60,140,0.20); }
+
+/* Shortcuts panel keycaps — hardcoded white bg + #333 text */
+body.dark .shortcuts-grid kbd {
+  background: rgba(4,12,34,0.65);
+  color: var(--txt);
+  border-color: var(--b-card);
+}
+
+/* Transpose cluster + per-channel slider tray */
+body.dark .ch-transpose { background: rgba(4,12,34,0.30); }
+body.dark .ch-sliders { background: rgba(10,26,64,0.45); }
+
+/* Seek slider track */
+body.dark .seek-slider { background: rgba(4,12,34,0.55); }
+
+/* Menu bar / toolbar — base uses bright white-translucent gradients */
+body.dark .win-menubar {
+  background: linear-gradient(180deg, rgba(20,46,104,0.45) 0%, rgba(10,26,64,0.35) 100%);
+}
+body.dark .win-toolbar {
+  background: linear-gradient(180deg, rgba(20,46,104,0.40) 0%, rgba(10,26,64,0.28) 100%);
+}
+
+/* App window top sheen — base uses a near-white gradient at the top */
+body.dark #app {
+  background: linear-gradient(180deg, rgba(30,60,130,0.45) 0%, rgba(16,34,80,0.55) 5%, var(--win) 14%);
+  border-top: 1px solid rgba(70,120,200,0.35);
+  box-shadow:
+    0 8px 32px rgba(0,10,40,0.55),
+    0 2px 8px rgba(0,5,30,0.40),
+    inset 0 1px 0 rgba(70,120,200,0.20);
+}
+
+/* Checkbox (unchecked) backdrop */
+body.dark input[type="checkbox"] {
+  background: rgba(4,12,34,0.65);
+  border-color: var(--b-btn);
+}
+
 @keyframes btn-wobble {
   0%, 100% { transform: rotate(-2deg); }
   50%       { transform: rotate(2deg); }
@@ -242,9 +633,9 @@ body.dark select option {
 #app {
   position:relative; z-index:1;
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.80) 0%, rgba(230,246,255,0.60) 5%, var(--win) 14%);
+    linear-gradient(180deg, var(--card) 0%, var(--card) 5%, var(--win) 14%);
   border: 1px solid var(--b-win);
-  border-top: 1px solid rgba(255,255,255,0.80);
+  border-top: 1px solid var(--b-win);
   border-radius: var(--radius);
   box-shadow:
     0 8px 32px rgba(0,60,180,0.18),
@@ -334,7 +725,7 @@ body.dark select option {
 
 /* ── Menu bar ────────────────────────────────────────────── */
 .win-menubar {
-  background: linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(220,240,255,0.40) 100%);
+  background: linear-gradient(180deg, var(--card) 0%, var(--win) 100%);
   border-bottom: 1px solid var(--b-win);
   display: flex;
   gap: 0;
@@ -360,7 +751,7 @@ body.dark select option {
   display: none;
   position: absolute;
   top: 100%; left: 0;
-  background: #fff;
+  background: var(--card);
   border: 1px solid var(--b-card);
   box-shadow: 0 4px 18px rgba(0,50,170,0.18), 0 1px 4px rgba(0,0,0,0.10);
   min-width: 190px;
@@ -373,18 +764,30 @@ body.dark select option {
 .win-dropdown-item {
   padding: 5px 18px;
   font: var(--font);
+  /* Always use the primary text colour (never --txt-dim/--acc, which can be
+     too light against the menu's --card surface). --txt is contrast-matched
+     to the surface in every theme, so menu text stays legible everywhere. */
   color: var(--txt);
   cursor: default;
   white-space: nowrap;
 }
 .win-dropdown-item:hover { background: var(--sel-bg); color: var(--sel-txt); }
 .win-dropdown-item.disabled { color: var(--txt-dis); pointer-events: none; }
+/* category tag shown inline on each flattened preset item */
+.preset-cat {
+  display: inline-block; min-width: 58px;
+  font-size: .82em; font-weight: 700; opacity: .65;
+  text-transform: uppercase; letter-spacing: .03em;
+}
+.win-dropdown-item:hover .preset-cat { opacity: .9; }
+/* the flat preset list can be long — keep it on-screen and scrollable */
+#presets-dropdown { max-height: 70vh; overflow-y: auto; }
 
 .win-dropdown-sep { height: 1px; background: var(--b-card); margin: 3px 8px; }
 
 /* ── Toolbar ─────────────────────────────────────────────── */
 .win-toolbar {
-  background: linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(210,235,255,0.30) 100%);
+  background: linear-gradient(180deg, var(--card) 0%, var(--win) 100%);
   border-bottom: 1px solid var(--b-win);
   display: flex;
   align-items: center;
@@ -394,6 +797,58 @@ body.dark select option {
 }
 
 .toolbar-sep { width:1px; height:18px; background: var(--b-btn); margin: 0 2px; }
+
+/* ── Accessibility: focus-visible outlines ───────────────── */
+/*
+ * Strong 3px focus ring using the theme accent (--acc).
+ * Suppressed for mouse/pointer users via :focus:not(:focus-visible).
+ * The ring uses outline (not border/box-shadow) so it sits outside
+ * the painted area and works on all element shapes.
+ */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+.win-menu-item:focus-visible,
+.win-dropdown-item:focus-visible {
+  outline: 3px solid var(--acc);
+  outline-offset: 2px;
+  /* Pair with a white/contrasting inner ring so the outline is visible
+     against both light and dark backgrounds (two-tone contrast). */
+  box-shadow: 0 0 0 1px #fff, 0 0 0 4px var(--acc);
+}
+/* Suppress the ring for mouse/pointer focus — only show for keyboard */
+button:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+select:focus:not(:focus-visible),
+.win-menu-item:focus:not(:focus-visible),
+.win-dropdown-item:focus:not(:focus-visible) {
+  outline: none;
+  /* restore the default box-shadow for inputs/selects that have one */
+}
+/* Keep select/input default box-shadow when focused via keyboard */
+select:focus-visible,
+input:focus-visible {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 1px #fff, 0 0 0 4px var(--acc);
+}
+/* Menu items need a visible ring too */
+.win-menu-item:focus-visible {
+  outline: 3px solid var(--acc);
+  outline-offset: -2px;
+}
+.win-dropdown-item:focus-visible {
+  outline: 3px solid var(--acc);
+  outline-offset: -2px;
+  background: var(--sel-bg);
+  color: var(--sel-txt);
+}
+/* prefers-reduced-motion: keep the outline visible but remove transitions */
+@media (prefers-reduced-motion: reduce) {
+  button, input, select,
+  .win-menu-item, .win-dropdown-item {
+    transition: none !important;
+  }
+}
 
 /* ── Flat PlayDoh Button ─────────────────────────────────── */
 button {
@@ -427,34 +882,38 @@ button:disabled { color: var(--txt-dis); cursor: not-allowed; opacity: 0.55; }
 
 /* ── Inputs / Selects ────────────────────────────────────── */
 input[type="text"], input[type="number"], select {
-  background: rgba(255,255,255,0.80);
+  background: var(--card);
   border: 1px solid var(--b-btn);
   border-radius: 5px;
   font: var(--font);
-  color: #07295a;
+  color: var(--txt);
   padding: 3px 6px;
   outline: none;
   box-shadow: inset 0 1px 3px rgba(0,50,160,0.10), 0 1px 0 rgba(255,255,255,0.60);
 }
-select option { color: #07295a; background: #fff; }
+select option { color: var(--txt); background: var(--card); }
 input[type="number"] { width: 64px; }
 select {
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%230a5090'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 6px center;
-  background-color: rgba(255,255,255,0.80);
+  background-color: var(--card);
   padding-right: 22px;
   cursor: pointer;
 }
-select:focus, input:focus {
+select:focus-visible, input:focus-visible {
   border-color: var(--acc);
   box-shadow: 0 0 0 2px rgba(0,100,200,0.18), inset 0 1px 3px rgba(0,50,160,0.10);
 }
-.seek-slider:focus {
+.seek-slider:focus:not(:focus-visible) {
   outline: none;
   border-color: var(--b-btn);
   box-shadow: inset 0 1px 3px rgba(0,50,160,0.10);
+}
+.seek-slider:focus-visible {
+  outline: 3px solid var(--acc);
+  outline-offset: 2px;
 }
 
 /* Range sliders */
@@ -479,7 +938,7 @@ input[type="range"]::-webkit-slider-thumb {
 input[type="checkbox"] {
   appearance: none;
   width: 14px; height: 14px;
-  background: rgba(255,255,255,0.80);
+  background: var(--card);
   border: 1px solid var(--b-btn);
   border-radius: 3px;
   position: relative;
@@ -511,9 +970,9 @@ input[type="checkbox"]:checked::after {
 
 .card {
   background:
-    linear-gradient(180deg, #ffffff 0%, #ffffff 5%, #f0f9ff 100%);
+    linear-gradient(180deg, var(--card) 0%, var(--card) 5%, var(--win) 100%);
   border: 1px solid var(--b-card);
-  border-top: 1px solid rgba(255,255,255,0.90);
+  border-top: 1px solid var(--b-card);
   border-radius: var(--radius);
   box-shadow:
     0 4px 18px rgba(0,60,180,0.12),
@@ -556,15 +1015,40 @@ input[type="checkbox"]:checked::after {
   background: linear-gradient(180deg, rgba(180,100,255,0.95) 0%, rgba(130,50,230,0.92) 49%, rgba(110,30,210,0.96) 51%, rgba(155,70,245,0.90) 100%);
   box-shadow: 0 2px 8px rgba(100,30,200,0.28), inset 0 1px 0 rgba(220,180,255,0.40);
 }
+/* Dark mode: same hues, dimmed so the title pills aren't glaring */
+body.dark .ct-create {
+  background: linear-gradient(180deg, rgba(150,45,95,0.95) 0%, rgba(120,25,65,0.92) 49%, rgba(105,18,55,0.96) 51%, rgba(135,40,85,0.90) 100%);
+  box-shadow: 0 2px 8px rgba(80,15,35,0.45), inset 0 1px 0 rgba(255,200,230,0.16);
+}
+body.dark .ct-channels {
+  background: linear-gradient(180deg, rgba(40,95,150,0.95) 0%, rgba(0,75,130,0.92) 49%, rgba(0,60,115,0.96) 51%, rgba(20,85,140,0.90) 100%);
+  box-shadow: 0 2px 8px rgba(0,50,110,0.45), inset 0 1px 0 rgba(180,230,255,0.16);
+}
+body.dark .ct-sf2 {
+  background: linear-gradient(180deg, rgba(40,120,75,0.95) 0%, rgba(12,100,55,0.92) 49%, rgba(8,85,45,0.96) 51%, rgba(28,110,65,0.90) 100%);
+  box-shadow: 0 2px 8px rgba(8,75,35,0.45), inset 0 1px 0 rgba(170,255,210,0.16);
+}
+body.dark .ct-pp {
+  background: linear-gradient(180deg, rgba(155,105,35,0.95) 0%, rgba(135,75,8,0.92) 49%, rgba(120,62,0,0.96) 51%, rgba(145,90,25,0.90) 100%);
+  box-shadow: 0 2px 8px rgba(95,45,0,0.45), inset 0 1px 0 rgba(255,230,160,0.16);
+}
+body.dark .ct-transport {
+  background: linear-gradient(180deg, rgba(105,60,150,0.95) 0%, rgba(75,30,135,0.92) 49%, rgba(62,18,120,0.96) 51%, rgba(90,42,145,0.90) 100%);
+  box-shadow: 0 2px 8px rgba(55,18,115,0.45), inset 0 1px 0 rgba(220,180,255,0.16);
+}
+/* checkmark on the currently-selected theme in the Themes menu */
+.win-dropdown-item.active { font-weight: 700; }
+.win-dropdown-item.active::before { content: "✓ "; }
 
 /* ── Status bar ──────────────────────────────────────────── */
 .win-status {
-  background: rgba(255,255,255,0.30);
-  border-top: 1px solid var(--b-win);
+  background: var(--win);
   display: flex;
   align-items: center;
   padding: 3px 10px;
   min-height: 24px;
+  margin-top: 12px;
+  border-radius: var(--radius);
 }
 /* Little ASCII dog that "speaks" the status text in a speech bubble. */
 .status-dog {
@@ -575,7 +1059,7 @@ input[type="checkbox"]:checked::after {
   line-height: 1.05;
   font-weight: 700;
   white-space: pre;
-  color: var(--b-ink, #333);
+  color: var(--txt-dim);
   align-self: center;
 }
 .status-bubble {
@@ -604,7 +1088,8 @@ input[type="checkbox"]:checked::after {
   overflow: hidden;
   text-overflow: ellipsis;
   font: var(--font);
-  background: rgba(255,255,255,0.40);
+  color: var(--txt);
+  background: var(--card);
 }
 .win-status.ok   .win-status-panel { color: var(--ok); }
 .win-status.busy .win-status-panel { color: var(--busy); }
@@ -625,8 +1110,7 @@ input[type="checkbox"]:checked::after {
   color: var(--txt-dim);
 }
 .gen-select, .gen-input { flex: 1; min-width: 80px; }
-.gen-select { color: #07295a !important; }
-body.dark .gen-select { color: #88b8e4 !important; }
+.gen-select { color: var(--txt) !important; }
 .gen-noise-row {
   display:flex; align-items:center; gap:7px;
   margin-bottom:8px; padding-left:58px;
@@ -639,37 +1123,39 @@ body.dark .gen-select { color: #88b8e4 !important; }
 
 .btn-generate {
   width:100%; padding:8px;
+  /* Tinted from the active theme's secondary accent (--acc2) */
   background: linear-gradient(180deg,
-    rgba(80,200,255,0.95) 0%,
-    rgba(0,160,240,0.92) 45%,
-    rgba(0,120,210,0.96) 51%,
-    rgba(0,150,230,0.90) 100%);
-  border: 1px solid rgba(0,100,190,0.55);
-  border-top: 1px solid rgba(140,220,255,0.80);
+    color-mix(in srgb, var(--acc2) 70%, #ffffff) 0%,
+    var(--acc2) 45%,
+    color-mix(in srgb, var(--acc2) 82%, #000000) 51%,
+    color-mix(in srgb, var(--acc2) 90%, #000000) 100%);
+  border: 1px solid color-mix(in srgb, var(--acc2) 65%, #000000);
+  border-top: 1px solid color-mix(in srgb, var(--acc2) 45%, #ffffff);
   border-radius: var(--radius);
   box-shadow:
-    0 4px 16px rgba(0,100,220,0.32),
-    0 1px 4px rgba(0,60,180,0.20),
+    0 4px 16px color-mix(in srgb, var(--acc2) 34%, transparent),
+    0 1px 4px color-mix(in srgb, var(--acc2) 24%, transparent),
     inset 0 1px 0 rgba(255,255,255,0.50);
   font: bold 18px var(--font-title);
   letter-spacing: 1px;
   cursor: pointer;
   color: #fff;
-  text-shadow: 0 1px 3px rgba(0,40,120,0.40);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.40);
   margin-top: 8px;
   transition: transform 0.10s, box-shadow 0.10s;
 }
-.btn-generate:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(0,120,240,0.40), inset 0 1px 0 rgba(255,255,255,0.55); }
-.btn-generate:active:not(:disabled) { transform: translateY(1px); box-shadow: inset 0 2px 6px rgba(0,40,140,0.22); padding: 9px 8px 7px; }
+.btn-generate:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 22px color-mix(in srgb, var(--acc2) 42%, transparent), inset 0 1px 0 rgba(255,255,255,0.55); }
+.btn-generate:active:not(:disabled) { transform: translateY(1px); box-shadow: inset 0 2px 6px rgba(0,0,0,0.28); padding: 9px 8px 7px; }
 
 .btn-scramble {
   width:100%; padding:7px;
+  /* Tinted from the active theme's "ok" accent */
   background: linear-gradient(135deg,
-    rgba(0,160,120,0.88) 0%,
-    rgba(0,200,100,0.82) 100%);
-  border: 1px solid rgba(0,120,80,0.40);
+    color-mix(in srgb, var(--ok) 78%, #000000) 0%,
+    var(--ok) 100%);
+  border: 1px solid color-mix(in srgb, var(--ok) 70%, #000000);
   border-radius: var(--radius);
-  box-shadow: 0 3px 10px rgba(0,150,90,0.22), inset 0 1px 0 rgba(255,255,255,0.28);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--ok) 26%, transparent), inset 0 1px 0 rgba(255,255,255,0.28);
   font: bold 15px var(--font-title);
   cursor: pointer;
   color: #fff;
@@ -686,7 +1172,7 @@ body.dark .gen-select { color: #88b8e4 !important; }
   position: relative;
   border: 2px dashed var(--b-btn);
   border-radius: var(--radius);
-  background: rgba(255,255,255,0.42);
+  background: var(--win);
   padding: 18px 10px;
   text-align: center;
   cursor: pointer;
@@ -698,7 +1184,7 @@ body.dark .gen-select { color: #88b8e4 !important; }
   position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%;
 }
 .drop-zone:hover, .drop-zone.drag-over {
-  background: rgba(0,100,200,0.08);
+  background: color-mix(in srgb, var(--acc) 10%, transparent);
   border-color: var(--acc);
 }
 .drop-zone.loaded { border-color: #22aa55; background: rgba(0,180,80,0.07); }
@@ -734,14 +1220,14 @@ body.dark .gen-select { color: #88b8e4 !important; }
 .progress-fill {
   height:100%;
   background: linear-gradient(90deg,
-    rgba(0,130,220,0.85) 0%,
-    rgba(0,190,240,0.90) 40%,
-    rgba(80,220,255,0.95) 55%,
-    rgba(0,170,230,0.88) 75%,
-    rgba(0,110,210,0.82) 100%);
+    color-mix(in srgb, var(--acc2) 88%, #000000) 0%,
+    var(--acc2) 40%,
+    color-mix(in srgb, var(--acc2) 70%, #ffffff) 55%,
+    var(--acc2) 75%,
+    color-mix(in srgb, var(--acc2) 88%, #000000) 100%);
   background-size: 200% 100%;
   border-radius: 4px;
-  box-shadow: 0 0 8px rgba(0,160,240,0.40), inset 0 1px 0 rgba(255,255,255,0.35);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--acc2) 40%, transparent), inset 0 1px 0 rgba(255,255,255,0.35);
   transition: width 0.15s ease;
   animation: aero-shimmer 1.8s linear infinite;
 }
@@ -751,9 +1237,9 @@ body.dark .gen-select { color: #88b8e4 !important; }
 
 .channel-row {
   display:flex; flex-direction:column; gap:6px;
-  background: linear-gradient(180deg, #ffffff 0%, #f0f9ff 100%);
+  background: linear-gradient(180deg, var(--card) 0%, var(--win) 100%);
   border: 1px solid var(--b-card);
-  border-top: 1px solid rgba(255,255,255,0.92);
+  border-top: 1px solid var(--b-card);
   border-radius: var(--radius);
   border-left: 4px solid;
   padding: 8px 10px;
@@ -777,7 +1263,7 @@ body.dark .gen-select { color: #88b8e4 !important; }
   width:100%; height:52px; display:block;
   border: 1px solid var(--b-card);
   border-radius: 5px;
-  background: rgba(255,255,255,0.70);
+  background: var(--win);
   cursor: default;
 }
 .channel-canvas.editing { height:200px; cursor:crosshair; }
@@ -847,11 +1333,11 @@ body.dark .gen-select { color: #88b8e4 !important; }
   margin: 0 1px;
   font: 700 10px "Courier New", monospace;
   text-align: center;
-  background: rgba(255,255,255,0.7);
+  background: var(--card);
   border: 1px solid var(--b-card);
   border-bottom-width: 2px;
   border-radius: 4px;
-  color: #333;
+  color: var(--txt);
 }
 
 .ch-btns { display:flex; align-items:center; gap:4px; flex-wrap:wrap; flex:1; }
@@ -890,7 +1376,7 @@ body.dark .gen-select { color: #88b8e4 !important; }
   border-radius: 5px;
   overflow:hidden;
   padding:1px;
-  background: rgba(255,255,255,0.20);
+  background: var(--win);
 }
 .btn-tr {
   width:20px; height:20px; padding:0;
@@ -906,7 +1392,7 @@ body.dark .gen-select { color: #88b8e4 !important; }
   align-items: center;
   gap: 6px;
   padding: 3px 6px;
-  background: rgba(220,238,255,0.45);
+  background: var(--win);
   border: 1px solid var(--b-card);
   border-radius: 6px;
   flex-shrink: 0;
@@ -933,20 +1419,20 @@ body.dark .gen-select { color: #88b8e4 !important; }
   padding: 0;
   font: bold 11px 'Segoe UI', Tahoma, sans-serif;
   line-height: 1;
-  background: linear-gradient(180deg, #e8f4ff 0%, #c8ddf5 100%);
+  background: linear-gradient(180deg, var(--btn-hi1) 0%, var(--btn-lo1) 100%);
   border: 1px solid var(--b-btn);
   border-radius: 3px;
   color: var(--txt);
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
 }
-.btn-chstep:hover { background: linear-gradient(180deg, #f2f9ff 0%, #d8eeff 100%); }
-.btn-chstep:active { background: linear-gradient(180deg, #b8d4f0 0%, #c8e0ff 100%); }
+.btn-chstep:hover { background: linear-gradient(180deg, var(--btn-hi1) 0%, var(--btn-hi2) 100%); }
+.btn-chstep:active { background: linear-gradient(180deg, var(--btn-lo1) 0%, var(--btn-lo2) 100%); }
 .ch-step-val {
   font: bold 9px 'Segoe UI', Tahoma, monospace;
   min-width: 30px; text-align: center;
   color: var(--acc);
-  background: rgba(255,255,255,0.6);
+  background: var(--win);
   border: 1px solid var(--b-card);
   border-radius: 3px;
   padding: 1px 2px;
@@ -965,7 +1451,7 @@ body.dark .gen-select { color: #88b8e4 !important; }
 /* ── SF2 card ────────────────────────────────────────────── */
 .sf2-drop-zone {
   position:relative;
-  background: rgba(255,255,255,0.48);
+  background: var(--win);
   border: 2px dashed var(--b-btn);
   border-radius: var(--radius);
   padding: 10px 14px;
@@ -1057,7 +1543,7 @@ body.dark .gen-select { color: #88b8e4 !important; }
 .seek-wrap { flex:1; }
 .seek-slider {
   width:100%; height:20px;
-  background: rgba(255,255,255,0.50);
+  background: var(--win);
   border: 1px solid var(--b-btn);
   border-radius: 5px;
   appearance: none;
@@ -1196,7 +1682,7 @@ body.dark .gen-select { color: #88b8e4 !important; }
   position: absolute;
   left: 100%;
   top: -2px;
-  background: var(--win);
+  background: var(--card);
   border: 1px solid var(--b-card);
   min-width: 160px;
   max-height: 320px;
@@ -1209,6 +1695,344 @@ body.dark .gen-select { color: #88b8e4 !important; }
 /* ── Misc ────────────────────────────────────────────────── */
 ::selection { background: var(--sel-bg); color: var(--sel-txt); }
 
+/* ================================================================
+   MICRO-INTERACTIONS — all motion added in one place for clarity.
+   Every animation/transition here is neutralised in the
+   prefers-reduced-motion block at the very bottom of this file.
+   ================================================================ */
+
+/* ── 1. Base button — smoother hover/press ───────────────── */
+button {
+  transition:
+    box-shadow    0.12s cubic-bezier(0.22, 1, 0.36, 1),
+    transform     0.12s cubic-bezier(0.22, 1, 0.36, 1),
+    background    0.14s ease,
+    background-color 0.14s ease,
+    border-color  0.14s ease,
+    color         0.12s ease,
+    opacity       0.14s ease;
+}
+
+/* ── 2. Generate button — hero interaction ───────────────── */
+.btn-generate {
+  /* Override the existing short transition with a richer one */
+  transition:
+    transform     0.15s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow    0.15s cubic-bezier(0.22, 1, 0.36, 1),
+    filter        0.15s ease;
+}
+.btn-generate:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.012);
+  box-shadow:
+    0 8px 28px color-mix(in srgb, var(--acc2) 48%, transparent),
+    0 2px 8px  color-mix(in srgb, var(--acc2) 30%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  filter: brightness(1.08);
+}
+.btn-generate:active:not(:disabled) {
+  transform: translateY(2px) scale(0.985);
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.28);
+  filter: brightness(0.96);
+}
+
+/* ── 3. Scramble / Humanize / Download / Random-SF2 — lift ─ */
+.btn-scramble,
+.btn-humanize,
+.btn-download,
+.btn-random-sf2 {
+  transition:
+    transform  0.12s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.12s ease,
+    filter     0.12s ease;
+}
+.btn-scramble:hover:not(:disabled),
+.btn-humanize:hover:not(:disabled),
+.btn-download:hover:not(:disabled),
+.btn-random-sf2:hover:not(:disabled) {
+  filter: brightness(1.10);
+}
+.btn-scramble:active:not(:disabled),
+.btn-humanize:active:not(:disabled),
+.btn-download:active:not(:disabled),
+.btn-random-sf2:active:not(:disabled) {
+  filter: brightness(0.94);
+  transform: translateY(1px) scale(0.98);
+}
+
+/* ── 4. Transport buttons ────────────────────────────────── */
+.btn-transport {
+  transition:
+    transform     0.10s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow    0.10s ease,
+    background    0.18s ease,
+    border-color  0.18s ease,
+    color         0.14s ease,
+    opacity       0.14s ease;
+}
+.btn-transport:hover:not(:disabled) {
+  transform: scale(1.08);
+  box-shadow: 3px 3px 0 rgba(0, 60, 180, 0.40);
+}
+.btn-transport:active:not(:disabled) {
+  transform: scale(0.94);
+  box-shadow: inset 0 2px 4px rgba(0, 40, 140, 0.22);
+}
+
+/* ── 5. Toggle-state transitions (mute/solo/lock/edit/arp/loop/metro/arm) */
+/*    Smooth background + color + border when .active class is toggled in  */
+.btn-mute,
+.btn-solo,
+.btn-lock,
+.btn-gen-toggle,
+.btn-edit-roll,
+.arp-btn,
+.btn-midi-arm,
+#loop-btn,
+#metro-btn,
+#midi-record,
+#jam-btn {
+  transition:
+    background    0.18s ease,
+    background-color 0.18s ease,
+    border-color  0.18s ease,
+    color         0.14s ease,
+    opacity       0.18s ease,
+    box-shadow    0.14s ease,
+    transform     0.10s cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* Micro-bounce when a toggle lands in its active state */
+.btn-mute.active,
+.btn-solo.active,
+.btn-lock.active,
+.btn-gen-toggle.active,
+.btn-edit-roll.active,
+.arp-btn.active,
+.btn-midi-arm.active,
+#loop-btn.active,
+#metro-btn.active {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 2px 6px rgba(0, 0, 0, 0.18);
+}
+
+/* ── 6. Btn-theme (light/dark/theme toggle) ──────────────── */
+.btn-theme {
+  transition:
+    opacity      0.15s ease,
+    background   0.18s ease,
+    color        0.14s ease,
+    border-color 0.14s ease,
+    transform    0.10s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.btn-theme:hover:not(.active) {
+  transform: scale(1.06);
+}
+.btn-theme:active {
+  transform: scale(0.95);
+}
+
+/* ── 7. Selects & inputs — focus/hover affordance ────────── */
+select,
+input[type="text"],
+input[type="number"] {
+  transition:
+    border-color 0.14s ease,
+    box-shadow   0.14s ease;
+}
+select:hover:not(:focus),
+input[type="text"]:hover:not(:focus),
+input[type="number"]:hover:not(:focus) {
+  border-color: var(--acc);
+  box-shadow:
+    0 0 0 1px rgba(0, 100, 200, 0.10),
+    inset 0 1px 3px rgba(0, 50, 160, 0.10);
+}
+
+/* ── 8. Range slider — thumb scale on drag ───────────────── */
+input[type="range"] {
+  transition: opacity 0.12s ease;
+}
+input[type="range"]::-webkit-slider-thumb {
+  transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease;
+}
+input[type="range"]:hover::-webkit-slider-thumb {
+  transform: scale(1.25);
+  box-shadow: 0 2px 8px rgba(0, 100, 220, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.90);
+}
+input[type="range"]:active::-webkit-slider-thumb {
+  transform: scale(1.35);
+  box-shadow: 0 3px 10px rgba(0, 100, 220, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.90);
+}
+/* Firefox */
+input[type="range"]::-moz-range-thumb {
+  transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+input[type="range"]:hover::-moz-range-thumb  { transform: scale(1.25); }
+input[type="range"]:active::-moz-range-thumb { transform: scale(1.35); }
+
+/* ── 9. Drop zones — invite + pulse on drag-over ─────────── */
+.drop-zone,
+.sf2-drop-zone {
+  transition:
+    background    0.18s ease,
+    border-color  0.18s ease,
+    transform     0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow    0.18s ease;
+}
+.drop-zone:hover,
+.sf2-drop-zone:hover {
+  transform: scale(1.012);
+  box-shadow: 0 4px 18px rgba(0, 100, 220, 0.14);
+}
+.drop-zone.drag-over,
+.sf2-drop-zone.drag-over {
+  transform: scale(1.025);
+  box-shadow: 0 6px 24px rgba(0, 120, 240, 0.22);
+  animation: dropzone-pulse 0.9s ease-in-out infinite;
+}
+@keyframes dropzone-pulse {
+  0%, 100% { border-color: var(--acc);                      box-shadow: 0 6px 24px rgba(0, 120, 240, 0.22); }
+  50%       { border-color: var(--acc2);                     box-shadow: 0 8px 30px rgba(0, 160, 240, 0.36); }
+}
+
+/* ── 10. Modal entrance ──────────────────────────────────── */
+@keyframes modal-fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes modal-slidein {
+  from { opacity: 0; transform: scale(0.94) translateY(12px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);    }
+}
+.modal-overlay.open {
+  animation: modal-fadein 0.20s ease-out both;
+}
+.modal-overlay.open .modal-window {
+  animation: modal-slidein 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.modal-close {
+  transition:
+    background   0.14s ease,
+    transform    0.10s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.modal-close:hover {
+  transform: scale(1.10);
+}
+.modal-close:active {
+  transform: scale(0.93);
+}
+
+/* ── 11. Cards — very subtle hover lift ──────────────────── */
+.card {
+  transition:
+    box-shadow 0.18s ease,
+    transform  0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.card:hover {
+  box-shadow:
+    0 8px 28px rgba(0, 60, 180, 0.16),
+    0 2px 8px  rgba(0, 30, 120, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  transform: translateY(-1px);
+}
+
+/* ── 12. Toolbar buttons — tighter press feel ────────────── */
+.toolbar-btn {
+  transition:
+    box-shadow   0.10s ease,
+    transform    0.10s cubic-bezier(0.22, 1, 0.36, 1),
+    background   0.14s ease;
+}
+
+/* ── 13. Menu bar items ──────────────────────────────────── */
+.win-menu-item {
+  transition: background 0.12s ease, color 0.10s ease;
+}
+.win-dropdown-item {
+  transition: background 0.10s ease, color 0.10s ease;
+}
+
+/* ── Reduced-motion safety net ───────────────────────────── */
+/*    Users who set "prefers reduced motion" get ZERO new motion.  */
+@media (prefers-reduced-motion: reduce) {
+  /* Kill all newly-added transitions */
+  button,
+  .btn-generate,
+  .btn-scramble,
+  .btn-humanize,
+  .btn-download,
+  .btn-random-sf2,
+  .btn-transport,
+  .btn-mute,
+  .btn-solo,
+  .btn-lock,
+  .btn-gen-toggle,
+  .btn-edit-roll,
+  .arp-btn,
+  .btn-midi-arm,
+  #loop-btn,
+  #metro-btn,
+  #midi-record,
+  #jam-btn,
+  .btn-theme,
+  select,
+  input[type="text"],
+  input[type="number"],
+  input[type="range"],
+  .drop-zone,
+  .sf2-drop-zone,
+  .modal-close,
+  .card,
+  .toolbar-btn,
+  .win-menu-item,
+  .win-dropdown-item {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  /* Kill new keyframe animations */
+  .modal-overlay.open,
+  .modal-overlay.open .modal-window {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .drop-zone.drag-over,
+  .sf2-drop-zone.drag-over {
+    animation: none !important;
+  }
+
+  /* Kill hover transforms that could jar motion-sensitive users */
+  .btn-generate:hover:not(:disabled),
+  .btn-generate:active:not(:disabled),
+  .btn-transport:hover:not(:disabled),
+  .btn-transport:active:not(:disabled),
+  .btn-scramble:hover:not(:disabled),
+  .btn-humanize:hover:not(:disabled),
+  .btn-download:hover:not(:disabled),
+  .btn-random-sf2:hover:not(:disabled),
+  .btn-theme:hover,
+  .btn-theme:active,
+  .modal-close:hover,
+  .modal-close:active,
+  .card:hover,
+  .drop-zone:hover,
+  .sf2-drop-zone:hover,
+  .drop-zone.drag-over,
+  .sf2-drop-zone.drag-over {
+    transform: none !important;
+    filter: none !important;
+    animation: none !important;
+  }
+
+  input[type="range"]:hover::-webkit-slider-thumb,
+  input[type="range"]:active::-webkit-slider-thumb,
+  input[type="range"]:hover::-moz-range-thumb,
+  input[type="range"]:active::-moz-range-thumb {
+    transform: none !important;
+  }
+}
+
 /* ── Theme buttons ───────────────────────────────────────── */
 .btn-theme {
   font: 11px/1 Tahoma, sans-serif;
@@ -1218,6 +2042,17 @@ body.dark .gen-select { color: #88b8e4 !important; }
 }
 .btn-theme:hover { opacity: 0.9; }
 .btn-theme.active { opacity: 1; font-weight: bold; background: var(--acc); color: #fff; border-color: var(--acc); }
+/* Override micro-interactions transition below — this block is later in the file so it wins */
+.btn-theme {
+  transition:
+    opacity      0.15s ease,
+    background   0.18s ease,
+    color        0.14s ease,
+    border-color 0.14s ease,
+    transform    0.10s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.btn-theme:hover:not(.active) { transform: scale(1.06); }
+.btn-theme:active              { transform: scale(0.95); }
 
 /* ── ASCII side panels ───────────────────────────────────── */
 .ascii-side {
