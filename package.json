@@ -14,7 +14,7 @@
     "build": "tsc && vite build",
     "build:demo": "tsc && cross-env VITE_DEMO=true vite build --outDir dist-demo",
     "build:examples": "node scripts/build-examples.mjs",
-    "build:site": "npm run build:demo && npm run build:examples && node scripts/build-site.mjs",
+    "build:site": "npm run build && npm run build:examples && node scripts/build-site.mjs",
     "preview": "vite preview",
     "desktop": "npm run build && electron .",
     "dev:electron": "concurrently -k -n VITE,ELECTRON -c green,cyan \"vite\" \"wait-on tcp:5173 && cross-env ELECTRON_START_URL=http://localhost:5173 electron .\"",

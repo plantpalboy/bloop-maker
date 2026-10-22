@@ -9,6 +9,7 @@ import { exportWAV } from './midi/WavExporter';
 import { Scheduler } from './engine/Scheduler';
 import { generate, type GenConfig, type GenMode, type ScaleType } from './generator/MelodyGenerator';
 import { scramble, type ScramblerConfig } from './generator/MIDIScrambler';
+import { VolumeAutomation } from './VolumeAutomation';
 import {
   IS_DEMO, DEMO_CHANNELS, DEMO_MODES, DEMO_PRESETS_PER_MODE, DEMO_ARP_STYLES,
   DEMO_ARCHETYPES, DEMO_STEER_MODES, DEMO_MAX_BARS, FULL_VERSION_URL,
@@ -139,7 +140,7 @@ const GEN_PRESETS: GenPreset[] = [
   { label: 'Eastern Boss',         mode: 'battle',  bpm: 158, scale: 'harmonicMinor',   generateNoise: true,  sparseness: 0   },
   { label: 'Victory Fanfare',      mode: 'mid',     bpm: 140, scale: 'major',            generateNoise: true,  sparseness: 0   },
   { label: 'Cutscene Drama',       mode: 'ambient', bpm: 72,  scale: 'minor',            generateNoise: false, sparseness: 0.3 },
-  // ── Undertale/Deltarune style (quirky nostalgic) ──
+  // ── Quirky nostalgic ──
   { label: 'Quirky Nostalgic',     mode: 'jazzy',   bpm: 92,  scale: 'dorian',           generateNoise: false, sparseness: 0.3 },
   { label: 'Wistful Town',         mode: 'jazzy',   bpm: 84,  scale: 'dorian',           generateNoise: true,  sparseness: 0.25 },
   { label: 'Tense Dungeon',        mode: 'ambient', bpm: 78,  scale: 'harmonicMinor',   generateNoise: false, sparseness: 0.35 },
@@ -292,6 +293,7 @@ class App {
   private bpmLocked = false;
   private loopEnabled = false;
   private currentTheme = 'bloop';
+  private volAuto = new VolumeAutomation();
   private vizColorIdx = 0;
   private vizCharPool: string[] = [];
   private lastMotifIntervals: number[] = [];
@@ -355,11 +357,6 @@ class App {
     this.injectSidePanels();
     this.applyDemoLimits();
     this.injectDemoBanner();
-    // Auto-show the welcome tour on a visitor's first visit (closable, and
-    // replayable later from Help → Show Welcome Tour).
-    if (!localStorage.getItem('bloopTourSeen')) {
-      setTimeout(() => this.startTour(), 600);
-    }
   }
 
   // Top banner shown only in the demo build: a note plus Buy + Back-to-homepage buttons.
@@ -462,6 +459,22 @@ class App {
 
       <main class="win-body" aria-label="Bloop Maker workspace">
 
+        <!-- SF2 -->
+        <section class="card" aria-labelledby="ct-sf2-lbl">
+          <div class="card-title ct-sf2" id="ct-sf2-lbl">Soundfont (SF2)</div>
+          <div class="sf2-drop-zone" id="sf2-drop">
+            <input type="file" id="sf2-input" accept=".sf2" multiple>
+            <div class="sf2-status" id="sf2-status">Drop .sf2 soundfonts here (supports multiple fonts)</div>
+          </div>
+          <div class="progress-wrap" id="sf2-progress-wrap" style="margin-top:6px">
+            <div class="progress-fill" id="sf2-progress-fill" style="width:0%"></div>
+          </div>
+          <div id="sf2-list" style="margin:4px 0;font:11px Tahoma;color:var(--txt-dis)"></div>
+          <div class="sf2-actions">
+            <button class="btn-random-sf2" id="sf2-random-btn" disabled>Random Presets</button>
+          </div>
+        </section>
+
         <!-- Create -->
         <section class="card" aria-labelledby="ct-create-lbl">
           <div class="card-title ct-create" id="ct-create-lbl">Create Music</div>
@@ -505,11 +518,6 @@ class App {
               <div class="gen-row">
                 <span class="gen-label" id="lbl-gen-sparseness">Sparse</span>
                 <input type="range" class="gen-input" id="gen-sparseness" min="0" max="1" value="0.4" step="0.05" style="flex:1" aria-labelledby="lbl-gen-sparseness" aria-valuetext="40%">
-              </div>
-              <div class="gen-row" style="align-items:center">
-                <span class="gen-label">Energy</span>
-                <canvas id="energy-canvas" width="200" height="40" style="cursor:crosshair;border:1px solid #555;background:#1a1a1a" role="img" aria-label="Energy curve editor — click and drag to draw energy over time"></canvas>
-                <button id="energy-reset" class="btn-sm" aria-label="Reset energy curve" style="margin-left:4px">&#8635;</button>
               </div>
               <div class="gen-row" style="align-items:center;gap:6px">
                 <span class="gen-label" id="lbl-arp-style">Arp Style</span>
@@ -628,7 +636,6 @@ class App {
                 </select>
                 <button id="arch-rand-toggle" class="btn-sm" aria-label="Randomize archetype — when active, Randomize Everything also picks a random archetype and arp style" aria-pressed="false" style="font-size:10px;opacity:0.5;white-space:nowrap" title="When lit, Randomize Everything also picks a random archetype and arp style">Rnd</button>
                 <button id="arch-clear" class="btn-sm" aria-label="Clear archetype and motif lock" style="font-size:10px" title="Clear archetype and motif lock">X</button>
-                <canvas id="motif-canvas" width="80" height="22" style="border:1px solid #444;background:#111;vertical-align:middle"></canvas>
               </div>
               <div class="gen-row" style="align-items:center;gap:6px;flex-wrap:wrap">
                 <span class="gen-label">Inspector</span>
@@ -756,22 +763,6 @@ class App {
           </div>
         </section>
 
-        <!-- SF2 -->
-        <section class="card" aria-labelledby="ct-sf2-lbl">
-          <div class="card-title ct-sf2" id="ct-sf2-lbl">Soundfont (SF2)</div>
-          <div class="sf2-drop-zone" id="sf2-drop">
-            <input type="file" id="sf2-input" accept=".sf2" multiple>
-            <div class="sf2-status" id="sf2-status">Drop .sf2 soundfonts here (supports multiple fonts)</div>
-          </div>
-          <div class="progress-wrap" id="sf2-progress-wrap" style="margin-top:6px">
-            <div class="progress-fill" id="sf2-progress-fill" style="width:0%"></div>
-          </div>
-          <div id="sf2-list" style="margin:4px 0;font:11px Tahoma;color:var(--txt-dis)"></div>
-          <div class="sf2-actions">
-            <button class="btn-random-sf2" id="sf2-random-btn" disabled>Random Presets</button>
-          </div>
-        </section>
-
         <!-- Post-processing -->
         <section class="card" aria-labelledby="ct-pp-lbl">
           <div class="card-title ct-pp" id="ct-pp-lbl">Post-Processing</div>
@@ -791,7 +782,6 @@ class App {
                 <span class="pp-val" id="humanize-val" aria-hidden="true">35%</span>
               </div>
               <button class="btn-humanize" id="humanize-btn" disabled>Apply Humanize</button>
-              <label style="display:inline-flex;align-items:center;gap:4px;font:11px Tahoma;margin-left:6px;cursor:pointer"><input type="checkbox" id="auto-humanize"> Auto</label>
             </div>
             <div>
               <div class="pp-row">
@@ -894,6 +884,8 @@ class App {
       this.editBtns[id]          = document.getElementById(`edit-${id}`)       as HTMLButtonElement;
       this.noteCountEls[id] = document.getElementById(`count-${id}`)!;
       this.panValEls[id]    = document.getElementById(`pan-val-${id}`)!;
+      const va = document.getElementById(`volauto-${id}`) as HTMLCanvasElement;
+      if (va) this.volAuto.bindCanvas(id, va);
     }
   }
 
@@ -903,7 +895,10 @@ class App {
       <div class="channel-row" data-channel="${id}" id="row-${id}">
         <div class="ch-top">
           <div class="channel-label">${m.label}</div>
-          <canvas class="channel-canvas" id="canvas-${id}" width="400" height="52"></canvas>
+          <div class="ch-canvas-wrap">
+            <canvas class="channel-canvas" id="canvas-${id}" width="400" height="52"></canvas>
+            <canvas class="vol-auto-canvas" id="volauto-${id}" width="400" height="52" title="Volume automation — click to add keypoints, drag to move, double-click to remove"></canvas>
+          </div>
           <div class="channel-note-count" id="count-${id}">0 notes</div>
         </div>
         <div class="ch-controls">
@@ -1422,6 +1417,7 @@ class App {
 
   private bindEnergyCanvas() {
     const canvas = document.getElementById('energy-canvas') as HTMLCanvasElement;
+    if (!canvas) return;
     const POINTS = 20;
     let painting = false;
 
@@ -1445,7 +1441,7 @@ class App {
     canvas.addEventListener('mousemove', e => { if (painting) paintPoint(e); });
     document.addEventListener('mouseup', () => { painting = false; });
 
-    document.getElementById('energy-reset')!.addEventListener('click', () => {
+    document.getElementById('energy-reset')?.addEventListener('click', () => {
       this.energyCurve = [];
       this.drawEnergyCanvas();
     });
@@ -1880,7 +1876,10 @@ class App {
       if (noteCount) this.noteCountEls[id] = noteCount;
       const panVal = document.getElementById(`pan-val-${id}`);
       if (panVal) this.panValEls[id] = panVal;
+      const va = document.getElementById(`volauto-${id}`) as HTMLCanvasElement;
+      if (va) this.volAuto.bindCanvas(id, va);
     }
+    this.volAuto.setDuration(this.state.duration);
     this.bindChannelRowEvents();
     this.populateInstrumentSelectors();
     this.updateSF2List();
@@ -3077,7 +3076,7 @@ class App {
     if (!this.sf2ListEl) return;
     if (this.loadedSF2s.length === 0) { this.sf2ListEl.innerHTML = ''; return; }
     this.sf2ListEl.innerHTML = this.loadedSF2s.map((f, i) =>
-      `<span style="margin-right:8px;padding:1px 4px;background:var(--btn-hi1);border:1px solid var(--b-btn);border-radius:3px;cursor:pointer" title="Click to remove" data-sf2-remove="${i}">SF${i + 1}: ${f.name.replace(/\.sf2$/i, '')} (${f.sf2.presets.length})</span>`
+      `<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px;min-width:0"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:1px 4px;background:var(--btn-hi1);border:1px solid var(--b-btn);border-radius:3px;cursor:pointer" title="${f.name} — click to remove" data-sf2-remove="${i}">SF${i + 1}: ${f.name.replace(/\.sf2$/i, '')} (${f.sf2.presets.length})</span></div>`
     ).join('');
     this.sf2ListEl.querySelectorAll('[data-sf2-remove]').forEach(el => {
       el.addEventListener('click', () => {
@@ -3218,6 +3217,7 @@ class App {
     this.state.duration = duration;
     this.state.bpm      = bpm;
     this.bpmInput.value = String(Math.round(bpm));
+    this.volAuto.setDuration(duration);
     // Locked channels keep their current notes (even if empty) — generation skips them.
     for (const id of CHANNELS) {
       if (this.channelLocked[id]) continue;
@@ -3307,6 +3307,12 @@ class App {
       this.currentTime = t;
       if (!this.isDraggingSeek) { this.seekSlider.value = String(t); this.updateTimeDisplay(t); }
       if (Math.round(t * 5) % 4 === 0) this.updateAllCanvases();
+      for (const id of CHANNELS) {
+        if (this.volAuto.hasAutomation(id) && this.sampler) {
+          const base = this.channelVolValues[id] ?? 1;
+          this.sampler.setChannelVolume(id, base * this.volAuto.getVolume(id, t));
+        }
+      }
     };
 
     this.scheduler.loop = this.loopEnabled;
@@ -3467,7 +3473,6 @@ class App {
   // ── Export ────────────────────────────────────────────────────
 
   private runDownload() {
-    if (this.demoGate('MIDI export')) return;
     const total = CHANNELS.reduce((s, id) => s + this.state.channels[id].notes.length, 0);
     if (total === 0) { this.setStatus('err', 'Nothing to export yet!'); return; }
     try {
@@ -3557,7 +3562,6 @@ class App {
   }
 
   private async runWAVExport() {
-    if (this.demoGate('WAV export')) return;
     if (this.loadedSF2s.length === 0) { this.setStatus('err', 'Load an SF2 soundfont first!'); return; }
     const total = CHANNELS.reduce((s, id) => s + (this.state.channels[id]?.notes.length ?? 0), 0);
     if (total === 0) { this.setStatus('err', 'No notes to export!'); return; }

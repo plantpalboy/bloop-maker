@@ -43,20 +43,20 @@ for (const entry of readdirSync('landing')) {
 }
 
 // Playable demo build
-if (!existsSync('dist-demo')) {
-  console.error('Missing dist-demo/ — run `npm run build:demo` first (npm run build:site does this for you).');
+if (!existsSync('dist')) {
+  console.error('Missing dist/ — run `npm run build` first (npm run build:site does this for you).');
   process.exit(1);
 }
-cpSync('dist-demo', 'demo/app', { recursive: true });
+cpSync('dist', 'demo/app', { recursive: true });
 
 // Give the demo app page its own SEO meta (it inherits the full app's index.html).
 const appIndex = 'demo/app/index.html';
 if (existsSync(appIndex)) {
   let html = readFileSync(appIndex, 'utf8');
   html = html.replace(/<title>[\s\S]*?<\/title>/,
-    '<title>Bloop Maker — Generative Music Program | Free In-Browser Game Music Generator Demo</title>');
+    '<title>Bloop Maker — Generative Music Program | Free In-Browser Game Music Generator</title>');
   html = html.replace(/(<meta name="description" content=")[^"]*(")/,
-    '$1Try Bloop Maker free in your browser — a no-AI game music generator built on music-theory rules. Generate original chiptune and video game music; the full version exports MIDI and WAV and runs offline.$2');
+    '$1Use Bloop Maker free in your browser — a no-AI game music generator built on music-theory rules. Generate original chiptune and video game music and export MIDI and WAV. Desktop app also available.$2');
   html = html.replace(/(<link rel="canonical" href=")[^"]*(")/,
     '$1https://bloopmaker.net/app/$2');
   writeFileSync(appIndex, html);

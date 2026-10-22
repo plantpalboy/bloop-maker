@@ -202,7 +202,7 @@ const LEAD_RHYTHM_PROFILES: { beats: number; w: number }[][] = [
   [ { beats: 1.0, w: 60 }, { beats: 1.5, w: 22 }, { beats: 0.5, w: 10 }, { beats: 2.0, w: 8  } ], // AC bouncy quarters
   [ { beats: 1.0, w: 50 }, { beats: 0.5, w: 30 }, { beats: 2.0, w: 12 }, { beats: 1.5, w: 8  } ], // AC mix quarters+8ths
   // Syncopated quirky: dotted-quarter + eighth combos (quarter, dotted-quarter, eighth)
-  // Creates the off-beat accent feel described in Undertale melodic theory
+  // Creates the off-beat accent feel common in quirky game music
   [ { beats: 1.5, w: 50 }, { beats: 0.5, w: 35 }, { beats: 1.0, w: 15 } ],
 ];
 const LEAD_REST_PROB: Record<GenMode, number> = { ambient: 0.28, mid: 0.18, battle: 0.10, jazzy: 0.20, funky: 0.14, silly: 0.08, weird: 0.26 };
@@ -377,7 +377,7 @@ function snapToScale(midi: number, key: number, scaleArr: number[]): number {
 
 // ── Swing quantization ────────────────────────────────────────
 // Shifts notes on even-8th positions (beat-and) forward by `amount` beats,
-// giving the 3:2 lilt described in the Undertale melodic theory guide.
+// giving the 3:2 lilt common in quirky game music.
 // amount = 0.15 is a light shuffle; 0.167 is a full triplet swing (2:1).
 function applySwing(notes: NoteEvent[], barStart: number, beatDur: number, amount = 0.15): NoteEvent[] {
   const eighth = beatDur * 0.5;
@@ -1765,7 +1765,7 @@ export function generate(config: GenConfig): GenResult {
     // Suspension insertion: long notes on strong beats in ambient/jazzy/mid; sparse in battle
     const susProb = config.mode === 'ambient' ? 0.22 : config.mode === 'jazzy' ? 0.18 : config.mode === 'battle' ? 0.06 : 0.14;
     melNotesFinal = insertSuspensions(melNotesFinal, beatDur, activeKey, scale, chordDeg, activeOct, rng, susProb);
-    // Swing: jazzy mode gets 3:2 shuffle on even 8th positions (Undertale lilt)
+    // Swing: jazzy mode gets 3:2 shuffle on even 8th positions (shuffle lilt)
     if (config.mode === 'jazzy' && rng.next() < 0.70) melNotesFinal = applySwing(melNotesFinal, barStart, beatDur, 0.14);
 
     // ── Improvement #3: Guaranteed cadences ───────────────────────
