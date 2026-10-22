@@ -2537,7 +2537,7 @@ class App {
             });
           }
         }
-        if ((document.getElementById('auto-humanize') as HTMLInputElement).checked) {
+        if ((document.getElementById('auto-humanize') as HTMLInputElement | null)?.checked) {
           this.applyHumanize();
         }
         this.state.inputType = 'generated';
